@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>ZDevTools</id>
+    <version>1.2</version>
+    <authors>穿越中的逍遥</authors>
+    <owners>穿越中的逍遥</owners>
+    <licenseUrl>https://github.com/zhyy2008z/ZDevTools/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/zhyy2008z/ZDevTools</projectUrl>
+    <iconUrl></iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>开发工具库，目前包含一个SqlHelper库和一个支持自动完成的文本框控件（修改自其它项目）</description>
+    <releaseNotes>原始版本发布</releaseNotes>
+    <copyright>Copyright 2015</copyright>
+    <tags>SqlHelper AutoComplete</tags>
+    <dependencies>
+      
+    </dependencies>
+  </metadata>
+</package>

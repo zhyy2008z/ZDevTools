@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("穿越中的逍遥程序开发工具库")]
-[assembly: AssemblyDescription("在项目中引入本库以快速开发应用程序。")]
+[assembly: AssemblyTitle("ZDevTools")]
+[assembly: AssemblyDescription("程序开发工具库，在项目中引入本库以快速开发应用程序。")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("自由软件")]
-[assembly: AssemblyProduct("自由软件")]
+[assembly: AssemblyCompany("穿越中的逍遥")]
+[assembly: AssemblyProduct("程序开发工具库")]
 [assembly: AssemblyCopyright("Copyright © 穿越中的逍遥 2015")]
 [assembly: AssemblyTrademark("^_^")]
 [assembly: AssemblyCulture("")]
