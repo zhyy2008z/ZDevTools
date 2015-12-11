@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("ZDevTools")]
-[assembly: AssemblyDescription("程序开发工具库，在项目中引入本库以快速开发应用程序。")]
+[assembly: AssemblyDescription("开发工具库，目前包含一个SqlHelper库和一个支持自动完成的文本框控件（修改自其它项目）")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("穿越中的逍遥")]
 [assembly: AssemblyProduct("程序开发工具库")]
