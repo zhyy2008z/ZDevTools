@@ -71,6 +71,9 @@ namespace ZDevTools.Data
     /// 1.为Open方法添加返回值
     /// 2.修改事务提交与回滚逻辑
     /// 
+    /// 2016年1月20日 v3.5
+    /// 1.连接字符串参数不变时不再重复赋值，优化性能
+    /// 
     /// </para>
     /// </summary>
     public class DbHelper<TConnection, TTransaction, TCommand, TDataReader, TParameter, TDataAdapter, TCommandBuilder> : IDisposable
@@ -252,9 +255,10 @@ namespace ZDevTools.Data
         void configAndOpen() //v1.2 修改该方法以使sqlhelper总是使用同一连接对象，减少资源消耗
         {
             if (conn == null)
+            {
                 conn = new TConnection();
-
-            conn.ConnectionString = ConnectionString;
+                conn.ConnectionString = ConnectionString; //v3.5 连接字符串参数不变时不再重复赋值，优化性能
+            }
             conn.Open();
         }
 
@@ -271,8 +275,17 @@ namespace ZDevTools.Data
             get { return connectionString; }
             set
             {
-                if (conn != null && conn.State != ConnectionState.Closed)
-                    throw new InvalidOperationException("连接开启时不允许设置连接字符串！关闭连接后方可设置连接字符串！");
+                if (string.IsNullOrEmpty(value))
+                    throw new InvalidOperationException("连接字符串不能为空！");
+
+                if (conn != null)
+                {
+                    if (conn.State != ConnectionState.Closed)
+                        throw new InvalidOperationException("连接开启时不允许设置连接字符串！关闭连接后方可设置连接字符串！");
+                    else
+                        conn.ConnectionString = value; //v3.5 连接字符串参数不变时不再重复赋值，优化性能
+                }
+
                 connectionString = value;
             }
         }
