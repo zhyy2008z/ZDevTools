@@ -9,8 +9,8 @@ namespace ZDevTools.Data
     /// <summary>
     /// <para>数据库通用访问辅助类</para>
     /// <para>开发者：穿越中的逍遥</para>
-    /// <para>版本：3.2</para>
-    /// <para>日期：2015年9月26日</para>
+    /// <para>版本：3.5</para>
+    /// <para>日期：2016年1月20日</para>
     /// <para>简介：</para>
     /// <para>虽然是个辅助类，但是支持事务管理（仅单事务管理）。您可以通过继承或填充泛型参数直接操作其他类型的数据库，如Oracle、MySql等。</para>
     /// <para>本辅助类支持占位符，使用方法如下： //v3.1 增加占位符功能的描述</para>
