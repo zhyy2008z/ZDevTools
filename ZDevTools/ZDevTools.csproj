@@ -46,7 +46,6 @@
     <Compile Include="UI\WinForm\CustomCompleteTextBox.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Data\DbConfig.cs" />
     <Compile Include="Data\DbHelper‘T.cs" />
     <Compile Include="Data\SqlHelper.cs" />
     <Compile Include="ExtLibrary\AppClickFilterHelper.cs" />
