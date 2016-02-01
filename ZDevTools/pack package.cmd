@@ -1,1 +1,0 @@
-nuget pack ZDevTools.csproj -Prop Configuration=Release

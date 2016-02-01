@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$-alpha</version>
+    <title>$title$</title>
+    <authors>$author$</authors>
+    <owners>$author$</owners>
+    <licenseUrl>https://github.com/zhyy2008z/ZDevTools/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools.ServiceCore</projectUrl>
+    <iconUrl>https://github.com/zhyy2008z/ZDevTools/noicon</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>$description$</description>
+    <releaseNotes>原始版本发布</releaseNotes>
+    <copyright>Copyright 自由软件 2016</copyright>
+    <tags>ServiceCore HostService</tags>
+  </metadata>
+</package>
