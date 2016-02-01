@@ -70,6 +70,7 @@
       <DependentUpon>HostedServiceUI.cs</DependentUpon>
     </Compile>
     <Compile Include="FormAppender.cs" />
+    <Compile Include="IServiceMetadata.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>

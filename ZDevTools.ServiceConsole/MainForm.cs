@@ -35,7 +35,9 @@ namespace ZDevTools.ServiceConsole
             CompositionContainer container = new CompositionContainer(directoryCatalog);
 
             //定义载入的服务
-            IServiceBase[] services = container.GetExportedValues<IServiceBase>().ToArray();
+            IServiceBase[] services = (from l in container.GetExports<IServiceBase, IServiceMetadata>()
+                                       orderby l.Metadata.DisplayOrder
+                                       select l.Value).ToArray();
 
             //从文件读取配置
             Dictionary<string, string> config = null;
