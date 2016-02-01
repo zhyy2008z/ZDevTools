@@ -9,7 +9,6 @@ namespace ZDevTools.ServiceConsole
 {
     public interface IServiceMetadata
     {
-        [DefaultValue(0)]
         int DisplayOrder { get; }
     }
 }

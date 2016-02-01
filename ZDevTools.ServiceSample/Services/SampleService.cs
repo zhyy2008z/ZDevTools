@@ -9,6 +9,7 @@ using System.Threading;
 
 namespace ZDevTools.ServiceSample.Services
 {
+    [ExportService]
     public class SampleService : ScheduledServiceBase, IServiceRevokable
     {
         static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(SampleService));

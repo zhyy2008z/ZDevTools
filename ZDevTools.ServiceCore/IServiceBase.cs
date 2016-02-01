@@ -10,7 +10,6 @@ namespace ZDevTools.ServiceCore
     /// <summary>
     /// 服务基本接口
     /// </summary>
-    [InheritedExport]
     public interface IServiceBase
     {
         string ServiceName { get; }
