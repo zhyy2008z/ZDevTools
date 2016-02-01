@@ -14,7 +14,7 @@ namespace ZDevTools.ServiceSample.Services
     {
         static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(SampleService));
 
-        public override global::log4net.ILog Log => log;
+        protected override log4net.ILog Log => log;
 
         public override string ServiceName => "样例服务";
 

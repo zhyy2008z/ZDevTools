@@ -19,7 +19,7 @@ namespace ZDevTools.ServiceCore
 
         public abstract string ServiceName { get; }
 
-        public abstract log4net.ILog Log { get; }
+        protected abstract log4net.ILog Log { get; }
 
         /// <summary>
         /// 保存Hash对象
