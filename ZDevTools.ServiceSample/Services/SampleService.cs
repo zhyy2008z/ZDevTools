@@ -27,7 +27,7 @@ namespace ZDevTools.ServiceSample.Services
         public override void ServiceCore()
         {
             cancelled = false;
-            for (int i = 0; i < 60; i++)
+            for (int i = 0; i < 3; i++)
             {
                 LogInfo("我在执行！");
                 Thread.Sleep(1000);

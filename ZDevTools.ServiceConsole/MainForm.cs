@@ -13,6 +13,7 @@ using ZDevTools.ServiceCore;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
 using System.Linq;
+using static ZDevTools.ServiceConsole.CommonFunctions;
 
 namespace ZDevTools.ServiceConsole
 {
@@ -170,7 +171,7 @@ namespace ZDevTools.ServiceConsole
                     break;
                 }
 
-            if (isAllStopped || MessageBox.Show("某些服务还未停止，真的要退出吗？", "退出提示", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            if (isAllStopped || ShowConfirm("某些服务还未停止，真的要退出吗？"))
                 Application.Exit();
         }
     }

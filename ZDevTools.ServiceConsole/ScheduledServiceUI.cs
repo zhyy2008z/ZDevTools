@@ -12,10 +12,11 @@ using System.Threading;
 using ZDevTools.ServiceConsole.Properties;
 using Newtonsoft.Json;
 using ZDevTools.ServiceCore;
+using ZDevTools.ServiceConsole.Schedules;
 
 namespace ZDevTools.ServiceConsole
 {
-    [Description("代表一个计划的服务"), DefaultEvent("DoWork"), DefaultProperty("ServiceName")]
+    [Description("代表一个计划的服务"), DefaultProperty("ServiceName")]
     public partial class ScheduledServiceUI : UserControl, IBindedServiceUI, IConfigurableUI, IControllableUI
     {
         static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(ScheduledServiceUI));
@@ -106,10 +107,6 @@ namespace ZDevTools.ServiceConsole
         public ScheduledServiceUI()
         {
             InitializeComponent();
-
-            mtbIntervalTime.ValidatingType = typeof(DateTime);
-            mtbOntime.GotFocus += mtbOntime_GotFocus;
-            mtbIntervalTime.GotFocus += mtbIntervalTime_GotFocus;
         }
 
         async void doWork()
@@ -153,6 +150,8 @@ namespace ZDevTools.ServiceConsole
             updateServiceStatus(ScheduledServiceStatus.Waitting);
         }
 
+
+        bool manageScheduleEnabled = true;
         /// <summary>
         /// 获取当前服务的执行状态名称
         /// </summary>
@@ -162,12 +161,10 @@ namespace ZDevTools.ServiceConsole
 
             if (serviceStatus == ScheduledServiceStatus.Waitting) //更新为等待状态时，需要进行特殊处理
             {
-                if (ServiceStatus == ScheduledServiceStatus.Stopping) //由停止中的状态而来，说明用户强行终止任务
+                if (ServiceStatus == ScheduledServiceStatus.Stopping || willFinish) //由停止中的状态而来或本次运行已经是最后一次运行，说明任务将要结束
                     this.ServiceStatus = ScheduledServiceStatus.Stopped;
-                else if (cbAutoRun.Checked) //勾选了自动运行，等待下一轮任务执行
+                else
                     this.ServiceStatus = ScheduledServiceStatus.Waitting;
-                else //没有勾选自动运行，任务终止
-                    this.ServiceStatus = ScheduledServiceStatus.Stopped;
             }
             else
                 this.ServiceStatus = serviceStatus;
@@ -175,74 +172,48 @@ namespace ZDevTools.ServiceConsole
             //更新控件状态
             string statusName;
             string buttonText;
-            bool buttonEnabled;
+            bool operationEnabled;
             switch (ServiceStatus)
             {
                 case ScheduledServiceStatus.Stopped:
                     statusName = "已停止";
                     buttonText = "启用";
-                    buttonEnabled = true;
+                    operationEnabled = true;
+                    manageScheduleEnabled = true;
                     break;
                 case ScheduledServiceStatus.Waitting:
                     statusName = "等待运行";
                     buttonText = "停用";
-                    buttonEnabled = true;
+                    operationEnabled = true;
+                    manageScheduleEnabled = false;
                     break;
                 case ScheduledServiceStatus.Running:
                     statusName = "正在运行";
                     buttonText = "停用";
-                    buttonEnabled = canbeCancelled;
+                    operationEnabled = canbeCancelled;
+                    manageScheduleEnabled = false;
                     break;
                 case ScheduledServiceStatus.Stopping:
                     statusName = "正在停用";
                     buttonText = "停用";
-                    buttonEnabled = false;
+                    operationEnabled = false;
+                    manageScheduleEnabled = false;
                     break;
                 default:
                     statusName = "未知状态";
                     buttonText = "未知";
-                    buttonEnabled = false;
+                    operationEnabled = false;
+                    manageScheduleEnabled = false;
                     break;
             }
 
             lStatus.Text = statusName;
             bOperation.Text = buttonText;
-            bOperation.Enabled = buttonEnabled;
+            bOperation.Enabled = operationEnabled;
 
             logInfo(statusName);
         }
 
-        void updateInterval()
-        {
-            if (rbRecycle.Checked)
-            {
-                var dateValue = mtbIntervalTime.ValidateText();
-                if (dateValue != null)
-                {
-                    var timeSpan = ((DateTime)(dateValue)).TimeOfDay;
-                    if (timeSpan.TotalSeconds >= 1) //防止用户将小于1秒钟的参数值传入程序
-                        tJob.Interval = (int)timeSpan.TotalMilliseconds;
-                }
-            }
-            else if (rbOnTime.Checked)
-            {
-                var targetTime = (DateTime)mtbOntime.ValidateText();
-                var nowTime = DateTime.Now;
-                if (targetTime > nowTime)
-                    tJob.Interval = (int)(targetTime.AddSeconds(10) - nowTime).TotalMilliseconds;
-                else
-                    tJob.Interval = (int)(targetTime.AddDays(1).AddSeconds(10) - nowTime).TotalMilliseconds;//这里多加了十秒钟是为了防止：计时器不准确，提前执行后当前时间小于目标时间，将再次执行本任务的问题。
-            }
-        }
-
-        private void tJob_Tick(object sender, EventArgs e)
-        {
-            //更新下一轮执行间隔
-            updateInterval();
-
-            //开始执行任务
-            doWork();
-        }
 
         private void bOperation_Click(object sender, EventArgs e)
         {
@@ -250,11 +221,8 @@ namespace ZDevTools.ServiceConsole
             {
                 case ScheduledServiceStatus.Stopped: //停止状态下，开启任务
 
-                    if (cbAutoRun.Checked)
-                    {
-                        updateInterval();
-                        tJob.Start();
-                    }
+                    startSchedules();
+
                     if (cbImmediately.Checked) //如果勾选了立即执行则直接开始任务，否则更新服务状态为等待状态
                         doWork();
                     else
@@ -263,13 +231,13 @@ namespace ZDevTools.ServiceConsole
                     break;
                 case ScheduledServiceStatus.Waitting: //等待状态下禁用任务
 
-                    tJob.Stop();
+                    stopSchedules();
                     updateServiceStatus(ScheduledServiceStatus.Stopped);
 
                     break;
                 case ScheduledServiceStatus.Running: //运行状态下，停止计时器防止再次启动任务，将任务状态标记为停止中，再取消任务
 
-                    tJob.Stop();
+                    stopSchedules();
                     updateServiceStatus(ScheduledServiceStatus.Stopping);
                     (bindedService as IServiceRevokable).Cancel();
 
@@ -281,85 +249,109 @@ namespace ZDevTools.ServiceConsole
             }
         }
 
-        #region 修正MaskTextBox的Modified事件不可用问题
 
-        string oldValue;
-        private void mtbOntime_GotFocus(object sender, EventArgs e)
+        void startSchedules()
         {
-            oldValue = mtbOntime.Text;
-        }
-
-        private void mtbOntime_Validating(object sender, CancelEventArgs e)
-        {
-            e.Cancel = mtbOntime.ValidateText() == null;
-            if (!e.Cancel && mtbOntime.Text != oldValue)
-                mtbOntime.Modified = true;
-        }
-
-        private void mtbOntime_ModifiedChanged(object sender, EventArgs e)
-        {
-            //当勾选按时间点执行时，更新间隔时间
-            if (rbOnTime.Checked)
-                updateInterval();
-        }
-
-        private void mtbIntervalTime_GotFocus(object sender, EventArgs e)
-        {
-            oldValue = mtbIntervalTime.Text;
-        }
-
-        private void mtbIntervalTime_Validating(object sender, CancelEventArgs e)
-        {
-            e.Cancel = mtbIntervalTime.ValidateText() == null;
-            if (!e.Cancel && mtbIntervalTime.Text != oldValue)
-                mtbIntervalTime.Modified = true;
-        }
-
-        private void mtbIntervalTime_ModifiedChanged(object sender, EventArgs e)
-        {
-            //当勾选按时间点执行时，更新间隔时间
-            if (rbRecycle.Checked)
-                updateInterval();
-        }
-        #endregion
-
-        private void rbRecycle_CheckedChanged(object sender, EventArgs e)
-        {
-            //当自动执行方式发生改变时更新自动执行间隔时间
-            updateInterval();
-        }
-
-        private void cbAutoRun_CheckedChanged(object sender, EventArgs e)
-        {
-            //当服务被启用并且勾选自动执行时将计时器打开，否则关闭之
-            if (isServiceEnabled && cbAutoRun.Checked)
+            if (enabledSchedules.Count > 0)
             {
-                updateInterval();
-                tJob.Start();
+                finishedSchedules.Clear();
+                willFinish = false;
+
+                enabledSchedules.ForEach(bs => bs.Start());
             }
             else
-                tJob.Stop();
+                willFinish = true;
         }
 
+        void stopSchedules()
+        {
+            enabledSchedules.ForEach(bs => bs.Stop());
+
+            willFinish = true;
+        }
+
+        List<BasicSchedule> enabledSchedules = new List<BasicSchedule>(), finishedSchedules = new List<BasicSchedule>(), schedules = new List<BasicSchedule>();
         public void LoadConfig(string jsonString)
         {
             var config = JsonConvert.DeserializeObject<ScheduledServiceConfig>(jsonString);
 
-            cbAutoRun.Checked = config.IsAutoRun;
-            if (config.IsRecycle)
-                rbRecycle.Checked = true;
-            else
-                rbOnTime.Checked = true;
             cbImmediately.Checked = config.Immediately;
-            if (!string.IsNullOrEmpty(config.OnTimeTime))
-                mtbOntime.Text = config.OnTimeTime;
-            if (!string.IsNullOrEmpty(config.RecycleInterval))
-                mtbIntervalTime.Text = config.RecycleInterval;
+
+            var scheduleConfigs = config.scheduleConfigs;
+            foreach (var item in scheduleConfigs)
+            {
+                var schedule = (BasicSchedule)JsonConvert.DeserializeObject(item.Item2, Type.GetType(item.Item1));
+                schedules.Add(schedule);
+                addEnabledSchedule(schedule);
+            }
+
+            updateDescription();
+        }
+
+        private void addEnabledSchedule(BasicSchedule schedule)
+        {
+            schedule.DoWork -= schedule_DoWork;
+            schedule.Finished -= schedule_Finished;
+            schedule.DoWork += schedule_DoWork;
+            schedule.Finished += schedule_Finished;
+            if (schedule.Enabled)
+                enabledSchedules.Add(schedule);
+        }
+
+        private void updateDescription()
+        {
+            if (enabledSchedules.Count == 1)
+            {
+                lDescription.Text = enabledSchedules[0].ToString();
+            }
+            else if (enabledSchedules.Count > 1)
+            {
+                lDescription.Text = "多个计划";
+            }
+            else
+                lDescription.Text = "没有计划";
+        }
+
+        bool willFinish;
+        private void schedule_Finished(object sender, EventArgs e)
+        {
+            finishedSchedules.Add(sender as BasicSchedule);
+
+            if (finishedSchedules.Count == enabledSchedules.Count)
+                willFinish = true;
+        }
+
+        private void schedule_DoWork(object sender, EventArgs e)
+        {
+            doWork();
         }
 
         public string SaveConfig()
         {
-            return JsonConvert.SerializeObject(new ScheduledServiceConfig() { IsAutoRun = cbAutoRun.Checked, IsRecycle = rbRecycle.Checked, OnTimeTime = mtbOntime.Text, RecycleInterval = mtbIntervalTime.Text, Immediately = cbImmediately.Checked });
+            var scheduleConfigs = new List<Tuple<string, string>>();
+
+            foreach (var schedule in schedules)
+            {
+                scheduleConfigs.Add(new Tuple<string, string>(schedule.GetType().FullName, JsonConvert.SerializeObject(schedule)));
+            }
+
+            return JsonConvert.SerializeObject(new ScheduledServiceConfig() { Immediately = cbImmediately.Checked, scheduleConfigs = scheduleConfigs });
+        }
+
+        private void bManageSchedule_Click(object sender, EventArgs e)
+        {
+            using (var form = new ScheduleManageForm())
+            {
+                form.Schedules = schedules.ToList();
+                form.CanManage = manageScheduleEnabled;
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    schedules = form.Schedules;
+                    enabledSchedules.Clear();
+                    schedules.ForEach(bs => addEnabledSchedule(bs));
+                    updateDescription();
+                }
+            }
         }
 
         public void Stop()
@@ -376,16 +368,8 @@ namespace ZDevTools.ServiceConsole
 
     public class ScheduledServiceConfig
     {
-        public bool IsAutoRun { get; set; }
-
-        public bool IsRecycle { get; set; }
-
-        public string RecycleInterval { get; set; }
-
-        public string OnTimeTime { get; set; }
-
         public bool Immediately { get; set; }
+
+        public List<Tuple<string, string>> scheduleConfigs { get; set; }
     }
-
-
 }
