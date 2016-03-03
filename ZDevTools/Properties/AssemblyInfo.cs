@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("穿越中的逍遥")]
 [assembly: AssemblyProduct("程序开发工具库")]
-[assembly: AssemblyCopyright("Copyright © 穿越中的逍遥 2015")]
+[assembly: AssemblyCopyright("Copyright © 穿越中的逍遥 2016")]
 [assembly: AssemblyTrademark("^_^")]
 [assembly: AssemblyCulture("")]
 
