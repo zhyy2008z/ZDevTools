@@ -11,7 +11,7 @@
     <iconUrl>https://github.com/zhyy2008z/ZDevTools/noicon</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>移除不常使用的DbConfig静态类</releaseNotes>
+    <releaseNotes>ImageButton控件新增支持向右下角偏移动画风格</releaseNotes>
     <copyright>Copyright 自由软件 2016</copyright>
     <tags>SqlHelper AutoComplete</tags>
   </metadata>
