@@ -11,7 +11,7 @@
     <iconUrl>https://github.com/zhyy2008z/ZDevTools/noicon</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>原始版本发布</releaseNotes>
+    <releaseNotes>承载服务新增失败（Faulted）事件</releaseNotes>
     <copyright>Copyright 自由软件 2016</copyright>
     <tags>ServiceCore HostService</tags>
   </metadata>

@@ -74,6 +74,8 @@ namespace ZDevTools.Data
     /// 2016年1月20日 v3.5
     /// 1.连接字符串参数不变时不再重复赋值，优化性能
     /// 
+    /// 2016年3月4日 v3.6
+    /// 1.新增保护方法Execute(Action<TConnection> job)，用于继承类实现特殊功能
     /// </para>
     /// </summary>
     public class DbHelper<TConnection, TTransaction, TCommand, TDataReader, TParameter, TDataAdapter, TCommandBuilder> : IDisposable
@@ -652,6 +654,32 @@ namespace ZDevTools.Data
                         cmd.Transaction = Transaction;
                     job(cmd);
                 }
+            }
+            finally
+            {
+                if (isClosed) //保持连接的原始状态
+                    conn.Close();
+            }
+        }
+
+        /// <summary>
+        /// 执行一个数据库操作，允许访问Connection对象，Connection对象维持上一次操作状态，不需要手动关闭连接
+        /// </summary>
+        /// <param name="job">对Connection操作的委托</param>
+        /// <remarks>此方法主要用于继承类实现自己的特殊功能所用</remarks>
+        protected void Execute(Action<TConnection> job)
+        //将需要做之事全部委托于此方法，此方法为job提供调用前及调用后做好维护服务
+        //v3.6 新增保护方法Execute(Action<TConnection> job)，用于继承类实现特殊功能
+        {
+            if (IsCommitted)
+                throw new InvalidOperationException("对不起，事务已提交，您不能再使用本连接!请先关闭连接，然后再次开启事务处理！");
+            bool isClosed = conn == null || conn.State == ConnectionState.Closed; //v2.2 修正：不能嵌套调用查询方法的bug
+            try
+            {
+                if (isClosed)//根据当前连接状态自动配置和打开连接
+                    configAndOpen();
+
+                job(conn);
             }
             finally
             {

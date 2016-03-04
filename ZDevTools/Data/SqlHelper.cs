@@ -79,5 +79,67 @@ namespace ZDevTools.Data
             Transaction.Save(pointName);
         }
 
+
+        /// <summary>
+        /// SqlBulkCopy方式复制dataTable到数据库中
+        /// </summary>
+        /// <param name="dataTable">要复制的数据表，请保证数据表名称与数据库中表名一致</param>
+        /// <param name="mappingColumnName">是否使用dataTable中每列的列名【ColumnName与数据库表字段匹配是大小写敏感的】进行映射，默认为true；如果dataTable中每列的位置均与目的数据表一致，那么此处可以为false，稍微提高一些性能</param>
+        public void BulkCopy(DataTable dataTable, bool mappingColumnName = true)
+        {
+            Execute((SqlConnection conn) =>
+            {
+                SqlBulkCopy sqlBulkCopy;
+                if (Transaction != null)
+                    sqlBulkCopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, Transaction);
+                else
+                    sqlBulkCopy = new SqlBulkCopy(conn);
+
+                using (sqlBulkCopy)
+                {
+                    sqlBulkCopy.DestinationTableName = dataTable.TableName;
+
+                    if (mappingColumnName)
+                        foreach (DataColumn column in dataTable.Columns)
+                            sqlBulkCopy.ColumnMappings.Add(column.ColumnName, column.ColumnName);//此处Add方法第二个参数destinationColumn要求与数据库表字段名称大小写也要一致
+
+                    sqlBulkCopy.WriteToServer(dataTable);
+                }
+            });
+        }
+
+        /// <summary>
+        /// 使用SqlBulkCopy在默认参数下复制数据到数据库
+        /// </summary>
+        /// <param name="job">以SqlBulkCopy对象为参数的委托</param>
+        public void BulkCopy(Action<SqlBulkCopy> job)
+        {
+            Execute((SqlConnection conn) =>
+            {
+                SqlBulkCopy sqlBulkCopy;
+                if (Transaction != null)
+                    sqlBulkCopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, Transaction);
+                else
+                    sqlBulkCopy = new SqlBulkCopy(conn);
+
+                using (sqlBulkCopy)
+                    job(sqlBulkCopy);
+            });
+        }
+
+        /// <summary>
+        /// 使用SqlBulkCopy在用户给定参数下复制数据到数据库
+        /// </summary>
+        /// <param name="job">以SqlBulkCopy对象为参数的委托</param>
+        /// <param name="copyOptions">创建SqlBulkCopy所用的复制选项【注意：在<see cref="SqlHelper"/>开启事务时，不能使用<see cref="SqlBulkCopyOptions.UseInternalTransaction"/>选项】</param>
+        public void BulkCopy(SqlBulkCopyOptions copyOptions, Action<SqlBulkCopy> job)
+        {
+            Execute((SqlConnection conn) =>
+            {
+                using (SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(conn, copyOptions, Transaction))
+                    job(sqlBulkCopy);
+            });
+        }
+
     }
 }
