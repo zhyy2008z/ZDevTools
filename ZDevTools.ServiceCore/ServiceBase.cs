@@ -9,6 +9,9 @@ using Newtonsoft.Json;
 
 namespace ZDevTools.ServiceCore
 {
+    /// <summary>
+    /// 服务基础抽象类
+    /// </summary>
     public abstract class ServiceBase : IServiceBase
     {
         static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(ServiceBase));

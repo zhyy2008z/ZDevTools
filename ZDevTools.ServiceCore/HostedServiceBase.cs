@@ -19,11 +19,18 @@ namespace ZDevTools.ServiceCore
         CancellationTokenSource source;
         ManualResetEvent manualResetEvent;
 
+        /// <summary>
+        /// 当服务执行失败时发生
+        /// </summary>
+        public event EventHandler Faulted;
+
+        /// <summary>
+        /// 开始服务
+        /// </summary>
         public Task StartAsync()
         {
             source = new CancellationTokenSource();
             manualResetEvent = new ManualResetEvent(false);
-
             return Task.Run(() =>
             {
                 ServiceInitialize();
@@ -31,8 +38,16 @@ namespace ZDevTools.ServiceCore
             });
         }
 
-        protected abstract void ServiceCore(CancellationToken token, ManualResetEvent waitHandle);
+        /// <summary>
+        /// 需要重复执行的服务核心代码
+        /// </summary>
+        /// <param name="cancelationToken">是否取消，状态获取令牌</param>
+        /// <returns>返回要让服务休息的毫秒数，小于等于0就不休息</returns>
+        protected abstract int ServiceCore(CancellationToken cancelationToken);
 
+        /// <summary>
+        /// 服务初始化操作
+        /// </summary>
         protected virtual void ServiceInitialize() { }
 
         void job()
@@ -43,14 +58,27 @@ namespace ZDevTools.ServiceCore
                 try
                 {
                     ReportStatus("状态：正在运行");
-                    ServiceCore(source.Token, manualResetEvent);
+                    while (true)
+                    {
+                        if (source.Token.IsCancellationRequested)
+                            break;
+
+                        int millisecondsTimeout = ServiceCore(source.Token);
+
+                        //让服务歇一会儿
+                        if (millisecondsTimeout > 0)
+                            manualResetEvent.WaitOne(millisecondsTimeout);
+                    }
                     ReportStatus("状态：停止运行");
                 }
+                catch (OperationCanceledException) { ReportStatus("状态：停止运行"); } //捕获掉取消操作异常，当作停止运行来处理
 #if !DEBUG
                 catch (Exception ex)
                 {
-                    logError($"运行出错，错误：{ex.Message}", ex);
-                    ReportError(ex);
+                    logError($"运行出错：{ex.Message}", ex);
+                    ReportError("状态：已停止，运行出错");
+                    if (Faulted != null)
+                        Faulted(this, EventArgs.Empty);
                 }
 #endif
                 finally { }
@@ -59,6 +87,9 @@ namespace ZDevTools.ServiceCore
             manualResetEvent = null;
         }
 
+        /// <summary>
+        /// 停止服务
+        /// </summary>
         public Task StopAsync()
         {
             //取消请求

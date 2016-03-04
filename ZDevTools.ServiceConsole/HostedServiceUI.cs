@@ -43,7 +43,16 @@ namespace ZDevTools.ServiceConsole
 
                 bindedService = (IHostedService)value;
                 lServiceName.Text = value.ServiceName;
+                bindedService.Faulted += bindedService_Faulted;
             }
+        }
+
+        private void bindedService_Faulted(object sender, EventArgs e)
+        {
+            if (InvokeRequired)
+                Invoke(new MethodInvoker(() => { updateServiceStatus(HostedServiceStatus.Stopped, true); }));
+            else
+                updateServiceStatus(HostedServiceStatus.Stopped, true);
         }
 
         public void Stop()
@@ -57,7 +66,7 @@ namespace ZDevTools.ServiceConsole
         /// <summary>
         /// 获取当前服务的执行状态名称
         /// </summary>
-        void updateServiceStatus(HostedServiceStatus serviceStatus)
+        void updateServiceStatus(HostedServiceStatus serviceStatus, bool hasError = false)
         {
             this.ServiceHostStatus = serviceStatus;
 
@@ -68,7 +77,10 @@ namespace ZDevTools.ServiceConsole
             switch (serviceStatus)
             {
                 case HostedServiceStatus.Stopped:
-                    statusName = "已停止";
+                    if (hasError)
+                        statusName = "已停止，有错误";
+                    else
+                        statusName = "已停止";
                     buttonText = "启动";
                     buttonEnabled = true;
                     break;
@@ -106,7 +118,6 @@ namespace ZDevTools.ServiceConsole
             switch (ServiceHostStatus)
             {
                 case HostedServiceStatus.Starting:
-                    break;
                 case HostedServiceStatus.Stopping:
                     break;
 

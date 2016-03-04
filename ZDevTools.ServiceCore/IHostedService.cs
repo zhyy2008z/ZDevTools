@@ -11,8 +11,21 @@ namespace ZDevTools.ServiceCore
     /// </summary>
     public interface IHostedService : IServiceBase
     {
+        /// <summary>
+        /// 开始执行承载服务
+        /// </summary>
+        /// <returns></returns>
         Task StartAsync();
 
+        /// <summary>
+        /// 停止执行承载服务
+        /// </summary>
+        /// <returns></returns>
         Task StopAsync();
+
+        /// <summary>
+        /// 承载服务因某种原因失败时发生
+        /// </summary>
+        event EventHandler Faulted;
     }
 }
