@@ -98,10 +98,7 @@ namespace ZDevTools.Data
 
                 using (sqlBulkCopy)
                 {
-                    if (string.IsNullOrEmpty(destinationTableName))
-                        sqlBulkCopy.DestinationTableName = dataTable.TableName;
-                    else
-                        sqlBulkCopy.DestinationTableName = destinationTableName;
+                    sqlBulkCopy.DestinationTableName = string.IsNullOrEmpty(destinationTableName) ? dataTable.TableName : destinationTableName;
 
                     if (mappingColumnName)
                         foreach (DataColumn column in dataTable.Columns)
