@@ -71,6 +71,7 @@ namespace ZDevTools.ServiceConsole
             this.ServiceHostStatus = serviceStatus;
 
             string statusName;
+            Color statusColor;
             string buttonText;
             bool buttonEnabled;
 
@@ -78,35 +79,46 @@ namespace ZDevTools.ServiceConsole
             {
                 case HostedServiceStatus.Stopped:
                     if (hasError)
+                    {
                         statusName = "已停止，有错误";
+                        statusColor = Color.Yellow;
+                    }
                     else
+                    {
                         statusName = "已停止";
+                        statusColor = Color.Black;
+                    }
                     buttonText = "启动";
                     buttonEnabled = true;
                     break;
                 case HostedServiceStatus.Starting:
                     statusName = "正在启动";
+                    statusColor = Color.LightGreen;
                     buttonText = "启动";
                     buttonEnabled = false;
                     break;
                 case HostedServiceStatus.Running:
                     statusName = "正在运行";
+                    statusColor = Color.Green;
                     buttonText = "停止";
                     buttonEnabled = true;
                     break;
                 case HostedServiceStatus.Stopping:
                     statusName = "正在停止";
+                    statusColor = Color.DarkGray;
                     buttonText = "停止";
                     buttonEnabled = false;
                     break;
                 default:
                     statusName = "未知状态";
+                    statusColor = Color.Yellow;
                     buttonText = "未知";
                     buttonEnabled = false;
                     break;
             }
 
             lStatus.Text = statusName;
+            lStatus.ForeColor = statusColor;
             bOperation.Text = buttonText;
             bOperation.Enabled = buttonEnabled;
 

@@ -84,6 +84,7 @@
     <Compile Include="ScheduledServiceBase.cs" />
     <Compile Include="ServiceBase.cs" />
     <Compile Include="ExportServiceAttribute.cs" />
+    <Compile Include="ServiceErrorException.cs" />
     <Compile Include="ServiceReport.cs" />
     <Compile Include="WaitResourceTimeoutAttribute.cs" />
     <Compile Include="WCFServiceBase.cs" />

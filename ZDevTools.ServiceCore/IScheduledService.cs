@@ -11,7 +11,11 @@ namespace ZDevTools.ServiceCore
     /// </summary>
     public interface IScheduledService : IServiceBase
     {
-        void Run();
+        /// <summary>
+        /// 运行服务
+        /// </summary>
+        /// <returns>本次执行是否成功</returns>
+        bool Run();
 
     }
 }

@@ -83,9 +83,9 @@
             this.lDescription.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lDescription.AutoEllipsis = true;
-            this.lDescription.Location = new System.Drawing.Point(248, 13);
+            this.lDescription.Location = new System.Drawing.Point(295, 13);
             this.lDescription.Name = "lDescription";
-            this.lDescription.Size = new System.Drawing.Size(414, 15);
+            this.lDescription.Size = new System.Drawing.Size(367, 15);
             this.lDescription.TabIndex = 14;
             this.lDescription.Text = "没有计划";
             // 

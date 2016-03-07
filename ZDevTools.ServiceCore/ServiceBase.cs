@@ -110,22 +110,22 @@ namespace ZDevTools.ServiceCore
         /// <summary>
         /// 扔出较为严重的错误，该错误发生后任务彻底终止
         /// </summary>
-        /// <param name="message"></param>
+        /// <param name="message">错误消息</param>
         [DebuggerNonUserCode]
         public void ThrowError(string message)
         {
-            throw new Exception($"【{ServiceName}】{message}");
+            throw new ServiceErrorException(message);
         }
 
         /// <summary>
         /// 扔出较为严重的错误，该错误发生后任务彻底终止
         /// </summary>
-        /// <param name="message"></param>
-        /// <param name="innerException"></param>
+        /// <param name="message">错误消息</param>
+        /// <param name="innerException">內部异常</param>
         [DebuggerNonUserCode]
         public void ThrowError(string message, Exception innerException)
         {
-            throw new Exception($"【{ServiceName}】{message}", innerException);
+            throw new ServiceErrorException(message, innerException);
         }
 
         /// <summary>

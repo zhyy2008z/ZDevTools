@@ -122,6 +122,7 @@ namespace ZDevTools.ServiceConsole
 
             logInfo($"开始执行");
             DateTime startTime = DateTime.Now;
+            bool hasError = false;
 
             await Task.Run(() =>
             {
@@ -135,7 +136,7 @@ namespace ZDevTools.ServiceConsole
                 }
                 try
                 {
-                    bindedService.Run();
+                    hasError = !bindedService.Run();
                 }
                 finally
                 {
@@ -147,7 +148,7 @@ namespace ZDevTools.ServiceConsole
 
             logInfo($"结束执行，总计耗时：{DateTime.Now - startTime}");
 
-            updateServiceStatus(ScheduledServiceStatus.Waitting);
+            updateServiceStatus(ScheduledServiceStatus.Waitting, hasError);
         }
 
 
@@ -155,7 +156,7 @@ namespace ZDevTools.ServiceConsole
         /// <summary>
         /// 获取当前服务的执行状态名称
         /// </summary>
-        void updateServiceStatus(ScheduledServiceStatus serviceStatus)
+        void updateServiceStatus(ScheduledServiceStatus serviceStatus, bool hasError = false)
         {
             //如果要更新为等待状态且没有开启自动执行功能，则认为服务已停止，否则更新为指定状态
 
@@ -173,28 +174,49 @@ namespace ZDevTools.ServiceConsole
             string statusName;
             string buttonText;
             bool operationEnabled;
+            Color statusColor;
             switch (ServiceStatus)
             {
                 case ScheduledServiceStatus.Stopped:
-                    statusName = "已停止";
+                    if (hasError)
+                    {
+                        statusName = "已停止，有错误";
+                        statusColor = Color.Red;
+                    }
+                    else
+                    {
+                        statusName = "已停止";
+                        statusColor = Color.Black;
+                    }
                     buttonText = "启用";
                     operationEnabled = true;
                     manageScheduleEnabled = true;
                     break;
                 case ScheduledServiceStatus.Waitting:
-                    statusName = "等待运行";
+                    if (hasError)
+                    {
+                        statusName = "等待运行，有错误";
+                        statusColor = Color.Red;
+                    }
+                    else
+                    {
+                        statusName = "等待运行";
+                        statusColor = Color.Gray;
+                    }
                     buttonText = "停用";
                     operationEnabled = true;
                     manageScheduleEnabled = false;
                     break;
                 case ScheduledServiceStatus.Running:
                     statusName = "正在运行";
+                    statusColor = Color.Green;
                     buttonText = "停用";
                     operationEnabled = canbeCancelled;
                     manageScheduleEnabled = false;
                     break;
                 case ScheduledServiceStatus.Stopping:
                     statusName = "正在停用";
+                    statusColor = Color.DarkGray;
                     buttonText = "停用";
                     operationEnabled = false;
                     manageScheduleEnabled = false;
@@ -202,12 +224,14 @@ namespace ZDevTools.ServiceConsole
                 default:
                     statusName = "未知状态";
                     buttonText = "未知";
+                    statusColor = Color.Yellow;
                     operationEnabled = false;
                     manageScheduleEnabled = false;
                     break;
             }
 
             lStatus.Text = statusName;
+            lStatus.ForeColor = statusColor;
             bOperation.Text = buttonText;
             bOperation.Enabled = operationEnabled;
 
