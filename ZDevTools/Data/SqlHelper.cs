@@ -84,8 +84,9 @@ namespace ZDevTools.Data
         /// SqlBulkCopy方式复制dataTable到数据库中
         /// </summary>
         /// <param name="dataTable">要复制的数据表，请保证数据表名称与数据库中表名一致</param>
-        /// <param name="mappingColumnName">是否使用dataTable中每列的列名【ColumnName与数据库表字段匹配是大小写敏感的】进行映射，默认为true；如果dataTable中每列的位置均与目的数据表一致，那么此处可以为false，稍微提高一些性能</param>
-        public void BulkCopy(DataTable dataTable, bool mappingColumnName = true)
+        /// <param name="destinationTableName">目标表名，如果为null或<see cref="string.Empty"/>则使用<see cref="DataTable.TableName"/></param>
+        /// <param name="mappingColumnName">是否使用<see cref="DataTable"/>中每列的列名【<see cref="DataTable.TableName"/>与数据库表字段匹配是大小写敏感的】进行映射，默认为true；如果<see cref="DataTable"/>中每列的位置均与目的数据表一致，那么此处可以为false，稍微提高一些性能</param>
+        public void BulkCopy(DataTable dataTable, string destinationTableName = null, bool mappingColumnName = true)
         {
             Execute((SqlConnection conn) =>
             {
@@ -97,7 +98,10 @@ namespace ZDevTools.Data
 
                 using (sqlBulkCopy)
                 {
-                    sqlBulkCopy.DestinationTableName = dataTable.TableName;
+                    if (string.IsNullOrEmpty(destinationTableName))
+                        sqlBulkCopy.DestinationTableName = dataTable.TableName;
+                    else
+                        sqlBulkCopy.DestinationTableName = destinationTableName;
 
                     if (mappingColumnName)
                         foreach (DataColumn column in dataTable.Columns)
