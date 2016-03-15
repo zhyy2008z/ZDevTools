@@ -53,8 +53,8 @@ namespace ZDevTools.ServiceConsole
             var x = 3;
             var y = 38;
 
-            Color defaultColor = Color.FromArgb(110, 220, 110);
-            Color alternateColor = Color.FromArgb(110, 200, 110);
+            Color defaultColor = Color.FromArgb(255, 255, 202);
+            Color alternateColor = Color.FromArgb(255, 233, 240);
 
             int i = 0;
             foreach (var service in services)
