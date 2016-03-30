@@ -383,6 +383,12 @@ namespace ZDevTools.ServiceConsole
             if (isServiceEnabled)
                 bOperation.PerformClick();
         }
+
+        public void Start()
+        {
+            if (!isServiceEnabled)
+                bOperation.PerformClick();
+        }
     }
 
     public enum ScheduledServiceStatus

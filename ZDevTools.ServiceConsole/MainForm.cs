@@ -25,8 +25,10 @@ namespace ZDevTools.ServiceConsole
 
         public static MainForm Instance { get; private set; }
 
-        List<IControllableUI> controllableUIs = new List<IControllableUI>();
+        Dictionary<string, IControllableUI> controllableUIs = new Dictionary<string, IControllableUI>();
+        Dictionary<string, IBindedServiceUI> bindedServiceUIs = new Dictionary<string, IBindedServiceUI>();
 
+        AppConfig appConfig;
         public MainForm()
         {
             InitializeComponent();
@@ -40,13 +42,17 @@ namespace ZDevTools.ServiceConsole
                                        orderby l.Metadata.DisplayOrder
                                        select l.Value).ToArray();
 
-            //从文件读取配置
-            Dictionary<string, string> config = null;
+            //加载/初始化配置
             if (File.Exists(configFile))
             {
                 var jsonStr = File.ReadAllText(configFile);
-                config = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonStr);
+                appConfig = JsonConvert.DeserializeObject<AppConfig>(jsonStr);
             }
+            else
+                appConfig = new AppConfig();
+
+            if (appConfig.ServicesConfig == null)
+                appConfig.ServicesConfig = new Dictionary<string, string>();
 
             //添加服务到界面
             pDown.SuspendLayout();
@@ -68,6 +74,8 @@ namespace ZDevTools.ServiceConsole
 
                 IBindedServiceUI bindedServiceUI = ui as IBindedServiceUI;
                 IConfigurableUI configurableUI = ui as IConfigurableUI;
+                IControllableUI controllableUI = ui as IControllableUI;
+
 
                 ui.Left = x;
                 ui.Top = y;
@@ -77,21 +85,52 @@ namespace ZDevTools.ServiceConsole
                 bindedServiceUI.BindedService = service;
 
                 //加载服务配置到界面
-                var serviceName = service.GetType().Name;
+                var serviceTypeName = service.GetType().Name;
                 string jsonString;
-                if (configurableUI != null && config != null && config.TryGetValue(serviceName, out jsonString))
+                if (configurableUI != null && appConfig.ServicesConfig.TryGetValue(serviceTypeName, out jsonString))
                     configurableUI.LoadConfig(jsonString);
 
                 pDown.Controls.Add(ui);
                 y += ui.Height;
 
-                controllableUIs.Add((IControllableUI)ui);
+                bindedServiceUIs.Add(serviceTypeName, bindedServiceUI);
+                if (controllableUI != null)
+                    controllableUIs.Add(serviceTypeName, controllableUI);
+
                 i++;
             }
 
             pDown.ResumeLayout();
 
             MainForm.Instance = this;
+
+            //初始化一键启动配置
+            if (appConfig.OneKeyStart == null)
+                appConfig.OneKeyStart = new Dictionary<string, ServiceItemConfig>();
+            else
+            {
+                var oneKeyStart = appConfig.OneKeyStart;
+
+                //移除多余配置
+                var keys = oneKeyStart.Keys.ToArray();
+                foreach (var key in keys)
+                {
+                    if (!controllableUIs.ContainsKey(key))
+                        oneKeyStart.Remove(key);
+                }
+
+                //添加应有配置
+                foreach (var keyValue in controllableUIs)
+                {
+                    ServiceItemConfig serviceItemConfig;
+                    if (!oneKeyStart.TryGetValue(keyValue.Key, out serviceItemConfig))
+                    {
+                        serviceItemConfig = new ServiceItemConfig();
+                        oneKeyStart.Add(keyValue.Key, serviceItemConfig);
+                    }
+                    serviceItemConfig.ServiceName = bindedServiceUIs[keyValue.Key].ServiceName;
+                }
+            }
         }
 
         /// <summary>
@@ -118,7 +157,7 @@ namespace ZDevTools.ServiceConsole
 
         private void bDisableAll_Click(object sender, EventArgs e)
         {
-            foreach (var controllableUI in controllableUIs)
+            foreach (var controllableUI in controllableUIs.Values)
                 controllableUI.Stop();
         }
 
@@ -144,7 +183,9 @@ namespace ZDevTools.ServiceConsole
                         dic.Add(bindedServiceUI.BindedService.GetType().Name, configurableUI.SaveConfig());
                 }
                 //保存配置到文件
-                var configStr = JsonConvert.SerializeObject(dic);
+                appConfig.ServicesConfig = dic;
+
+                var configStr = JsonConvert.SerializeObject(appConfig);
                 File.WriteAllText(configFile, configStr);
 
                 MainForm.Instance = null;
@@ -164,7 +205,7 @@ namespace ZDevTools.ServiceConsole
         private void 退出ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             bool isAllStopped = true;
-            foreach (var controllableUI in controllableUIs)
+            foreach (var controllableUI in controllableUIs.Values)
                 if (!controllableUI.IsStopped)
                 {
                     isAllStopped = false;
@@ -173,6 +214,38 @@ namespace ZDevTools.ServiceConsole
 
             if (isAllStopped || ShowConfirm("某些服务还未停止，真的要退出吗？"))
                 Application.Exit();
+        }
+
+        private void lbConsole_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Control && e.KeyCode == Keys.C)
+            {
+                if (lbConsole.SelectedItem != null)
+                    Clipboard.SetText(lbConsole.SelectedItem.ToString());
+            }
+        }
+
+        private void bOneKeyStart_Click(object sender, EventArgs e)
+        {
+            var shouldOneKeyStartServiceKeys = (from keyValue in appConfig.OneKeyStart where keyValue.Value.OneKeyStart select keyValue.Key).ToArray();
+
+            if (shouldOneKeyStartServiceKeys.Length > 0)
+            {
+                foreach (var key in shouldOneKeyStartServiceKeys)
+                    controllableUIs[key].Start();
+            }
+            else
+                CommonFunctions.ShowMessage("请先点击左侧按钮设置需要一键启动的服务!");
+        }
+
+        private void bConfigOneKeyStart_Click(object sender, EventArgs e)
+        {
+            //弹出配置窗口
+            using (var form = new OneKeyStartConfigForm())
+            {
+                form.Configs = appConfig.OneKeyStart;
+                form.ShowDialog();
+            }
         }
     }
 }

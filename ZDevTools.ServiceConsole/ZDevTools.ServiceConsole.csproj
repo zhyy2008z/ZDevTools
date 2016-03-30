@@ -76,7 +76,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AppConfig.cs" />
     <Compile Include="CommonFunctions.cs" />
+    <Compile Include="OneKeyStartConfigForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="OneKeyStartConfigForm.Designer.cs">
+      <DependentUpon>OneKeyStartConfigForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="ScheduleForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -117,11 +124,15 @@
       <DependentUpon>ScheduledServiceUI.cs</DependentUpon>
     </Compile>
     <Compile Include="Schedules\WeekRepeatSchedule.cs" />
+    <Compile Include="ServiceItemConfig.cs" />
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="HostedServiceUI.resx">
       <DependentUpon>HostedServiceUI.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="OneKeyStartConfigForm.resx">
+      <DependentUpon>OneKeyStartConfigForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ScheduledServiceUI.resx">
       <DependentUpon>ScheduledServiceUI.cs</DependentUpon>

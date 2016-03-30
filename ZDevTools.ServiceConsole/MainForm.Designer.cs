@@ -32,8 +32,10 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.lbConsole = new System.Windows.Forms.ListBox();
             this.pDown = new System.Windows.Forms.Panel();
+            this.bConfigOneKeyStart = new System.Windows.Forms.Button();
+            this.bOneKeyStart = new System.Windows.Forms.Button();
             this.lService = new System.Windows.Forms.Label();
-            this.bDisableAll = new System.Windows.Forms.Button();
+            this.bStopAll = new System.Windows.Forms.Button();
             this.niMain = new System.Windows.Forms.NotifyIcon(this.components);
             this.cms4Ni = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.退出ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -52,18 +54,43 @@
             this.lbConsole.Name = "lbConsole";
             this.lbConsole.Size = new System.Drawing.Size(900, 160);
             this.lbConsole.TabIndex = 1;
+            this.lbConsole.KeyDown += new System.Windows.Forms.KeyEventHandler(this.lbConsole_KeyDown);
             // 
             // pDown
             // 
             this.pDown.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.pDown.AutoScroll = true;
+            this.pDown.Controls.Add(this.bConfigOneKeyStart);
+            this.pDown.Controls.Add(this.bOneKeyStart);
             this.pDown.Controls.Add(this.lService);
-            this.pDown.Controls.Add(this.bDisableAll);
+            this.pDown.Controls.Add(this.bStopAll);
             this.pDown.Location = new System.Drawing.Point(12, 189);
             this.pDown.Name = "pDown";
             this.pDown.Size = new System.Drawing.Size(900, 330);
             this.pDown.TabIndex = 5;
+            // 
+            // bConfigOneKeyStart
+            // 
+            this.bConfigOneKeyStart.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.bConfigOneKeyStart.Location = new System.Drawing.Point(656, 9);
+            this.bConfigOneKeyStart.Name = "bConfigOneKeyStart";
+            this.bConfigOneKeyStart.Size = new System.Drawing.Size(75, 23);
+            this.bConfigOneKeyStart.TabIndex = 5;
+            this.bConfigOneKeyStart.Text = "设置";
+            this.bConfigOneKeyStart.UseVisualStyleBackColor = true;
+            this.bConfigOneKeyStart.Click += new System.EventHandler(this.bConfigOneKeyStart_Click);
+            // 
+            // bOneKeyStart
+            // 
+            this.bOneKeyStart.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.bOneKeyStart.Location = new System.Drawing.Point(737, 9);
+            this.bOneKeyStart.Name = "bOneKeyStart";
+            this.bOneKeyStart.Size = new System.Drawing.Size(75, 23);
+            this.bOneKeyStart.TabIndex = 4;
+            this.bOneKeyStart.Text = "一键启动";
+            this.bOneKeyStart.UseVisualStyleBackColor = true;
+            this.bOneKeyStart.Click += new System.EventHandler(this.bOneKeyStart_Click);
             // 
             // lService
             // 
@@ -74,16 +101,16 @@
             this.lService.TabIndex = 3;
             this.lService.Text = "全部服务";
             // 
-            // bDisableAll
+            // bStopAll
             // 
-            this.bDisableAll.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.bDisableAll.Location = new System.Drawing.Point(818, 9);
-            this.bDisableAll.Name = "bDisableAll";
-            this.bDisableAll.Size = new System.Drawing.Size(75, 23);
-            this.bDisableAll.TabIndex = 2;
-            this.bDisableAll.Text = "全部禁用";
-            this.bDisableAll.UseVisualStyleBackColor = true;
-            this.bDisableAll.Click += new System.EventHandler(this.bDisableAll_Click);
+            this.bStopAll.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.bStopAll.Location = new System.Drawing.Point(818, 9);
+            this.bStopAll.Name = "bStopAll";
+            this.bStopAll.Size = new System.Drawing.Size(75, 23);
+            this.bStopAll.TabIndex = 2;
+            this.bStopAll.Text = "全部停用";
+            this.bStopAll.UseVisualStyleBackColor = true;
+            this.bStopAll.Click += new System.EventHandler(this.bDisableAll_Click);
             // 
             // niMain
             // 
@@ -129,11 +156,13 @@
         #endregion
         private System.Windows.Forms.ListBox lbConsole;
         private System.Windows.Forms.Panel pDown;
-        private System.Windows.Forms.Button bDisableAll;
+        private System.Windows.Forms.Button bStopAll;
         private System.Windows.Forms.NotifyIcon niMain;
         private System.Windows.Forms.ContextMenuStrip cms4Ni;
         private System.Windows.Forms.ToolStripMenuItem 退出ToolStripMenuItem;
         private System.Windows.Forms.Label lService;
+        private System.Windows.Forms.Button bConfigOneKeyStart;
+        private System.Windows.Forms.Button bOneKeyStart;
     }
 }
 

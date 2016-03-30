@@ -14,5 +14,7 @@ namespace ZDevTools.ServiceConsole
         void Stop();
 
         bool IsStopped { get; }
+
+        void Start();
     }
 }

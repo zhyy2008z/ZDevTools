@@ -62,6 +62,13 @@ namespace ZDevTools.ServiceConsole
                 bOperation.PerformClick();
             }
         }
+        public void Start()
+        {
+            if (ServiceHostStatus == HostedServiceStatus.Stopped)
+            {
+                bOperation.PerformClick();
+            }
+        }
 
         /// <summary>
         /// 获取当前服务的执行状态名称
@@ -161,6 +168,7 @@ namespace ZDevTools.ServiceConsole
                     break;
             }
         }
+
 
         public HostedServiceStatus ServiceHostStatus { get; private set; } = HostedServiceStatus.Stopped;
 

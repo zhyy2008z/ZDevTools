@@ -68,14 +68,14 @@
             // 
             this.tJob.Interval = 10000;
             // 
-            // ServiceHostUI
+            // HostedServiceUI
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.bOperation);
             this.Controls.Add(this.lStatus);
             this.Controls.Add(this.lServiceName);
-            this.Name = "ServiceHostUI";
+            this.Name = "HostedServiceUI";
             this.Size = new System.Drawing.Size(877, 39);
             this.ResumeLayout(false);
             this.PerformLayout();
