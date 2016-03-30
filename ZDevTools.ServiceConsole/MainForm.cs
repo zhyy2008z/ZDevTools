@@ -51,6 +51,9 @@ namespace ZDevTools.ServiceConsole
             else
                 appConfig = new AppConfig();
 
+            if (appConfig.OneKeyStart == null)
+                appConfig.OneKeyStart = new Dictionary<string, ServiceItemConfig>();
+
             if (appConfig.ServicesConfig == null)
                 appConfig.ServicesConfig = new Dictionary<string, string>();
 
@@ -105,32 +108,28 @@ namespace ZDevTools.ServiceConsole
             MainForm.Instance = this;
 
             //初始化一键启动配置
-            if (appConfig.OneKeyStart == null)
-                appConfig.OneKeyStart = new Dictionary<string, ServiceItemConfig>();
-            else
+            var oneKeyStart = appConfig.OneKeyStart;
+
+            //移除多余配置
+            var keys = oneKeyStart.Keys.ToArray();
+            foreach (var key in keys)
             {
-                var oneKeyStart = appConfig.OneKeyStart;
-
-                //移除多余配置
-                var keys = oneKeyStart.Keys.ToArray();
-                foreach (var key in keys)
-                {
-                    if (!controllableUIs.ContainsKey(key))
-                        oneKeyStart.Remove(key);
-                }
-
-                //添加应有配置
-                foreach (var keyValue in controllableUIs)
-                {
-                    ServiceItemConfig serviceItemConfig;
-                    if (!oneKeyStart.TryGetValue(keyValue.Key, out serviceItemConfig))
-                    {
-                        serviceItemConfig = new ServiceItemConfig();
-                        oneKeyStart.Add(keyValue.Key, serviceItemConfig);
-                    }
-                    serviceItemConfig.ServiceName = bindedServiceUIs[keyValue.Key].ServiceName;
-                }
+                if (!controllableUIs.ContainsKey(key))
+                    oneKeyStart.Remove(key);
             }
+
+            //添加应有配置
+            foreach (var keyValue in controllableUIs)
+            {
+                ServiceItemConfig serviceItemConfig;
+                if (!oneKeyStart.TryGetValue(keyValue.Key, out serviceItemConfig))
+                {
+                    serviceItemConfig = new ServiceItemConfig();
+                    oneKeyStart.Add(keyValue.Key, serviceItemConfig);
+                }
+                serviceItemConfig.ServiceName = bindedServiceUIs[keyValue.Key].ServiceName;
+            }
+
         }
 
         /// <summary>
