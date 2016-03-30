@@ -48,12 +48,14 @@
             this.lbConsole.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.lbConsole.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
             this.lbConsole.FormattingEnabled = true;
             this.lbConsole.ItemHeight = 12;
             this.lbConsole.Location = new System.Drawing.Point(12, 12);
             this.lbConsole.Name = "lbConsole";
             this.lbConsole.Size = new System.Drawing.Size(900, 160);
             this.lbConsole.TabIndex = 1;
+            this.lbConsole.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.lbConsole_DrawItem);
             this.lbConsole.KeyDown += new System.Windows.Forms.KeyEventHandler(this.lbConsole_KeyDown);
             // 
             // pDown

@@ -15,7 +15,7 @@ namespace ZDevTools.ServiceConsole
         protected override void Append(LoggingEvent loggingEvent)
         {
             string message = this.RenderLoggingEvent(loggingEvent);
-            MainForm.Instance.OutputLog(message);
+            MainForm.Instance?.OutputLog(new MessageItem(message, loggingEvent.Level));
         }
     }
 }

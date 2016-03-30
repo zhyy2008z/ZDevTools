@@ -38,6 +38,8 @@ namespace ZDevTools.ServiceSample.Services
                 }
             }
             LogInfo("我执行完成了！");
+            LogDebug("****调试信息****");
+            LogWarn("*****警告信息*****");
         }
     }
 }

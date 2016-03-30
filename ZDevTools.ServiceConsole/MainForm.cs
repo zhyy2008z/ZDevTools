@@ -14,6 +14,7 @@ using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
 using System.Linq;
 using static ZDevTools.ServiceConsole.CommonFunctions;
+using log4net.Core;
 
 namespace ZDevTools.ServiceConsole
 {
@@ -136,7 +137,7 @@ namespace ZDevTools.ServiceConsole
         /// 输出日志【允许非UI线程直接调用】
         /// </summary>
         /// <param name="message">要输出的消息</param>
-        public void OutputLog(string message)
+        public void OutputLog(MessageItem message)
         {
             var handler = new Action(() =>
             {
@@ -244,6 +245,37 @@ namespace ZDevTools.ServiceConsole
             {
                 form.Configs = appConfig.OneKeyStart;
                 form.ShowDialog();
+            }
+        }
+
+        private void lbConsole_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            Brush brush = null;
+
+            ListBox listBox = sender as ListBox;
+
+            if (e.Index > -1)
+            {
+                var item = listBox.Items[e.Index] as MessageItem;
+
+                var level = item.Level;
+
+                if (level == Level.Info)
+                    brush = new SolidBrush(e.ForeColor);
+                else if (level == Level.Warn)
+                    brush = Brushes.DarkOrange;
+                else if (level == Level.Error)
+                    brush = Brushes.Red;
+                else if (level == Level.Debug)
+                    brush = Brushes.Blue;
+                else if (level == Level.Fatal)
+                    brush = Brushes.DarkRed;
+
+                e.DrawBackground();
+
+                e.Graphics.DrawString(item.ToString(), e.Font, brush, e.Bounds);
+
+                e.DrawFocusRectangle();
             }
         }
     }

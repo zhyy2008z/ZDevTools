@@ -78,6 +78,7 @@
   <ItemGroup>
     <Compile Include="AppConfig.cs" />
     <Compile Include="CommonFunctions.cs" />
+    <Compile Include="MessageItem.cs" />
     <Compile Include="OneKeyStartConfigForm.cs">
       <SubType>Form</SubType>
     </Compile>
