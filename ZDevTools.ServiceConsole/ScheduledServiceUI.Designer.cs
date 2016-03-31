@@ -44,6 +44,7 @@
             this.lServiceName.Size = new System.Drawing.Size(170, 12);
             this.lServiceName.TabIndex = 0;
             this.lServiceName.Text = "服务名称";
+            this.lServiceName.Click += new System.EventHandler(this.lServiceName_Click);
             // 
             // lStatus
             // 
@@ -53,6 +54,7 @@
             this.lStatus.Size = new System.Drawing.Size(41, 12);
             this.lStatus.TabIndex = 1;
             this.lStatus.Text = "已停止";
+            this.lStatus.Click += new System.EventHandler(this.lServiceName_Click);
             // 
             // bOperation
             // 
@@ -88,6 +90,7 @@
             this.lDescription.Size = new System.Drawing.Size(367, 15);
             this.lDescription.TabIndex = 14;
             this.lDescription.Text = "没有计划";
+            this.lDescription.Click += new System.EventHandler(this.lServiceName_Click);
             // 
             // bManageSchedule
             // 

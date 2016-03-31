@@ -173,6 +173,11 @@ namespace ZDevTools.ServiceConsole
         public HostedServiceStatus ServiceHostStatus { get; private set; } = HostedServiceStatus.Stopped;
 
         public bool IsStopped => ServiceHostStatus == HostedServiceStatus.Stopped;
+
+        private void lServiceName_Click(object sender, EventArgs e)
+        {
+            this.Focus();
+        }
     }
 
     public enum HostedServiceStatus

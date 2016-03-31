@@ -54,6 +54,7 @@
             this.lStatus.Size = new System.Drawing.Size(41, 12);
             this.lStatus.TabIndex = 15;
             this.lStatus.Text = "已停止";
+            this.lStatus.Click += new System.EventHandler(this.lServiceName_Click);
             // 
             // lServiceName
             // 
@@ -63,6 +64,7 @@
             this.lServiceName.Size = new System.Drawing.Size(53, 12);
             this.lServiceName.TabIndex = 14;
             this.lServiceName.Text = "服务名称";
+            this.lServiceName.Click += new System.EventHandler(this.lServiceName_Click);
             // 
             // tJob
             // 

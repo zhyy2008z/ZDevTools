@@ -378,6 +378,11 @@ namespace ZDevTools.ServiceConsole
             }
         }
 
+        private void lServiceName_Click(object sender, EventArgs e)
+        {
+            Focus();
+        }
+
         public void Stop()
         {
             if (isServiceEnabled)
