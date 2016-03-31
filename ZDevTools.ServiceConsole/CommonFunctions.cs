@@ -14,6 +14,11 @@ namespace ZDevTools.ServiceConsole
             MessageBox.Show(message, Properties.Settings.Default.ServiceConsoleTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
+        public static void ShowError(string message)
+        {
+            MessageBox.Show(message, Properties.Settings.Default.ServiceConsoleTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
         public static bool ShowConfirm(string message)
         {
             return MessageBox.Show(message, Properties.Settings.Default.ServiceConsoleTitle, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;

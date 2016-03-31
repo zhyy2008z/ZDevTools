@@ -20,6 +20,9 @@ namespace ZDevTools.ServiceConsole
 {
     public partial class MainForm : Form
     {
+        static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(MainForm));
+        void logError(string message, Exception exception) => log.Error($"【主界面】{message}", exception);
+
         const int MaxMessageCount = 1000;
         const int RemoveItemsCount = 300;
         const string configFile = "config.json";
@@ -221,7 +224,17 @@ namespace ZDevTools.ServiceConsole
             if (e.Control && e.KeyCode == Keys.C)
             {
                 if (lbConsole.SelectedItem != null)
-                    Clipboard.SetText(lbConsole.SelectedItem.ToString());
+                {
+                    try
+                    {
+                        Clipboard.Clear();//设置文本前必须先清空剪贴板，否则可能会报错
+                        Clipboard.SetText(lbConsole.SelectedItem.ToString());
+                    }
+                    catch (Exception ex)
+                    {
+                        logError("剪贴板错误：" + ex.Message, ex);
+                    }
+                }
             }
         }
 
