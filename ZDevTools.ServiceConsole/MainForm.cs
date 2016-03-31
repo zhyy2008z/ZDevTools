@@ -228,7 +228,7 @@ namespace ZDevTools.ServiceConsole
                     try
                     {
                         Clipboard.Clear();//设置文本前必须先清空剪贴板，否则可能会报错
-                        Clipboard.SetText(lbConsole.SelectedItem.ToString());
+                        Clipboard.SetText(lbConsole.SelectedItem.ToString() + Environment.NewLine);
                     }
                     catch (Exception ex)
                     {
