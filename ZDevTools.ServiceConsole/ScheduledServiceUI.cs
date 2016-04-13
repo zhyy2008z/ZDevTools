@@ -175,6 +175,8 @@ namespace ZDevTools.ServiceConsole
             string buttonText;
             bool operationEnabled;
             Color statusColor;
+            string statusToolTip;
+
             switch (ServiceStatus)
             {
                 case ScheduledServiceStatus.Stopped:
@@ -191,6 +193,7 @@ namespace ZDevTools.ServiceConsole
                     buttonText = "启用";
                     operationEnabled = true;
                     manageScheduleEnabled = true;
+                    statusToolTip = null;
                     break;
                 case ScheduledServiceStatus.Waitting:
                     if (hasError)
@@ -206,6 +209,7 @@ namespace ZDevTools.ServiceConsole
                     buttonText = "停用";
                     operationEnabled = true;
                     manageScheduleEnabled = false;
+                    statusToolTip = "下次执行时间：" + ServiceBase.FormatDateTime((from schedule in enabledSchedules select schedule.ArrangedTime).Min());
                     break;
                 case ScheduledServiceStatus.Running:
                     statusName = "正在运行";
@@ -213,6 +217,7 @@ namespace ZDevTools.ServiceConsole
                     buttonText = "停用";
                     operationEnabled = canbeCancelled;
                     manageScheduleEnabled = false;
+                    statusToolTip = null;
                     break;
                 case ScheduledServiceStatus.Stopping:
                     statusName = "正在停用";
@@ -220,6 +225,7 @@ namespace ZDevTools.ServiceConsole
                     buttonText = "停用";
                     operationEnabled = false;
                     manageScheduleEnabled = false;
+                    statusToolTip = null;
                     break;
                 default:
                     statusName = "未知状态";
@@ -227,6 +233,7 @@ namespace ZDevTools.ServiceConsole
                     statusColor = Color.Yellow;
                     operationEnabled = false;
                     manageScheduleEnabled = false;
+                    statusToolTip = null;
                     break;
             }
 
@@ -234,10 +241,10 @@ namespace ZDevTools.ServiceConsole
             lStatus.ForeColor = statusColor;
             bOperation.Text = buttonText;
             bOperation.Enabled = operationEnabled;
+            ttMain.SetToolTip(lStatus, statusToolTip);
 
             logInfo(statusName);
         }
-
 
         private void bOperation_Click(object sender, EventArgs e)
         {
@@ -314,12 +321,14 @@ namespace ZDevTools.ServiceConsole
 
         private void addEnabledSchedule(BasicSchedule schedule)
         {
-            schedule.DoWork -= schedule_DoWork;
-            schedule.Finished -= schedule_Finished;
-            schedule.DoWork += schedule_DoWork;
-            schedule.Finished += schedule_Finished;
             if (schedule.Enabled)
+            {
+                schedule.DoWork -= schedule_DoWork;
+                schedule.Finished -= schedule_Finished;
+                schedule.DoWork += schedule_DoWork;
+                schedule.Finished += schedule_Finished;
                 enabledSchedules.Add(schedule);
+            }
         }
 
         private void updateDescription()

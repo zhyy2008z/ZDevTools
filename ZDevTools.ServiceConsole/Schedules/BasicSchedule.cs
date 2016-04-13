@@ -15,6 +15,11 @@ namespace ZDevTools.ServiceConsole.Schedules
     /// </summary>
     public class BasicSchedule : IDisposable
     {
+        /// <summary>
+        /// 设定计时器的最大时间
+        /// </summary>
+        const int MaxPeriod = 24 * 3600 * 1000;
+
         public event EventHandler DoWork;
         public event EventHandler Finished;
 
@@ -32,26 +37,32 @@ namespace ZDevTools.ServiceConsole.Schedules
         }
 
         [NonSerialized]
-        protected readonly Timer ScheduleTimer = new Timer();
+        readonly Timer scheduleTimer = new Timer();
 
         public BasicSchedule()
         {
-            ScheduleTimer.Tick += timer_Tick;
+            scheduleTimer.Tick += scheduleTimer_Tick;
         }
 
         /// <summary>
         /// 安排的执行时间
         /// </summary>
         [NonSerialized]
-        protected DateTime ArrangedTime;
-        void timer_Tick(object sender, EventArgs e)
+        DateTime _arrangedTime;
+
+        public DateTime ArrangedTime { get { return _arrangedTime; } private set { _arrangedTime = value; } }
+
+
+        void scheduleTimer_Tick(object sender, EventArgs e)
         {
+            scheduleTimer.Stop();
+
             var now = DateTime.Now;
             if (now < ArrangedTime)
-                SetTimer(now);
+                setTimer(now);
             else
             {
-                UpdateInterval();
+                updateInterval();
                 OnDoWork(EventArgs.Empty);
             }
         }
@@ -101,59 +112,63 @@ namespace ZDevTools.ServiceConsole.Schedules
         /// <summary>
         /// 更新计时器间隔时间，重写时注意设置<see cref="ArrangedTime"/>
         /// </summary>
-        protected virtual void UpdateInterval()
+        void updateInterval()
         {
-            ScheduleTimer.Stop();
-
             var now = DateTime.Now;
-            if (now < BeginTime)
+
+            DateTime thisTime, nextTime;
+
+            CalculateTime(now, out thisTime, out nextTime);
+
+            if (now >= BeginTime && RepeatPeriod.HasValue) //当前时间比起始时间晚才考虑重复
             {
-                ArrangedTime = BeginTime;
-                SetTimer(now);
+                var nextPeriodTime = now + RepeatPeriod.Value;
+                if ((!(RepeatUntil.HasValue && nextPeriodTime >= thisTime + RepeatUntil.Value)) && nextPeriodTime < nextTime)
+                    nextTime = nextPeriodTime;
             }
+
+            if (EndTime.HasValue && nextTime >= EndTime.Value)
+            {
+                nextTime = DateTime.MaxValue;
+            }
+
+            ArrangedTime = nextTime;
+
+            if (ArrangedTime == DateTime.MaxValue)
+                OnFinished(EventArgs.Empty); //通知任务已经结束
             else
-            {
-                var nextTime = DateTime.MaxValue;
-
-                if (RepeatPeriod.HasValue) //如果考虑重复
-                {
-                    var nextPeriodTime = now + RepeatPeriod.Value;
-
-                    if ((!(RepeatUntil.HasValue && nextPeriodTime >= BeginTime + RepeatUntil.Value)) && nextPeriodTime < nextTime)
-                        nextTime = nextPeriodTime;
-                }
-
-                if (nextTime == DateTime.MaxValue || EndTime.HasValue && nextTime >= EndTime.Value)
-                {
-                    OnFinished(EventArgs.Empty); //通知任务已经结束
-                }
-                else
-                {
-                    ArrangedTime = nextTime;
-                    SetTimer(now);
-                }
-            }
+                setTimer(now);
         }
 
-        protected void SetTimer(DateTime nowTime)
+        protected virtual void CalculateTime(DateTime now, out DateTime thisTime, out DateTime nextTime)
         {
-            ScheduleTimer.Interval = (int)Math.Ceiling((ArrangedTime - nowTime).TotalMilliseconds);
-            ScheduleTimer.Start();
+            thisTime = BeginTime;
+            if (now < thisTime)
+                nextTime = thisTime;
+            else
+                nextTime = DateTime.MaxValue;
+        }
+
+        void setTimer(DateTime nowTime)
+        {
+            var elapsedMiliseconds = Math.Ceiling((ArrangedTime - nowTime).TotalMilliseconds);
+            scheduleTimer.Interval = elapsedMiliseconds > MaxPeriod ? MaxPeriod : (int)elapsedMiliseconds;
+            scheduleTimer.Start();
         }
 
         public void Start()
         {
-            UpdateInterval();
+            updateInterval();
         }
 
         public void Stop()
         {
-            ScheduleTimer.Stop();
+            scheduleTimer.Stop();
         }
 
         public void Dispose()
         {
-            ScheduleTimer.Dispose();
+            scheduleTimer.Dispose();
         }
 
         [JsonIgnore]

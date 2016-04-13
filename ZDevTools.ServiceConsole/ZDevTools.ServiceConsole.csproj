@@ -124,6 +124,7 @@
     <Compile Include="ScheduledServiceUI.Designer.cs">
       <DependentUpon>ScheduledServiceUI.cs</DependentUpon>
     </Compile>
+    <Compile Include="Schedules\MonthRepeatSchedule.cs" />
     <Compile Include="Schedules\WeekRepeatSchedule.cs" />
     <Compile Include="ServiceItemConfig.cs" />
     <EmbeddedResource Include="MainForm.resx">

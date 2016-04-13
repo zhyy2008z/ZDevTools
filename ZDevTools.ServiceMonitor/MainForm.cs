@@ -167,20 +167,22 @@ namespace ZDevTools.ServiceMonitor
             if (dgvMain.Columns[e.ColumnIndex].Name == ServiceMessageColumn.Name && list[e.RowIndex].MessageArray != null)
             {
                 var lb = new ListBox();
-
-                lb.Items.AddRange(list[e.RowIndex].MessageArray);
-
-                var container = new Control();
                 lb.Width = 150;
                 lb.Height = 180;
-                lb.Margin = new Padding();
-                container.Controls.Add(lb);
-                container.Size = new Size(150, 170);
+                lb.Items.AddRange(list[e.RowIndex].MessageArray);
+
 
 
                 ToolStripDropDown dropDown = new ToolStripDropDown();
+                dropDown.Padding = Padding.Empty;
+                dropDown.Margin = Padding.Empty;
 
-                dropDown.Items.Add(new ToolStripControlHost(container));
+                var controlHost = new ToolStripControlHost(lb);
+                controlHost.Padding = Padding.Empty;
+                controlHost.Margin = Padding.Empty;
+                controlHost.AutoSize = false;
+
+                dropDown.Items.Add(controlHost);
 
                 dropDown.Show(MousePosition);
             }

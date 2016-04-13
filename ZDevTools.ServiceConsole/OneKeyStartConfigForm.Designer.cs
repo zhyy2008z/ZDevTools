@@ -78,6 +78,7 @@
             this.Controls.Add(this.bCancel);
             this.Name = "OneKeyStartConfigForm";
             this.ShowIcon = false;
+            this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "配置一键启动服务";
             this.Load += new System.EventHandler(this.OneKeyStartConfigForm_Load);

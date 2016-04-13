@@ -32,7 +32,7 @@ namespace ZDevTools.ServiceCore
                 if (ExecutionExtraInfo != null)
                     ReportStatus(ExecutionExtraInfo);
                 else
-                    ReportStatus();
+                    ReportStatus("执行成功");
 
                 return true;
             }

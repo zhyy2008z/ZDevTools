@@ -29,10 +29,23 @@
         private void InitializeComponent()
         {
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.gbPerMonth = new System.Windows.Forms.GroupBox();
+            this.bWeeksDropDown = new System.Windows.Forms.Button();
+            this.tbWeeks = new System.Windows.Forms.TextBox();
+            this.bOrderDropDown = new System.Windows.Forms.Button();
+            this.tbOrder = new System.Windows.Forms.TextBox();
+            this.rbOn = new System.Windows.Forms.RadioButton();
+            this.bDaysDropDown = new System.Windows.Forms.Button();
+            this.tbDays = new System.Windows.Forms.TextBox();
+            this.rbDays = new System.Windows.Forms.RadioButton();
+            this.bMonthDropDown = new System.Windows.Forms.Button();
+            this.tbMonth = new System.Windows.Forms.TextBox();
+            this.lMonth = new System.Windows.Forms.Label();
+            this.rbPerMonth = new System.Windows.Forms.RadioButton();
             this.rbPerWeek = new System.Windows.Forms.RadioButton();
             this.rbPerDay = new System.Windows.Forms.RadioButton();
             this.rbOneTime = new System.Windows.Forms.RadioButton();
-            this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.gbMain = new System.Windows.Forms.GroupBox();
             this.lWeek = new System.Windows.Forms.Label();
             this.nudWeeks = new System.Windows.Forms.NumericUpDown();
             this.clbWeekDays = new System.Windows.Forms.CheckedListBox();
@@ -56,8 +69,13 @@
             this.label2 = new System.Windows.Forms.Label();
             this.bOK = new System.Windows.Forms.Button();
             this.bCancel = new System.Windows.Forms.Button();
+            this.clbMonth = new System.Windows.Forms.CheckedListBox();
+            this.clbDays = new System.Windows.Forms.CheckedListBox();
+            this.clbOrder = new System.Windows.Forms.CheckedListBox();
+            this.clbWeeks = new System.Windows.Forms.CheckedListBox();
             this.groupBox1.SuspendLayout();
-            this.groupBox2.SuspendLayout();
+            this.gbPerMonth.SuspendLayout();
+            this.gbMain.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nudWeeks)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudDays)).BeginInit();
             this.groupBox3.SuspendLayout();
@@ -65,10 +83,12 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.gbPerMonth);
+            this.groupBox1.Controls.Add(this.rbPerMonth);
             this.groupBox1.Controls.Add(this.rbPerWeek);
             this.groupBox1.Controls.Add(this.rbPerDay);
             this.groupBox1.Controls.Add(this.rbOneTime);
-            this.groupBox1.Controls.Add(this.groupBox2);
+            this.groupBox1.Controls.Add(this.gbMain);
             this.groupBox1.Controls.Add(this.dtpStartTime);
             this.groupBox1.Controls.Add(this.dtpStartDate);
             this.groupBox1.Controls.Add(this.label1);
@@ -80,10 +100,149 @@
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "设置";
             // 
+            // gbPerMonth
+            // 
+            this.gbPerMonth.Controls.Add(this.bWeeksDropDown);
+            this.gbPerMonth.Controls.Add(this.tbWeeks);
+            this.gbPerMonth.Controls.Add(this.bOrderDropDown);
+            this.gbPerMonth.Controls.Add(this.tbOrder);
+            this.gbPerMonth.Controls.Add(this.rbOn);
+            this.gbPerMonth.Controls.Add(this.bDaysDropDown);
+            this.gbPerMonth.Controls.Add(this.tbDays);
+            this.gbPerMonth.Controls.Add(this.rbDays);
+            this.gbPerMonth.Controls.Add(this.bMonthDropDown);
+            this.gbPerMonth.Controls.Add(this.tbMonth);
+            this.gbPerMonth.Controls.Add(this.lMonth);
+            this.gbPerMonth.Location = new System.Drawing.Point(119, 43);
+            this.gbPerMonth.Name = "gbPerMonth";
+            this.gbPerMonth.Size = new System.Drawing.Size(503, 115);
+            this.gbPerMonth.TabIndex = 9;
+            this.gbPerMonth.TabStop = false;
+            // 
+            // bWeeksDropDown
+            // 
+            this.bWeeksDropDown.Location = new System.Drawing.Point(456, 86);
+            this.bWeeksDropDown.Margin = new System.Windows.Forms.Padding(0);
+            this.bWeeksDropDown.Name = "bWeeksDropDown";
+            this.bWeeksDropDown.Size = new System.Drawing.Size(34, 19);
+            this.bWeeksDropDown.TabIndex = 17;
+            this.bWeeksDropDown.Text = "▼";
+            this.bWeeksDropDown.UseVisualStyleBackColor = true;
+            this.bWeeksDropDown.Click += new System.EventHandler(this.bMonthDropDown_Click);
+            // 
+            // tbWeeks
+            // 
+            this.tbWeeks.Location = new System.Drawing.Point(232, 85);
+            this.tbWeeks.Name = "tbWeeks";
+            this.tbWeeks.Size = new System.Drawing.Size(259, 21);
+            this.tbWeeks.TabIndex = 16;
+            this.tbWeeks.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.tbMonth_KeyPress);
+            // 
+            // bOrderDropDown
+            // 
+            this.bOrderDropDown.Location = new System.Drawing.Point(191, 86);
+            this.bOrderDropDown.Margin = new System.Windows.Forms.Padding(0);
+            this.bOrderDropDown.Name = "bOrderDropDown";
+            this.bOrderDropDown.Size = new System.Drawing.Size(34, 19);
+            this.bOrderDropDown.TabIndex = 15;
+            this.bOrderDropDown.Text = "▼";
+            this.bOrderDropDown.UseVisualStyleBackColor = true;
+            this.bOrderDropDown.Click += new System.EventHandler(this.bMonthDropDown_Click);
+            // 
+            // tbOrder
+            // 
+            this.tbOrder.Location = new System.Drawing.Point(60, 85);
+            this.tbOrder.Name = "tbOrder";
+            this.tbOrder.Size = new System.Drawing.Size(166, 21);
+            this.tbOrder.TabIndex = 14;
+            this.tbOrder.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.tbMonth_KeyPress);
+            // 
+            // rbOn
+            // 
+            this.rbOn.AutoSize = true;
+            this.rbOn.Location = new System.Drawing.Point(14, 86);
+            this.rbOn.Name = "rbOn";
+            this.rbOn.Size = new System.Drawing.Size(47, 16);
+            this.rbOn.TabIndex = 13;
+            this.rbOn.TabStop = true;
+            this.rbOn.Text = "在：";
+            this.rbOn.UseVisualStyleBackColor = true;
+            this.rbOn.CheckedChanged += new System.EventHandler(this.rbOn_CheckedChanged);
+            // 
+            // bDaysDropDown
+            // 
+            this.bDaysDropDown.Location = new System.Drawing.Point(457, 52);
+            this.bDaysDropDown.Margin = new System.Windows.Forms.Padding(0);
+            this.bDaysDropDown.Name = "bDaysDropDown";
+            this.bDaysDropDown.Size = new System.Drawing.Size(33, 19);
+            this.bDaysDropDown.TabIndex = 11;
+            this.bDaysDropDown.Text = "▼";
+            this.bDaysDropDown.UseVisualStyleBackColor = true;
+            this.bDaysDropDown.Click += new System.EventHandler(this.bMonthDropDown_Click);
+            // 
+            // tbDays
+            // 
+            this.tbDays.Location = new System.Drawing.Point(60, 51);
+            this.tbDays.Name = "tbDays";
+            this.tbDays.Size = new System.Drawing.Size(431, 21);
+            this.tbDays.TabIndex = 10;
+            this.tbDays.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.tbMonth_KeyPress);
+            // 
+            // rbDays
+            // 
+            this.rbDays.AutoSize = true;
+            this.rbDays.Location = new System.Drawing.Point(14, 53);
+            this.rbDays.Name = "rbDays";
+            this.rbDays.Size = new System.Drawing.Size(47, 16);
+            this.rbDays.TabIndex = 12;
+            this.rbDays.Text = "天：";
+            this.rbDays.UseVisualStyleBackColor = true;
+            this.rbDays.CheckedChanged += new System.EventHandler(this.rbDays_CheckedChanged);
+            // 
+            // bMonthDropDown
+            // 
+            this.bMonthDropDown.Location = new System.Drawing.Point(457, 20);
+            this.bMonthDropDown.Margin = new System.Windows.Forms.Padding(0);
+            this.bMonthDropDown.Name = "bMonthDropDown";
+            this.bMonthDropDown.Size = new System.Drawing.Size(33, 19);
+            this.bMonthDropDown.TabIndex = 8;
+            this.bMonthDropDown.Text = "▼";
+            this.bMonthDropDown.UseVisualStyleBackColor = true;
+            this.bMonthDropDown.Click += new System.EventHandler(this.bMonthDropDown_Click);
+            // 
+            // tbMonth
+            // 
+            this.tbMonth.Location = new System.Drawing.Point(60, 19);
+            this.tbMonth.Name = "tbMonth";
+            this.tbMonth.Size = new System.Drawing.Size(431, 21);
+            this.tbMonth.TabIndex = 7;
+            this.tbMonth.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.tbMonth_KeyPress);
+            // 
+            // lMonth
+            // 
+            this.lMonth.AutoSize = true;
+            this.lMonth.Location = new System.Drawing.Point(19, 22);
+            this.lMonth.Name = "lMonth";
+            this.lMonth.Size = new System.Drawing.Size(41, 12);
+            this.lMonth.TabIndex = 6;
+            this.lMonth.Text = "月份：";
+            // 
+            // rbPerMonth
+            // 
+            this.rbPerMonth.AutoSize = true;
+            this.rbPerMonth.Location = new System.Drawing.Point(30, 133);
+            this.rbPerMonth.Name = "rbPerMonth";
+            this.rbPerMonth.Size = new System.Drawing.Size(47, 16);
+            this.rbPerMonth.TabIndex = 8;
+            this.rbPerMonth.TabStop = true;
+            this.rbPerMonth.Text = "每月";
+            this.rbPerMonth.UseVisualStyleBackColor = true;
+            this.rbPerMonth.CheckedChanged += new System.EventHandler(this.rbPerMonth_CheckedChanged);
+            // 
             // rbPerWeek
             // 
             this.rbPerWeek.AutoSize = true;
-            this.rbPerWeek.Location = new System.Drawing.Point(30, 84);
+            this.rbPerWeek.Location = new System.Drawing.Point(30, 98);
             this.rbPerWeek.Name = "rbPerWeek";
             this.rbPerWeek.Size = new System.Drawing.Size(47, 16);
             this.rbPerWeek.TabIndex = 7;
@@ -95,7 +254,7 @@
             // rbPerDay
             // 
             this.rbPerDay.AutoSize = true;
-            this.rbPerDay.Location = new System.Drawing.Point(30, 57);
+            this.rbPerDay.Location = new System.Drawing.Point(30, 63);
             this.rbPerDay.Name = "rbPerDay";
             this.rbPerDay.Size = new System.Drawing.Size(47, 16);
             this.rbPerDay.TabIndex = 6;
@@ -116,19 +275,19 @@
             this.rbOneTime.UseVisualStyleBackColor = true;
             this.rbOneTime.CheckedChanged += new System.EventHandler(this.rbOneTime_CheckedChanged);
             // 
-            // groupBox2
+            // gbMain
             // 
-            this.groupBox2.Controls.Add(this.lWeek);
-            this.groupBox2.Controls.Add(this.nudWeeks);
-            this.groupBox2.Controls.Add(this.clbWeekDays);
-            this.groupBox2.Controls.Add(this.lDay);
-            this.groupBox2.Controls.Add(this.nudDays);
-            this.groupBox2.Controls.Add(this.lPer);
-            this.groupBox2.Location = new System.Drawing.Point(119, 43);
-            this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(503, 115);
-            this.groupBox2.TabIndex = 5;
-            this.groupBox2.TabStop = false;
+            this.gbMain.Controls.Add(this.lWeek);
+            this.gbMain.Controls.Add(this.nudWeeks);
+            this.gbMain.Controls.Add(this.clbWeekDays);
+            this.gbMain.Controls.Add(this.lDay);
+            this.gbMain.Controls.Add(this.nudDays);
+            this.gbMain.Controls.Add(this.lPer);
+            this.gbMain.Location = new System.Drawing.Point(119, 43);
+            this.gbMain.Name = "gbMain";
+            this.gbMain.Size = new System.Drawing.Size(503, 115);
+            this.gbMain.TabIndex = 5;
+            this.gbMain.TabStop = false;
             // 
             // lWeek
             // 
@@ -382,11 +541,122 @@
             this.bCancel.Text = "取消";
             this.bCancel.UseVisualStyleBackColor = true;
             // 
+            // clbMonth
+            // 
+            this.clbMonth.CheckOnClick = true;
+            this.clbMonth.FormattingEnabled = true;
+            this.clbMonth.Items.AddRange(new object[] {
+            "所有月份",
+            "1月",
+            "2月",
+            "3月",
+            "4月",
+            "5月",
+            "6月",
+            "7月",
+            "8月",
+            "9月",
+            "10月",
+            "11月",
+            "12月"});
+            this.clbMonth.Location = new System.Drawing.Point(684, 12);
+            this.clbMonth.Name = "clbMonth";
+            this.clbMonth.Size = new System.Drawing.Size(136, 244);
+            this.clbMonth.TabIndex = 4;
+            this.clbMonth.Click += new System.EventHandler(this.clbMonth_Click);
+            this.clbMonth.DoubleClick += new System.EventHandler(this.clbMonth_Click);
+            // 
+            // clbDays
+            // 
+            this.clbDays.CheckOnClick = true;
+            this.clbDays.ColumnWidth = 50;
+            this.clbDays.FormattingEnabled = true;
+            this.clbDays.Items.AddRange(new object[] {
+            "每天",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23",
+            "24",
+            "25",
+            "26",
+            "27",
+            "28",
+            "29",
+            "30",
+            "31",
+            "-1"});
+            this.clbDays.Location = new System.Drawing.Point(837, 12);
+            this.clbDays.MultiColumn = true;
+            this.clbDays.Name = "clbDays";
+            this.clbDays.Size = new System.Drawing.Size(355, 100);
+            this.clbDays.TabIndex = 5;
+            this.clbDays.Click += new System.EventHandler(this.clbMonth_Click);
+            // 
+            // clbOrder
+            // 
+            this.clbOrder.CheckOnClick = true;
+            this.clbOrder.FormattingEnabled = true;
+            this.clbOrder.Items.AddRange(new object[] {
+            "每周",
+            "第1个",
+            "第2个",
+            "第3个",
+            "第4个",
+            "最后1个"});
+            this.clbOrder.Location = new System.Drawing.Point(684, 262);
+            this.clbOrder.Name = "clbOrder";
+            this.clbOrder.Size = new System.Drawing.Size(136, 116);
+            this.clbOrder.TabIndex = 6;
+            this.clbOrder.Click += new System.EventHandler(this.clbMonth_Click);
+            // 
+            // clbWeeks
+            // 
+            this.clbWeeks.CheckOnClick = true;
+            this.clbWeeks.FormattingEnabled = true;
+            this.clbWeeks.Items.AddRange(new object[] {
+            "所有星期",
+            "星期日",
+            "星期一",
+            "星期二",
+            "星期三",
+            "星期四",
+            "星期五",
+            "星期六"});
+            this.clbWeeks.Location = new System.Drawing.Point(868, 163);
+            this.clbWeeks.Name = "clbWeeks";
+            this.clbWeeks.Size = new System.Drawing.Size(136, 164);
+            this.clbWeeks.TabIndex = 7;
+            this.clbWeeks.Click += new System.EventHandler(this.clbMonth_Click);
+            // 
             // ScheduleForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(658, 382);
+            this.ClientSize = new System.Drawing.Size(1204, 399);
+            this.Controls.Add(this.clbWeeks);
+            this.Controls.Add(this.clbOrder);
+            this.Controls.Add(this.clbDays);
+            this.Controls.Add(this.clbMonth);
             this.Controls.Add(this.bCancel);
             this.Controls.Add(this.bOK);
             this.Controls.Add(this.groupBox1);
@@ -400,8 +670,10 @@
             this.Text = "计划设置";
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
-            this.groupBox2.ResumeLayout(false);
-            this.groupBox2.PerformLayout();
+            this.gbPerMonth.ResumeLayout(false);
+            this.gbPerMonth.PerformLayout();
+            this.gbMain.ResumeLayout(false);
+            this.gbMain.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nudWeeks)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudDays)).EndInit();
             this.groupBox3.ResumeLayout(false);
@@ -414,7 +686,7 @@
 
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.RadioButton rbOneTime;
-        private System.Windows.Forms.GroupBox groupBox2;
+        private System.Windows.Forms.GroupBox gbMain;
         private System.Windows.Forms.DateTimePicker dtpStartTime;
         private System.Windows.Forms.DateTimePicker dtpStartDate;
         private System.Windows.Forms.Label label1;
@@ -440,5 +712,22 @@
         private System.Windows.Forms.Button bCancel;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.MaskedTextBox mtbRepeatUntil;
+        private System.Windows.Forms.RadioButton rbPerMonth;
+        private System.Windows.Forms.Label lMonth;
+        private System.Windows.Forms.Button bMonthDropDown;
+        private System.Windows.Forms.TextBox tbMonth;
+        private System.Windows.Forms.CheckedListBox clbMonth;
+        private System.Windows.Forms.GroupBox gbPerMonth;
+        private System.Windows.Forms.RadioButton rbDays;
+        private System.Windows.Forms.Button bDaysDropDown;
+        private System.Windows.Forms.TextBox tbDays;
+        private System.Windows.Forms.Button bWeeksDropDown;
+        private System.Windows.Forms.TextBox tbWeeks;
+        private System.Windows.Forms.Button bOrderDropDown;
+        private System.Windows.Forms.TextBox tbOrder;
+        private System.Windows.Forms.RadioButton rbOn;
+        private System.Windows.Forms.CheckedListBox clbDays;
+        private System.Windows.Forms.CheckedListBox clbOrder;
+        private System.Windows.Forms.CheckedListBox clbWeeks;
     }
 }

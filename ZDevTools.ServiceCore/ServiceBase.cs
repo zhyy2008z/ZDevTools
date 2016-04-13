@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using ServiceStack.Redis;
 using System.Diagnostics;
 using Newtonsoft.Json;
+using System.IO;
 
 namespace ZDevTools.ServiceCore
 {
@@ -15,6 +16,8 @@ namespace ZDevTools.ServiceCore
     public abstract class ServiceBase : IServiceBase
     {
         static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(ServiceBase));
+        const string ServiceReportsFolder = "reports";
+
         void logInfo(string message) => log.Info($"【{ServiceName}】{message}");
         void logError(string message, Exception exception) => log.Error($"【{ServiceName}】{message}", exception);
 
@@ -137,20 +140,37 @@ namespace ZDevTools.ServiceCore
 
         void reportStatus(ServiceReport serviceReport)
         {
-            if (redisManagerPool == null)
-                return;
-
             try
             {
                 serviceReport.ServiceName = ServiceName;
                 serviceReport.UpdateTime = DateTime.Now;
-                using (var client = redisManagerPool.GetClient())
-                {
-                    client.SetEntryInHash(RedisKeys.ServiceReports, this.GetType().Name, JsonConvert.SerializeObject(serviceReport));
-                    client.PublishMessage(RedisKeys.ServiceReports, this.GetType().Name);
-                }
+
+                saveReportHistory(serviceReport);
+
+                if (redisManagerPool != null)
+                    using (var client = redisManagerPool.GetClient())
+                    {
+                        client.SetEntryInHash(RedisKeys.ServiceReports, this.GetType().Name, JsonConvert.SerializeObject(serviceReport));
+                        client.PublishMessage(RedisKeys.ServiceReports, this.GetType().Name);
+                    }
             }
             catch (Exception ex) { logError("状态汇报出错，错误：" + ex.Message, ex); }
+        }
+
+        private void saveReportHistory(ServiceReport serviceReport)
+        {
+            string saveFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServiceReportsFolder);
+            if (!Directory.Exists(saveFolder))
+                Directory.CreateDirectory(saveFolder);
+
+            string reportFullName = Path.Combine(saveFolder, this.GetType().Name + ".log");
+
+            if (!File.Exists(reportFullName))
+            {
+                File.WriteAllText(reportFullName, "时间\t\t\t错误\t消息\t\t\t消息组\r\n");
+            }
+
+            File.AppendAllText(reportFullName, $"{FormatDateTime(serviceReport.UpdateTime)}\t{(serviceReport.HasError ? "[有]" : "[无]")}\t{serviceReport.Message}\t{(serviceReport.MessageArray == null ? null : string.Join("、", serviceReport.MessageArray))}\r\n");
         }
 
         public void ReportStatus(string message)

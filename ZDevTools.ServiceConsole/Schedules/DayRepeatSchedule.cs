@@ -11,7 +11,7 @@ namespace ZDevTools.ServiceConsole.Schedules
     /// </summary>
     public class DayRepeatSchedule : BasicSchedule
     {
-        public int RepeatPerDays { get; set; } = 1;
+        public int RepeatPerDays { get; set; }
 
 
         public override string ToString()
@@ -26,40 +26,20 @@ namespace ZDevTools.ServiceConsole.Schedules
 
         public override string Title { get { return "每天"; } }
 
-        protected override void UpdateInterval()
-        {
-            ScheduleTimer.Stop();
 
-            var now = DateTime.Now;
-            if (now < BeginTime)
+        protected override void CalculateTime(DateTime now, out DateTime thisTime, out DateTime nextTime)
+        {
+            thisTime = BeginTime;
+            if (now < thisTime)
             {
-                ArrangedTime = BeginTime;
-                SetTimer(now);
+                nextTime = thisTime;
             }
             else
             {
                 var days = (int)(now - BeginTime).TotalDays;
-
-                var nextTime = BeginTime.AddDays(RepeatPerDays * (days / RepeatPerDays + 1)); //在无重复的情况下下次的执行时间
-
-                if (RepeatPeriod.HasValue) //如果考虑重复
-                {
-                    var thisTime = nextTime.AddDays(-RepeatPerDays);
-                    var nextPeriodTime = now + RepeatPeriod.Value;
-
-                    if ((!(RepeatUntil.HasValue && nextPeriodTime >= thisTime + RepeatUntil.Value)) && nextPeriodTime < nextTime)
-                        nextTime = nextPeriodTime;
-                }
-
-                if (EndTime.HasValue && nextTime >= EndTime.Value)
-                    OnFinished(EventArgs.Empty);
-                else
-                {
-                    ArrangedTime = nextTime;
-                    SetTimer(now);
-                }
+                nextTime = BeginTime.AddDays(RepeatPerDays * (days / RepeatPerDays + 1)); //在无重复的情况下下次的执行时间
+                thisTime = nextTime.AddDays(-RepeatPerDays);
             }
         }
-
     }
 }
