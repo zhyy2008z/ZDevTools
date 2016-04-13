@@ -42,8 +42,8 @@ namespace ZDevTools.ServiceCore
         private void serviceHost_Faulted(object sender, EventArgs e)
         {
             serviceHost.Close();
-            logError("运行出错");
-            ReportError("状态：已停止，运行出错");
+            logError("WCF服务失败");
+            ReportError("状态：已停止，WCF服务失败");
             if (Faulted != null)
                 Faulted(this, EventArgs.Empty);
         }

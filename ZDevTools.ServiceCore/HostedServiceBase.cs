@@ -75,8 +75,8 @@ namespace ZDevTools.ServiceCore
 #if !DEBUG
                 catch (Exception ex)
                 {
-                    logError($"运行出错：{ex.Message}", ex);
-                    ReportError("状态：已停止，运行出错");
+                    logError($"承载的服务失败：{ex.Message}", ex);
+                    ReportError("状态：已停止，承载的服务失败", ex);
                     if (Faulted != null)
                         Faulted(this, EventArgs.Empty);
                 }

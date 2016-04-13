@@ -195,16 +195,6 @@ namespace ZDevTools.ServiceCore
             reportStatus(report);
         }
 
-        public void ReportError(Exception exception)
-        {
-            ServiceReport report = new ServiceReport();
-
-            report.HasError = true;
-            report.Message = exception.Message;
-
-            reportStatus(report);
-        }
-
         public void ReportError(string message)
         {
             ServiceReport report = new ServiceReport();
@@ -215,9 +205,15 @@ namespace ZDevTools.ServiceCore
             reportStatus(report);
         }
 
-        public void ReportStatus()
+        public void ReportError(string message, Exception exception)
         {
-            reportStatus(new ServiceReport());
+            ServiceReport report = new ServiceReport();
+
+            report.HasError = true;
+            report.Message = message;
+            report.MessageArray = new List<string>() { exception.Message };
+
+            reportStatus(report);
         }
     }
 
