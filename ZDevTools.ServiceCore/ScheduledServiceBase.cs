@@ -40,7 +40,7 @@ namespace ZDevTools.ServiceCore
             catch (Exception ex)
             {
                 logError($"执行出错，错误：{ex.Message}", ex);
-                ReportError("本次执行出错", ex);
+                ReportError("执行出错", ex);
                 return false;
             }
 #endif
