@@ -75,11 +75,10 @@ namespace ZDevTools.Data
     /// 1.连接字符串参数不变时不再重复赋值，优化性能
     /// 
     /// 2016年3月4日 v3.6
-    /// 1.新增保护方法Execute(Action<TConnection> job)，用于继承类实现特殊功能
+    /// 1.新增保护方法Execute(Action&lt;TConnection> job)，用于继承类实现特殊功能
     /// 
     /// 2016年4月14日 v3.7
     /// 1.新增支持设定隔离级别的BeginTransaction方法
-    /// 
     /// </para>
     /// </summary>
     public class DbHelper<TConnection, TTransaction, TCommand, TDataReader, TParameter, TDataAdapter, TCommandBuilder> : IDisposable
