@@ -76,6 +76,10 @@ namespace ZDevTools.Data
     /// 
     /// 2016年3月4日 v3.6
     /// 1.新增保护方法Execute(Action<TConnection> job)，用于继承类实现特殊功能
+    /// 
+    /// 2016年4月14日 v3.7
+    /// 1.新增支持设定隔离级别的BeginTransaction方法
+    /// 
     /// </para>
     /// </summary>
     public class DbHelper<TConnection, TTransaction, TCommand, TDataReader, TParameter, TDataAdapter, TCommandBuilder> : IDisposable
@@ -311,11 +315,20 @@ namespace ZDevTools.Data
         /// <returns>返回对象本身，使用<see cref="IDisposable"/>接口</returns>
         public IDisposable BeginTransaction() //v3.3 原Open方法重命名为BeginTransaction方法
         {
-            if (manualOpen) //v1.2 不允许连续两次打开连接，连续打开将导致连接失去控制，从而加速资源流失
-                throw new InvalidOperationException("不能连续手动打开连接两次，请先Close当前连接！");
-            configAndOpen();
-            manualOpen = true;
+            Open();
             Transaction = (TTransaction)conn.BeginTransaction();
+            return this;
+        }
+
+        /// <summary>
+        /// 开启一个事务，提交事务请显式调用<see cref="Commit()"/>，否则事务无法提交。
+        /// </summary>
+        /// <param name="isolationLevel">显式指定一个隔离级别</param>
+        /// <returns>返回对象本身，使用<see cref="IDisposable"/>接口</returns>
+        public IDisposable BeginTransaction(IsolationLevel isolationLevel) //v3.7 新增支持设定隔离级别的BeginTransaction方法
+        {
+            Open();
+            Transaction = (TTransaction)conn.BeginTransaction(isolationLevel);
             return this;
         }
 

@@ -82,14 +82,6 @@ namespace ZDevTools.ServiceConsole
 
                         resources.Add(resetEvent);
                     }
-                    else
-                    {
-                        var waitResourceTimeout = attribute as WaitResourceTimeoutAttribute;
-                        if (waitResourceTimeout != null)
-                        {
-                            waitTimeOut = waitResourceTimeout.WaitTimeout;
-                        }
-                    }
                 }
 
                 relyOnResources = resources.ToArray();

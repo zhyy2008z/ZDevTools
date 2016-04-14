@@ -12,20 +12,29 @@ namespace ZDevTools.ServiceCore
     [System.AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
     public sealed class RequestResourceAttribute : Attribute
     {
-        // See the attribute guidelines at 
-        //  http://go.microsoft.com/fwlink/?LinkId=85236
-        readonly string resourceName;
-
-        // This is a positional argument
+        /// <summary>
+        /// 初始化请求资源特性
+        /// </summary>
+        /// <param name="resourceName">资源名称</param>
         public RequestResourceAttribute(string resourceName)
         {
-            this.resourceName = resourceName;
+            this.ResourceName = resourceName;
         }
 
-        public string ResourceName
-        {
-            get { return resourceName; }
-        }
+        /// <summary>
+        /// 资源名称
+        /// </summary>
+        public string ResourceName { get; }
+
+        /// <summary>
+        /// 等待资源超时时间（不设置【0】代表使用默认超时时间，单位：秒）
+        /// </summary>
+        public int WaitTimeout { get; set; }
+
+        /// <summary>
+        /// 请求动作
+        /// </summary>
+        public RequestAction RequestAction { get; set; }
     }
 
 }
