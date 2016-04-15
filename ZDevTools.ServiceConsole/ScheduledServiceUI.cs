@@ -23,6 +23,8 @@ namespace ZDevTools.ServiceConsole
         void logInfo(string message) => log.Info($"【{ServiceName}】{message}");
         void logError(string message) => log.Error($"【{ServiceName}】{message}");
 
+        static readonly object Locker = new object();
+
         /// <summary>
         /// 服务名称
         /// </summary>
@@ -38,11 +40,9 @@ namespace ZDevTools.ServiceConsole
         /// <summary>
         /// 获取执行当前服务需要用到的资源
         /// </summary>
-        AutoResetEvent[] relyOnResources;
+        MyReaderWriterLock[] relyOnResources;
+        RequestAction[] requestActions;
 
-        /// <summary>
-        /// 等待资源可用的最大超时时间【为0时使用默认值，单位：秒】
-        /// </summary>
         int waitTimeOut;
 
         IScheduledService bindedService;
@@ -66,25 +66,30 @@ namespace ZDevTools.ServiceConsole
 
                 //处理资源占用问题
                 var attributes = value.GetType().GetCustomAttributes(false);
-                var resources = new List<AutoResetEvent>();
+                var resources = new List<MyReaderWriterLock>();
+                var actions = new List<RequestAction>();
+
                 foreach (var attribute in attributes)
                 {
                     var requestResource = attribute as RequestResourceAttribute;
                     if (requestResource != null)
                     {
-                        AutoResetEvent resetEvent = null;
 
-                        if (!allResources.TryGetValue(requestResource.ResourceName, out resetEvent))
+                        MyReaderWriterLock myReaderWriterLock;
+                        if (!allResources.TryGetValue(requestResource.ResourceName, out myReaderWriterLock))
                         {
-                            resetEvent = new AutoResetEvent(true);
-                            allResources.Add(requestResource.ResourceName, resetEvent);
+                            myReaderWriterLock = new MyReaderWriterLock();
+                            allResources.Add(requestResource.ResourceName, myReaderWriterLock);
                         }
-
-                        resources.Add(resetEvent);
+                        resources.Add(myReaderWriterLock);
+                        actions.Add(requestResource.RequestAction);
+                        if (requestResource.WaitTimeout > waitTimeOut)
+                            waitTimeOut = requestResource.WaitTimeout;
                     }
                 }
 
                 relyOnResources = resources.ToArray();
+                requestActions = actions.ToArray();
             }
         }
 
@@ -94,7 +99,7 @@ namespace ZDevTools.ServiceConsole
         /// <summary>
         /// 代表可以收集到的所有资源
         /// </summary>
-        static Dictionary<string, AutoResetEvent> allResources = new Dictionary<string, AutoResetEvent>();
+        static Dictionary<string, MyReaderWriterLock> allResources = new Dictionary<string, MyReaderWriterLock>();
 
         public ScheduledServiceUI()
         {
@@ -119,12 +124,15 @@ namespace ZDevTools.ServiceConsole
             await Task.Run(() =>
             {
                 //检查是否存在资源竞争问题
-                if (relyOnResources.Length > 0 && !AutoResetEvent.WaitAll(relyOnResources, (waitTimeOut == 0 ? Settings.Default.ServiceWaitTimeOut : waitTimeOut) * 1000))
+                if (relyOnResources.Length > 0)
                 {
-                    const string errorMessage = "等待资源释放超时，未执行";
-                    logError(errorMessage);
-                    ((ServiceBase)bindedService).ReportError(errorMessage);
-                    return;
+                    if (!MyReaderWriterLock.EnterLocks(relyOnResources, requestActions, (waitTimeOut < Settings.Default.ServiceWaitTimeOut ? Settings.Default.ServiceWaitTimeOut : waitTimeOut) * 1000))
+                    {
+                        const string errorMessage = "等待资源释放超时，未执行";
+                        logError(errorMessage);
+                        ((ServiceBase)bindedService).ReportError(errorMessage);
+                        return;
+                    }
                 }
                 try
                 {
@@ -132,9 +140,7 @@ namespace ZDevTools.ServiceConsole
                 }
                 finally
                 {
-                    //释放所有锁
-                    foreach (var autoResetEvent in relyOnResources)
-                        autoResetEvent.Set();
+                    MyReaderWriterLock.LeaveLocks(relyOnResources, requestActions);
                 }
             });
 
