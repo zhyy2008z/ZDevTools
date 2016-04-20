@@ -12,7 +12,7 @@ namespace ZDevTools.ServiceCore
     public abstract class ScheduledServiceBase : ServiceBase, IScheduledService
     {
         static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(ScheduledServiceBase));
-        void logError(string message, Exception exception) => log.Error($"【{ServiceName}】{message}", exception);
+        void logError(string message, Exception exception) => log.Error($"【{DisplayName}】{message}", exception);
 
         /// <summary>
         /// 执行额外信息

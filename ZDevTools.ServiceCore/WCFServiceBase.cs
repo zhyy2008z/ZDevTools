@@ -15,7 +15,7 @@ namespace ZDevTools.ServiceCore
     {
         static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(WCFServiceBase));
 
-        void logError(string message) => log.Error($"【{ServiceName}】{message}");
+        void logError(string message) => log.Error($"【{DisplayName}】{message}");
 
 
         ServiceHost serviceHost;

@@ -16,53 +16,27 @@ namespace ZDevTools.ServiceCore
     public abstract class ServiceBase : IServiceBase
     {
         static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(ServiceBase));
-        const string ServiceReportsFolder = "reports";
+        void logInfo(string message) => log.Info($"【{DisplayName}】{message}");
+        void logWarn(string message, Exception exception) => log.Error($"【{DisplayName}】{message}", exception);
 
-        void logInfo(string message) => log.Info($"【{ServiceName}】{message}");
-        void logError(string message, Exception exception) => log.Error($"【{ServiceName}】{message}", exception);
+        public const string ServiceReportsFolder = "reports";
+        public static RedisManagerPool RedisManagerPool { get; } = string.IsNullOrEmpty(Properties.Settings.Default.RedisServer) ? null : new RedisManagerPool(Properties.Settings.Default.RedisServer);
 
-        static RedisManagerPool redisManagerPool { get; } = string.IsNullOrEmpty(Properties.Settings.Default.RedisServer) ? null : new RedisManagerPool(Properties.Settings.Default.RedisServer);
+        public abstract string DisplayName { get; }
 
-        public abstract string ServiceName { get; }
+        /// <summary>
+        /// 服务內部名称（其实就是类名）
+        /// </summary>
+        public string ServiceName => this.GetType().Name;
+
+        /// <summary>
+        /// 提供一个标准的时间格式化方法
+        /// </summary>
+        /// <param name="dateTime">要被格式化的日期时间实例</param>
+        /// <returns></returns>
+        public static string FormatDateTime(DateTime dateTime) => $"{dateTime:yyyy-MM-dd HH:mm:ss}";
 
         protected abstract log4net.ILog Log { get; }
-
-        /// <summary>
-        /// 保存Hash对象
-        /// </summary>
-        public void SaveHash(string hashId, Dictionary<string, string> dic)
-        {
-            if (redisManagerPool == null)
-                return;
-
-            using (var client = redisManagerPool.GetClient())
-            {
-                using (var trans = client.CreateTransaction())
-                {
-                    trans.QueueCommand(rc => rc.Remove(hashId));
-                    trans.QueueCommand(rc => rc.SetRangeInHash(hashId, dic));
-                    trans.Commit();
-                }
-            }
-
-            logInfo($"生成条目{dic.Count}条，已保存到hashid为{hashId}的哈希集合中");
-        }
-
-        /// <summary>
-        /// 保存单值字符串
-        /// </summary>
-        public void SaveValue(string key, string value)
-        {
-            if (redisManagerPool == null)
-                return;
-
-            using (var client = redisManagerPool.GetClient())
-            {
-                client.SetValue(key, value);
-            }
-
-            logInfo($"生成条目{key}");
-        }
 
         /// <summary>
         /// 记录提示性信息
@@ -70,7 +44,7 @@ namespace ZDevTools.ServiceCore
         /// <param name="message"></param>
         public void LogInfo(string message)
         {
-            Log.Info($"【{ServiceName}】{message}");
+            Log.Info($"【{DisplayName}】{message}");
         }
 
         /// <summary>
@@ -79,7 +53,7 @@ namespace ZDevTools.ServiceCore
         /// <param name="message"></param>
         public void LogDebug(string message)
         {
-            Log.Debug($"【{ServiceName}】{message}");
+            Log.Debug($"【{DisplayName}】{message}");
         }
 
         /// <summary>
@@ -88,7 +62,7 @@ namespace ZDevTools.ServiceCore
         /// <param name="message"></param>
         public void LogDebug(string message, Exception exception)
         {
-            Log.Debug($"【{ServiceName}】{message}", exception);
+            Log.Debug($"【{DisplayName}】{message}", exception);
         }
 
         /// <summary>
@@ -97,7 +71,7 @@ namespace ZDevTools.ServiceCore
         /// <param name="message"></param>
         public void LogWarn(string message)
         {
-            Log.Warn($"【{ServiceName}】{message}");
+            Log.Warn($"【{DisplayName}】{message}");
         }
 
         /// <summary>
@@ -107,7 +81,7 @@ namespace ZDevTools.ServiceCore
         /// <param name="exception"></param>
         public void LogWarn(string message, Exception exception)
         {
-            Log.Warn($"【{ServiceName}】{message}", exception);
+            Log.Warn($"【{DisplayName}】{message}", exception);
         }
 
         /// <summary>
@@ -131,30 +105,61 @@ namespace ZDevTools.ServiceCore
             throw new ServiceErrorException(message, innerException);
         }
 
+        #region 已导出
         /// <summary>
-        /// 提供一个标准的时间格式化方法
+        /// 保存Hash对象
         /// </summary>
-        /// <param name="dateTime">要被格式化的日期时间实例</param>
-        /// <returns></returns>
-        public static string FormatDateTime(DateTime dateTime) => $"{dateTime:yyyy-MM-dd HH:mm:ss}";
+        public void SaveHash(string hashId, Dictionary<string, string> dic)
+        {
+            if (RedisManagerPool == null)
+                return;
+
+            using (var client = RedisManagerPool.GetClient())
+            {
+                using (var trans = client.CreateTransaction())
+                {
+                    trans.QueueCommand(rc => rc.Remove(hashId));
+                    trans.QueueCommand(rc => rc.SetRangeInHash(hashId, dic));
+                    trans.Commit();
+                }
+            }
+
+            logInfo($"生成条目{dic.Count}条，已保存到hashid为{hashId}的哈希集合中");
+        }
+
+        /// <summary>
+        /// 保存单值字符串
+        /// </summary>
+        public void SaveValue(string key, string value)
+        {
+            if (RedisManagerPool == null)
+                return;
+
+            using (var client = RedisManagerPool.GetClient())
+            {
+                client.SetValue(key, value);
+            }
+
+            logInfo($"生成条目{key}");
+        }
 
         void reportStatus(ServiceReport serviceReport)
         {
             try
             {
-                serviceReport.ServiceName = ServiceName;
+                serviceReport.ServiceName = DisplayName;
                 serviceReport.UpdateTime = DateTime.Now;
 
                 saveReportHistory(serviceReport);
 
-                if (redisManagerPool != null)
-                    using (var client = redisManagerPool.GetClient())
+                if (RedisManagerPool != null)
+                    using (var client = RedisManagerPool.GetClient())
                     {
-                        client.SetEntryInHash(RedisKeys.ServiceReports, this.GetType().Name, JsonConvert.SerializeObject(serviceReport));
-                        client.PublishMessage(RedisKeys.ServiceReports, this.GetType().Name);
+                        client.SetEntryInHash(RedisKeys.ServiceReports, ServiceName, JsonConvert.SerializeObject(serviceReport));
+                        client.PublishMessage(RedisKeys.ServiceReports, ServiceName);
                     }
             }
-            catch (Exception ex) { logError("状态汇报出错，错误：" + ex.Message, ex); }
+            catch (Exception ex) { logWarn("状态汇报出错，错误：" + ex.Message, ex); }
         }
 
         private void saveReportHistory(ServiceReport serviceReport)
@@ -163,7 +168,7 @@ namespace ZDevTools.ServiceCore
             if (!Directory.Exists(saveFolder))
                 Directory.CreateDirectory(saveFolder);
 
-            string reportFullName = Path.Combine(saveFolder, this.GetType().Name + ".log");
+            string reportFullName = Path.Combine(saveFolder, ServiceName + ".log");
 
             if (!File.Exists(reportFullName))
             {
@@ -215,6 +220,7 @@ namespace ZDevTools.ServiceCore
 
             reportStatus(report);
         }
+        #endregion
     }
 
 }

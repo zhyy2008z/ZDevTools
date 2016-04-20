@@ -15,9 +15,8 @@ namespace ZDevTools.ServiceConsole
     public partial class HostedServiceUI : UserControl, IBindedServiceUI, IControllableUI
     {
         static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(HostedServiceUI));
-        void logInfo(string message) => log.Info($"【{ServiceName}】{message}");
-        void logError(string message, Exception exception) => log.Error($"【{ServiceName}】{message}", exception);
-
+        void logInfo(string message) => log.Info($"【{DisplayName}】{message}");
+        void logError(string message, Exception exception) => log.Error($"【{DisplayName}】{message}", exception);
 
         public HostedServiceUI()
         {
@@ -27,10 +26,10 @@ namespace ZDevTools.ServiceConsole
         /// <summary>
         /// 服务名称
         /// </summary>
-        public string ServiceName { get { return lServiceName.Text; } }
+        public string DisplayName { get { return lServiceName.Text; } }
 
         IHostedService bindedService;
-        public IServiceBase BindedService
+        public virtual IServiceBase BindedService
         {
             get
             {
@@ -42,7 +41,7 @@ namespace ZDevTools.ServiceConsole
                     throw new InvalidOperationException("不支持为该控件多次绑定服务！");
 
                 bindedService = (IHostedService)value;
-                lServiceName.Text = value.ServiceName;
+                lServiceName.Text = value.DisplayName;
                 bindedService.Faulted += bindedService_Faulted;
             }
         }
@@ -50,21 +49,21 @@ namespace ZDevTools.ServiceConsole
         private void bindedService_Faulted(object sender, EventArgs e)
         {
             if (InvokeRequired)
-                Invoke(new MethodInvoker(() => { updateServiceStatus(HostedServiceStatus.Stopped, true); }));
+                Invoke(new MethodInvoker(() => { UpdateServiceStatus(HostedServiceStatus.Stopped, true); }));
             else
-                updateServiceStatus(HostedServiceStatus.Stopped, true);
+                UpdateServiceStatus(HostedServiceStatus.Stopped, true);
         }
 
         public void Stop()
         {
-            if (ServiceHostStatus == HostedServiceStatus.Running)
+            if (HostedServiceStatus == HostedServiceStatus.Running)
             {
                 bOperation.PerformClick();
             }
         }
         public void Start()
         {
-            if (ServiceHostStatus == HostedServiceStatus.Stopped)
+            if (HostedServiceStatus == HostedServiceStatus.Stopped)
             {
                 bOperation.PerformClick();
             }
@@ -73,9 +72,12 @@ namespace ZDevTools.ServiceConsole
         /// <summary>
         /// 获取当前服务的执行状态名称
         /// </summary>
-        void updateServiceStatus(HostedServiceStatus serviceStatus, bool hasError = false)
+        protected void UpdateServiceStatus(HostedServiceStatus serviceStatus, bool hasError = false)
         {
-            this.ServiceHostStatus = serviceStatus;
+            if (serviceStatus == HostedServiceStatus)
+                return;
+
+            this.HostedServiceStatus = serviceStatus;
 
             string statusName;
             Color statusColor;
@@ -88,7 +90,7 @@ namespace ZDevTools.ServiceConsole
                     if (hasError)
                     {
                         statusName = "已停止，有错误";
-                        statusColor = Color.Yellow;
+                        statusColor = Color.Red;
                     }
                     else
                     {
@@ -100,7 +102,7 @@ namespace ZDevTools.ServiceConsole
                     break;
                 case HostedServiceStatus.Starting:
                     statusName = "正在启动";
-                    statusColor = Color.LightGreen;
+                    statusColor = Color.LimeGreen;
                     buttonText = "启动";
                     buttonEnabled = false;
                     break;
@@ -134,14 +136,14 @@ namespace ZDevTools.ServiceConsole
 
         private async void bOperation_Click(object sender, EventArgs e)
         {
-            switch (ServiceHostStatus)
+            switch (HostedServiceStatus)
             {
                 case HostedServiceStatus.Starting:
                 case HostedServiceStatus.Stopping:
                     break;
 
                 case HostedServiceStatus.Running:
-                    updateServiceStatus(HostedServiceStatus.Stopping);
+                    UpdateServiceStatus(HostedServiceStatus.Stopping);
                     try
                     {
                         await bindedService.StopAsync();
@@ -149,11 +151,13 @@ namespace ZDevTools.ServiceConsole
                     catch (Exception ex)
                     {
                         logError("停止服务时出错：" + ex.Message, ex);
+                        UpdateServiceStatus(HostedServiceStatus.Running, true);
+                        break;
                     }
-                    updateServiceStatus(HostedServiceStatus.Stopped);
+                    UpdateServiceStatus(HostedServiceStatus.Stopped);
                     break;
                 case HostedServiceStatus.Stopped:
-                    updateServiceStatus(HostedServiceStatus.Starting);
+                    UpdateServiceStatus(HostedServiceStatus.Starting);
                     try
                     {
                         await bindedService.StartAsync();
@@ -161,8 +165,10 @@ namespace ZDevTools.ServiceConsole
                     catch (Exception ex)
                     {
                         logError("启动服务时出错：" + ex.Message, ex);
+                        UpdateServiceStatus(HostedServiceStatus.Stopped, true);
+                        break;
                     }
-                    updateServiceStatus(HostedServiceStatus.Running);
+                    UpdateServiceStatus(HostedServiceStatus.Running);
                     break;
                 default:
                     break;
@@ -170,14 +176,16 @@ namespace ZDevTools.ServiceConsole
         }
 
 
-        public HostedServiceStatus ServiceHostStatus { get; private set; } = HostedServiceStatus.Stopped;
+        public HostedServiceStatus HostedServiceStatus { get; private set; } = HostedServiceStatus.Stopped;
 
-        public bool IsStopped => ServiceHostStatus == HostedServiceStatus.Stopped;
+        public bool IsStopped => HostedServiceStatus == HostedServiceStatus.Stopped;
 
         private void lServiceName_Click(object sender, EventArgs e)
         {
             this.Focus();
         }
+
+        public virtual void RefreshStatus() { }
     }
 
     public enum HostedServiceStatus

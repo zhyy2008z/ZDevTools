@@ -13,7 +13,7 @@ namespace ZDevTools.ServiceCore
     public abstract class HostedServiceBase : ServiceBase, IHostedService
     {
         static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(HostedServiceBase));
-        void logError(string message, Exception exception) => log.Error($"【{ServiceName}】{message}", exception);
+        void logError(string message, Exception exception) => log.Error($"【{DisplayName}】{message}", exception);
 
         Task jobTask;
         CancellationTokenSource source;

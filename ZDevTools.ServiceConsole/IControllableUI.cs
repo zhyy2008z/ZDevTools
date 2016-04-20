@@ -16,5 +16,7 @@ namespace ZDevTools.ServiceConsole
         bool IsStopped { get; }
 
         void Start();
+
+        void RefreshStatus();
     }
 }

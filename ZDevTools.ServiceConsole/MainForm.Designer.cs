@@ -32,13 +32,15 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.lbConsole = new System.Windows.Forms.ListBox();
             this.pDown = new System.Windows.Forms.Panel();
+            this.bInstall = new System.Windows.Forms.Button();
             this.bConfigOneKeyStart = new System.Windows.Forms.Button();
             this.bOneKeyStart = new System.Windows.Forms.Button();
             this.lService = new System.Windows.Forms.Label();
             this.bStopAll = new System.Windows.Forms.Button();
             this.niMain = new System.Windows.Forms.NotifyIcon(this.components);
             this.cms4Ni = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.退出ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiExit = new System.Windows.Forms.ToolStripMenuItem();
+            this.bRefreshStatus = new System.Windows.Forms.Button();
             this.pDown.SuspendLayout();
             this.cms4Ni.SuspendLayout();
             this.SuspendLayout();
@@ -63,6 +65,8 @@
             this.pDown.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.pDown.AutoScroll = true;
+            this.pDown.Controls.Add(this.bRefreshStatus);
+            this.pDown.Controls.Add(this.bInstall);
             this.pDown.Controls.Add(this.bConfigOneKeyStart);
             this.pDown.Controls.Add(this.bOneKeyStart);
             this.pDown.Controls.Add(this.lService);
@@ -71,6 +75,16 @@
             this.pDown.Name = "pDown";
             this.pDown.Size = new System.Drawing.Size(900, 330);
             this.pDown.TabIndex = 5;
+            // 
+            // bInstall
+            // 
+            this.bInstall.Location = new System.Drawing.Point(575, 9);
+            this.bInstall.Name = "bInstall";
+            this.bInstall.Size = new System.Drawing.Size(75, 23);
+            this.bInstall.TabIndex = 6;
+            this.bInstall.Text = "安装服务";
+            this.bInstall.UseVisualStyleBackColor = true;
+            this.bInstall.Click += new System.EventHandler(this.bInstall_Click);
             // 
             // bConfigOneKeyStart
             // 
@@ -124,16 +138,26 @@
             // cms4Ni
             // 
             this.cms4Ni.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.退出ToolStripMenuItem});
+            this.tsmiExit});
             this.cms4Ni.Name = "cms4Ni";
             this.cms4Ni.Size = new System.Drawing.Size(101, 26);
             // 
-            // 退出ToolStripMenuItem
+            // tsmiExit
             // 
-            this.退出ToolStripMenuItem.Name = "退出ToolStripMenuItem";
-            this.退出ToolStripMenuItem.Size = new System.Drawing.Size(100, 22);
-            this.退出ToolStripMenuItem.Text = "退出";
-            this.退出ToolStripMenuItem.Click += new System.EventHandler(this.退出ToolStripMenuItem_Click);
+            this.tsmiExit.Name = "tsmiExit";
+            this.tsmiExit.Size = new System.Drawing.Size(100, 22);
+            this.tsmiExit.Text = "退出";
+            this.tsmiExit.Click += new System.EventHandler(this.退出ToolStripMenuItem_Click);
+            // 
+            // bRefreshStatus
+            // 
+            this.bRefreshStatus.Location = new System.Drawing.Point(494, 9);
+            this.bRefreshStatus.Name = "bRefreshStatus";
+            this.bRefreshStatus.Size = new System.Drawing.Size(75, 23);
+            this.bRefreshStatus.TabIndex = 7;
+            this.bRefreshStatus.Text = "刷新状态";
+            this.bRefreshStatus.UseVisualStyleBackColor = true;
+            this.bRefreshStatus.Click += new System.EventHandler(this.bRefreshStatus_Click);
             // 
             // MainForm
             // 
@@ -161,10 +185,12 @@
         private System.Windows.Forms.Button bStopAll;
         private System.Windows.Forms.NotifyIcon niMain;
         private System.Windows.Forms.ContextMenuStrip cms4Ni;
-        private System.Windows.Forms.ToolStripMenuItem 退出ToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem tsmiExit;
         private System.Windows.Forms.Label lService;
         private System.Windows.Forms.Button bConfigOneKeyStart;
         private System.Windows.Forms.Button bOneKeyStart;
+        private System.Windows.Forms.Button bInstall;
+        private System.Windows.Forms.Button bRefreshStatus;
     }
 }
 

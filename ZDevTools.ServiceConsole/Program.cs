@@ -5,28 +5,44 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
+using ZDevTools.ServiceCore;
 
 namespace ZDevTools.ServiceConsole
 {
     static class Program
     {
-        static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(Program));
+        static log4net.ILog log;
 
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
+            if (args.Length == 2 && args[0] == "-Daemon")
+            {
+                var services = MainForm.GetServicesFromMef();
+
+                var service = (from s in services
+                               where s is WindowsServiceBase && s.ServiceName == args[1]
+                               select s).SingleOrDefault() as WindowsServiceBase;
+                if (service != null)
+                    System.ServiceProcess.ServiceBase.Run(service);
+            }
+            else
+            {
+                log4net.Config.XmlConfigurator.Configure();
+                log = log4net.LogManager.GetLogger(typeof(Program));
 #if !DEBUG
-            //设置UI线程异常不要被界面捕获，直接抛出
-            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
-            //处理所有异常
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+                //设置UI线程异常不要被界面捕获，直接抛出
+                Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
+                //处理所有异常
+                AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 #endif
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                Application.Run(new MainForm());
+            }
         }
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)

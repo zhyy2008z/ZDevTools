@@ -69,6 +69,7 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
@@ -88,6 +89,9 @@
     <Compile Include="ServiceErrorException.cs" />
     <Compile Include="ServiceReport.cs" />
     <Compile Include="WCFServiceBase.cs" />
+    <Compile Include="WindowsServiceBase.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

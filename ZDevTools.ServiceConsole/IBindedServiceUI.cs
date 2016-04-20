@@ -14,6 +14,6 @@ namespace ZDevTools.ServiceConsole
     {
         IServiceBase BindedService { get; set; }
 
-        string ServiceName { get; }
+        string DisplayName { get; }
     }
 }

@@ -20,15 +20,15 @@ namespace ZDevTools.ServiceConsole
     public partial class ScheduledServiceUI : UserControl, IBindedServiceUI, IConfigurableUI, IControllableUI
     {
         static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(ScheduledServiceUI));
-        void logInfo(string message) => log.Info($"【{ServiceName}】{message}");
-        void logError(string message) => log.Error($"【{ServiceName}】{message}");
+        void logInfo(string message) => log.Info($"【{DisplayName}】{message}");
+        void logError(string message) => log.Error($"【{DisplayName}】{message}");
 
         static readonly object Locker = new object();
 
         /// <summary>
         /// 服务名称
         /// </summary>
-        public string ServiceName { get { return lServiceName.Text; } }
+        public string DisplayName { get { return lServiceName.Text; } }
 
         /// <summary>
         /// 服务状态
@@ -61,7 +61,7 @@ namespace ZDevTools.ServiceConsole
                     throw new InvalidOperationException("不支持为该控件多次绑定服务！");
 
                 bindedService = (IScheduledService)value;
-                lServiceName.Text = value.ServiceName;
+                lServiceName.Text = value.DisplayName;
                 canbeCancelled = value is IServiceRevokable;
 
                 //处理资源占用问题
@@ -202,7 +202,7 @@ namespace ZDevTools.ServiceConsole
                     else
                     {
                         statusName = "等待运行";
-                        statusColor = Color.Gray;
+                        statusColor = Color.LimeGreen ;
                     }
                     buttonText = "停用";
                     operationEnabled = true;
@@ -401,6 +401,8 @@ namespace ZDevTools.ServiceConsole
             if (!isServiceEnabled)
                 bOperation.PerformClick();
         }
+
+        public void RefreshStatus() { }
     }
 
     public enum ScheduledServiceStatus

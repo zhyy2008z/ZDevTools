@@ -11,7 +11,7 @@
     <iconUrl>https://github.com/zhyy2008z/ZDevTools/noicon</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>增加服务报告本地历史记录功能</releaseNotes>
+    <releaseNotes>改进资源等待性能</releaseNotes>
     <copyright>Copyright 自由软件 2016</copyright>
     <tags>ServiceCore HostService</tags>
   </metadata>
