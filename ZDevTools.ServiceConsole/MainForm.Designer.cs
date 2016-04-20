@@ -78,6 +78,7 @@
             // 
             // bInstall
             // 
+            this.bInstall .Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.bInstall.Location = new System.Drawing.Point(575, 9);
             this.bInstall.Name = "bInstall";
             this.bInstall.Size = new System.Drawing.Size(75, 23);
@@ -151,6 +152,7 @@
             // 
             // bRefreshStatus
             // 
+            this.bRefreshStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.bRefreshStatus.Location = new System.Drawing.Point(494, 9);
             this.bRefreshStatus.Name = "bRefreshStatus";
             this.bRefreshStatus.Size = new System.Drawing.Size(75, 23);
