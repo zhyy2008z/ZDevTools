@@ -79,6 +79,10 @@ namespace ZDevTools.Data
     /// 
     /// 2016年4月14日 v3.7
     /// 1.新增支持设定隔离级别的BeginTransaction方法
+    /// 
+    /// 2016年4月28日 v3.8
+    /// 1.修正一个2.4版本就该解决的问题，value参数赋null值时导致提示"未提供该参数"错误
+    /// 
     /// </para>
     /// </summary>
     public class DbHelper<TConnection, TTransaction, TCommand, TDataReader, TParameter, TDataAdapter, TCommandBuilder> : IDisposable
@@ -153,7 +157,7 @@ namespace ZDevTools.Data
                 string paramName = parameters[j] as string;
                 if (paramName == null) throw new ArgumentException("参数填写有误，name应为字符串类型且name不能为null！");
                 paramNames[i] = paramName;
-                parama[i] = new TParameter() { ParameterName = paramName, Value = parameters[j + 1] };
+                parama[i] = new TParameter() { ParameterName = paramName, Value = parameters[j + 1] ?? DBNull.Value }; //v3.8 修正一个2.4版本就该解决的问题，value参数赋null值时导致提示"未提供该参数"错误
             }
 
             return parama;
