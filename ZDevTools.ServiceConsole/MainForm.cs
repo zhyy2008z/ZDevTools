@@ -73,13 +73,16 @@ namespace ZDevTools.ServiceConsole
             foreach (var service in services)
             {
                 Control ui = null;
-
-                if (service is ScheduledServiceBase)
+                if(service is IScheduledService)
                     ui = new ScheduledServiceUI();
-                else if (service is HostedServiceBase)
-                    ui = new HostedServiceUI();
-                else if (service is WindowsServiceBase)
-                    ui = new WindowsServiceUI();
+                else if(service is  IHostedService)
+                {
+                     if (service is WindowsServiceBase)
+                        ui = new WindowsServiceUI();
+                     else
+                        ui = new HostedServiceUI();
+                }
+          
 
                 if (ui == null)
                     continue;
