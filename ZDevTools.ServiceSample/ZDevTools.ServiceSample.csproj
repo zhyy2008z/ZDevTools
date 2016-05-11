@@ -12,6 +12,7 @@
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <WcfConfigValidationEnabled>True</WcfConfigValidationEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -43,6 +44,8 @@
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -56,11 +59,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\ISampleWCFService.cs" />
+    <Compile Include="Services\SampleHostedService.cs" />
     <Compile Include="Services\SampleScheduledService.cs" />
+    <Compile Include="Services\SampleWCFService.cs" />
     <Compile Include="Services\SampleWindowsService.cs">
       <SubType>Component</SubType>
     </Compile>
     <None Include="packages.config" />
+    <Content Include="ZDevTools.ServiceConsole.exe.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -73,8 +83,23 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>if not exist "$(TargetDir)services" md "$(TargetDir)services"
-copy "$(TargetPath)" "$(TargetDir)services\"</PostBuildEvent>
+    <PostBuildEvent>::复制服务dll到services目录下，便于壳程序识别服务
+if not exist "$(TargetDir)services" md "$(TargetDir)services"
+copy "$(TargetPath)" "$(TargetDir)services\"
+
+::用于生产环境时，请将下面的语句全部删除
+
+::判断壳程序是否已更新
+fc "$(SolutionDir)ZDevTools.ServiceConsole\bin\$(ConfigurationName)\ZDevTools.ServiceConsole.exe" "$(TargetDir)ZDevTools.ServiceConsole.exe"
+
+::如果已更新，替换壳程序为新版本
+if errorlevel 1 (
+copy "$(SolutionDir)ZDevTools.ServiceConsole\bin\$(ConfigurationName)\ZDevTools.ServiceConsole.exe" "$(TargetDir)"
+)</PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
