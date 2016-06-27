@@ -83,6 +83,9 @@ namespace ZDevTools.Data
     /// 2016年4月28日 v3.8
     /// 1.修正一个2.4版本就该解决的问题，value参数赋null值时导致提示"未提供该参数"错误
     /// 
+    /// 2016年6月27日 v4.0
+    /// 1.事务处理新增RollBack方法，允许用户在一个数据库DBHelper中途开启/提交/回滚事务，您不应当在各个方法的委托中调用BeginTransaction方法，因为事务由DBHelper隐式管理，可能造成DBCommand引发未绑定事务异常。
+    /// 
     /// </para>
     /// </summary>
     public class DbHelper<TConnection, TTransaction, TCommand, TDataReader, TParameter, TDataAdapter, TCommandBuilder> : IDisposable
@@ -103,11 +106,6 @@ namespace ZDevTools.Data
         /// 代表一个事务
         /// </summary>
         protected TTransaction Transaction { get; private set; }
-
-        /// <summary>
-        /// 事务是否已被提交
-        /// </summary>
-        protected bool IsCommitted { get; private set; } //v3.4 修改事务提交与回滚逻辑
 
         string connectionString;
 
@@ -271,6 +269,24 @@ namespace ZDevTools.Data
             conn.Open();
         }
 
+        void prepareConnectionForTransaction()
+        {
+            if (Transaction != null)
+                throw new InvalidOperationException("已开启事务，不能重复开启事务");
+
+            bool isClosed = getConnectionIsClosed();
+            if (isClosed)
+            {
+                configAndOpen();
+                manualOpen = true;
+            }
+        }
+
+        bool getConnectionIsClosed()
+        {
+            return conn == null || conn.State == ConnectionState.Closed;
+        }
+
         #endregion
 
         #region 实现接口方法
@@ -302,7 +318,7 @@ namespace ZDevTools.Data
         /// <summary>
         /// 手动打开连接并一直保持开启状态
         /// </summary>
-        /// <returns>返回对象本身，使用<see cref="IDisposable"/>接口</returns>
+        /// <returns>返回DBHelper对象本身，使用<see cref="IDisposable"/>接口</returns>
         public IDisposable Open() //v3.3 新的Open方法，不再自动开启事务
         {
             if (manualOpen) //v1.2 不允许连续两次打开连接，连续打开将导致连接失去控制，从而加速资源流失
@@ -315,10 +331,10 @@ namespace ZDevTools.Data
         /// <summary>
         /// 开启一个事务，提交事务请显式调用<see cref="Commit()"/>，否则事务无法提交。
         /// </summary>
-        /// <returns>返回对象本身，使用<see cref="IDisposable"/>接口</returns>
+        /// <returns>返回DBHelper对象本身，使用<see cref="IDisposable"/>接口</returns>
         public IDisposable BeginTransaction() //v3.3 原Open方法重命名为BeginTransaction方法
         {
-            Open();
+            prepareConnectionForTransaction();
             Transaction = (TTransaction)conn.BeginTransaction();
             return this;
         }
@@ -327,43 +343,49 @@ namespace ZDevTools.Data
         /// 开启一个事务，提交事务请显式调用<see cref="Commit()"/>，否则事务无法提交。
         /// </summary>
         /// <param name="isolationLevel">显式指定一个隔离级别</param>
-        /// <returns>返回对象本身，使用<see cref="IDisposable"/>接口</returns>
+        /// <returns>返回DBHelper对象本身，使用<see cref="IDisposable"/>接口</returns>
         public IDisposable BeginTransaction(IsolationLevel isolationLevel) //v3.7 新增支持设定隔离级别的BeginTransaction方法
         {
-            Open();
+            prepareConnectionForTransaction();
             Transaction = (TTransaction)conn.BeginTransaction(isolationLevel);
             return this;
         }
 
         /// <summary>
-        /// 提交事务，之后您还应当调用Close方法，以彻底释放事务并关闭连接
+        /// 提交事务，事务彻底关闭
         /// </summary>
         public void Commit()
         {
             if (Transaction == null)
                 throw new InvalidOperationException("没有开启事务，无法提交！");
 
-            if (IsCommitted) //v3.3 修正可能的重复提交问题
-                throw new InvalidOperationException("事务已提交，请勿重复提交！");
-
             Transaction.Commit();
-            IsCommitted = true;
+            Transaction.Dispose();
+            Transaction = null;
         }
+
+        /// <summary>
+        /// 回滚事务，事务彻底关闭
+        /// </summary>
+        public void RollBack() //v4.0 事务处理新增RollBack方法，允许用户在一个数据库DBHelper中途开启/提交/回滚事务，您不应当在各个方法的委托中调用BeginTransaction方法，因为事务由DBHelper隐式管理，可能造成DBCommand引发未绑定事务异常。
+        {
+            if (Transaction == null)
+                throw new InvalidOperationException("没有开启事务，无法回滚！");
+
+            Transaction.Rollback();
+            Transaction.Dispose();
+            Transaction = null;
+        }
+
 
         /// <summary>
         /// 如果您调用了<see cref="Open()"/>或<see cref="BeginTransaction()"/>方法，则必须调用此方法以释放连接
         /// </summary>
         public void Close()
         {
-            //处理事务
+            //处理事务，隐式回滚
             if (Transaction != null)
-            {
-                if (!IsCommitted)//如果未提交就回滚事务
-                    Transaction.Rollback();
-                Transaction.Dispose();
-                Transaction = null;
-                IsCommitted = false;
-            }
+                RollBack();
 
             //处理基础连接
             if (conn != null)
@@ -657,9 +679,7 @@ namespace ZDevTools.Data
         /// <param name="job">对Command操作的委托</param>
         public void Execute(Action<TCommand> job)//将需要做之事全部委托于此方法，此方法为job提供调用前及调用后做好维护服务
         {
-            if (IsCommitted)
-                throw new InvalidOperationException("对不起，事务已提交，您不能再使用本连接!请先关闭连接，然后再次开启事务处理！");
-            bool isClosed = conn == null || conn.State == ConnectionState.Closed; //v2.2 修正：不能嵌套调用查询方法的bug
+            bool isClosed = getConnectionIsClosed(); //v2.2 修正：不能嵌套调用查询方法的bug
             try
             {
                 if (isClosed)//根据当前连接状态自动配置和打开连接
@@ -687,9 +707,7 @@ namespace ZDevTools.Data
         //将需要做之事全部委托于此方法，此方法为job提供调用前及调用后做好维护服务
         //v3.6 新增保护方法Execute(Action<TConnection> job)，用于继承类实现特殊功能
         {
-            if (IsCommitted)
-                throw new InvalidOperationException("对不起，事务已提交，您不能再使用本连接!请先关闭连接，然后再次开启事务处理！");
-            bool isClosed = conn == null || conn.State == ConnectionState.Closed; //v2.2 修正：不能嵌套调用查询方法的bug
+            bool isClosed = getConnectionIsClosed(); //v2.2 修正：不能嵌套调用查询方法的bug
             try
             {
                 if (isClosed)//根据当前连接状态自动配置和打开连接

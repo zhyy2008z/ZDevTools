@@ -59,9 +59,6 @@ namespace ZDevTools.Data
             if (Transaction == null)
                 throw new InvalidOperationException("没有开启事务，不能回滚还原点！");
 
-            if (IsCommitted) //v3.3 修正可能的重复提交问题
-                throw new InvalidOperationException("事务已提交，不能回滚还原点！");
-
             Transaction.Rollback(pointName);
         }
 
@@ -72,9 +69,6 @@ namespace ZDevTools.Data
         {
             if (Transaction == null)
                 throw new InvalidOperationException("没有开启事务，不能保存还原点！");
-
-            if (IsCommitted) //v3.3 修正可能的重复提交问题
-                throw new InvalidOperationException("事务已提交，不能保存还原点！");
 
             Transaction.Save(pointName);
         }
