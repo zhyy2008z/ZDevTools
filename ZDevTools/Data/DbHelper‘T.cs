@@ -86,6 +86,9 @@ namespace ZDevTools.Data
     /// 2016年6月27日 v4.0
     /// 1.事务处理新增RollBack方法，允许用户在一个数据库DBHelper中途开启/提交/回滚事务，您不应当在各个方法的委托中调用BeginTransaction方法，因为事务由DBHelper隐式管理，可能造成DBCommand引发未绑定事务异常。
     /// 
+    /// 2016年9月14日 v4.1
+    /// 1.修改object[] parameters参数的处理方式为自动命名参数名称方式，参数自动名称示例：@p0,@p1,@p2,@p3...
+    /// 
     /// </para>
     /// </summary>
     public class DbHelper<TConnection, TTransaction, TCommand, TDataReader, TParameter, TDataAdapter, TCommandBuilder> : IDisposable
@@ -141,23 +144,19 @@ namespace ZDevTools.Data
             return parameters;
         }
 
-        static TParameter[] ConvertParameter(object[] parameters, out string[] paramNames)
+        static TParameter[] ConvertParameter(object[] parameters, out string[] paramNames) //改成按序数字占位符样式
         //v2.0 添加paramNames支持输出参数名称数组，以供进行其他处理
         {
-            if (parameters.Length % 2 != 0)
-                throw new ArgumentException("参数填写有误，name value数量不匹配！");
-            var length = parameters.Length / 2;
+            //v4.1 修改object[] parameters参数的处理方式为自动命名参数名称方式，参数自动名称示例：@p0,@p1,@p2,@p3...
+            var length = parameters.Length;
             paramNames = new string[length];
             TParameter[] parama = new TParameter[length];
             for (int i = 0; i < length; i++)
             {
-                var j = 2 * i;
-                string paramName = parameters[j] as string;
-                if (paramName == null) throw new ArgumentException("参数填写有误，name应为字符串类型且name不能为null！");
+                string paramName = "@p" + i;
                 paramNames[i] = paramName;
-                parama[i] = new TParameter() { ParameterName = paramName, Value = parameters[j + 1] ?? DBNull.Value }; //v3.8 修正一个2.4版本就该解决的问题，value参数赋null值时导致提示"未提供该参数"错误
+                parama[i] = new TParameter() { ParameterName = paramName, Value = parameters[i] ?? DBNull.Value }; //v3.8 修正一个2.4版本就该解决的问题，value参数赋null值时导致提示"未提供该参数"错误
             }
-
             return parama;
         }
 
@@ -289,7 +288,7 @@ namespace ZDevTools.Data
 
         #endregion
 
-        #region 实现接口方法
+        #region 对外公开方法
 
         #region 操作helper
         /// <summary>
@@ -465,7 +464,7 @@ namespace ZDevTools.Data
         /// </summary>
         /// <typeparam name="T">类型参数</typeparam>
         /// <param name="sql">sql语句</param>
-        /// <param name="parameters">参数，样例："p1",234,"p2",22,"p3",2342.324</param>
+        /// <param name="parameters">参数，sql语句对应索引位置名称为@p0,@p1,@p2...</param>
         public T GetScalar<T>(string sql, params object[] parameters)
         {
             T r = default(T);
@@ -557,7 +556,7 @@ namespace ZDevTools.Data
         /// 执行查询
         /// </summary>
         /// <param name="sql">查询字符串</param>
-        /// <param name="parameters">参数，样例："p1",234,"p2",22,"p3",2342.324</param>
+        /// <param name="parameters">参数，sql语句对应索引位置名称为@p0,@p1,@p2...</param>
         /// <returns></returns>
         public int Execute(string sql, params object[] parameters)
         {
@@ -645,7 +644,7 @@ namespace ZDevTools.Data
         /// </summary>
         /// <param name="sql">查询字符串</param>
         /// <param name="job">对Reader操作的委托</param>
-        /// <param name="parameters">参数，样例："p1",234,"p2",22,"p3",2342.324</param>
+        /// <param name="parameters">参数，sql语句对应索引位置名称为@p0,@p1,@p2...</param>
         public void Execute(string sql, Action<TDataReader> job, params object[] parameters)
         {
             Execute((TCommand cmd) =>
@@ -791,7 +790,7 @@ namespace ZDevTools.Data
         /// 获取数据集
         /// </summary>
         /// <param name="sql">查询字符串</param>
-        /// <param name="parameters">参数，样例："p1",234,"p2",22,"p3",2342.324</param>
+        /// <param name="parameters">参数，sql语句对应索引位置名称为@p0,@p1,@p2...</param>
         /// <returns></returns>
         public DataSet GetDataSet(string sql, params object[] parameters)
         {
@@ -915,7 +914,7 @@ namespace ZDevTools.Data
         /// 获取数据表
         /// </summary>
         /// <param name="sql">查询字符串</param>
-        /// <param name="parameters">参数，样例："p1",234,"p2",22,"p3",2342.324</param>
+        /// <param name="parameters">参数，sql语句对应索引位置名称为@p0,@p1,@p2...</param>
         /// <returns></returns>
         public DataTable GetDataTable(string sql, params object[] parameters)
         {
