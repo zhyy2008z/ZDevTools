@@ -3,14 +3,17 @@ using System.Data;
 using System.Data.Common;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
+using System.Collections;
+using System.Linq;
 
 namespace ZDevTools.Data
 {
     /// <summary>
     /// <para>数据库通用访问辅助类</para>
     /// <para>开发者：穿越中的逍遥</para>
-    /// <para>版本：3.5</para>
-    /// <para>日期：2016年1月20日</para>
+    /// <para>版本：4.2</para>
+    /// <para>日期：2016年10月31日</para>
     /// <para>简介：</para>
     /// <para>虽然是个辅助类，但是支持事务管理（仅单事务管理）。您可以通过继承或填充泛型参数直接操作其他类型的数据库，如Oracle、MySql等。</para>
     /// <para>本辅助类支持占位符，使用方法如下： //v3.1 增加占位符功能的描述</para>
@@ -19,6 +22,7 @@ namespace ZDevTools.Data
     /// <para>{insf}占位符，替换该占位符为 参数名1[...[,参数名n]] 形式</para>        
     /// <para>{insv}占位符，替换该占位符为 @参数名1[...[,@参数名n]] 形式</para>
     /// <para> {q\d+}占位符，当\d+代表的数字(num)大于0时用于开启查询(query)模式。在query模式下，{where}将仅使用前num个参数替换{where}占位符，用除前num个参数外的参数来替换剩余其他占位符。{q\d+}占位符可以放置于Sql语句的任何位置，该占位符最终被删除。</para>        
+    /// <para>{in:变量名}占位符，替换该占位符为 @变量名_0,@变量名_1,... </para>
     /// <para>使用提醒：本辅助类本身没有多线程同步机制，不保证线程安全！如若在多线程环境下使用，请君自己做好线程同步维护工作！</para>
     /// <para>历史记录</para>
     /// <para>
@@ -89,6 +93,9 @@ namespace ZDevTools.Data
     /// 2016年9月14日 v4.1
     /// 1.修改object[] parameters参数的处理方式为自动命名参数名称方式，参数自动名称示例：@p0,@p1,@p2,@p3...
     /// 
+    /// 2016年10月31日 v4.2
+    /// 1.增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+    /// 
     /// </para>
     /// </summary>
     public class DbHelper<TConnection, TTransaction, TCommand, TDataReader, TParameter, TDataAdapter, TCommandBuilder> : IDisposable
@@ -111,6 +118,11 @@ namespace ZDevTools.Data
         protected TTransaction Transaction { get; private set; }
 
         string connectionString;
+
+        /// <summary>
+        /// In语句自动变量前缀
+        /// </summary>
+        protected const string InStatementAutoVariablePrefix = "@__i_";
 
         #endregion
 
@@ -136,28 +148,86 @@ namespace ZDevTools.Data
         static TParameter[] ConvertParameter(TParameter[] parameters, out string[] paramNames)
         //v2.0 添加paramNames支持输出参数名称数组，以供进行其他处理
         {
-            var length = parameters.Length;
-            paramNames = new string[length];
-            for (int i = 0; i < length; i++)
-                paramNames[i] = parameters[i].ParameterName;
-
+            List<string> pns = new List<string>();
+            foreach (var item in parameters)
+            {
+                var pa = parameters[0].ParameterName;
+                pns.Add(pa);
+            }
+            paramNames = pns.ToArray();
             return parameters;
         }
 
-        static TParameter[] ConvertParameter(object[] parameters, out string[] paramNames) //改成按序数字占位符样式
+        /// <summary>
+        /// 转换公共参数为sqlserver支持的参数类型
+        /// </summary>
+        /// <param name="parameters">参数列表</param>
+        /// <param name="inParameters">In语句参数</param>
+        /// <param name="paramNames">输出的参数名数组</param>
+        /// <returns></returns>
+        static TParameter[] ConvertParameter(TParameter[] parameters, InParameters inParameters, out string[] paramNames) //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
         //v2.0 添加paramNames支持输出参数名称数组，以供进行其他处理
+        {
+            List<string> pns = new List<string>();
+            foreach (var item in parameters)
+            {
+                var pa = parameters[0].ParameterName;
+                pns.Add(pa);
+            }
+            paramNames = pns.ToArray();
+
+            var inPLength = inParameters.Parameters.Sum(p => p.Length);
+            TParameter[] retParameters = new TParameter[parameters.Length + inPLength];
+            parameters.CopyTo(retParameters, 0);
+            var pos = parameters.Length;
+            foreach (var inParams in inParameters.Parameters)
+            {
+                inParams.CopyTo(retParameters, pos);
+                pos += inParams.Length;
+            }
+            return retParameters;
+        }
+
+        static TParameter[] ConvertParameter(object[] parameters, out string[] paramNames, out InParameters inParameters) //改成按序数字占位符样式
+        //v2.0 添加paramNames支持输出参数名称数组，以供进行其他处理
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
         {
             //v4.1 修改object[] parameters参数的处理方式为自动命名参数名称方式，参数自动名称示例：@p0,@p1,@p2,@p3...
             var length = parameters.Length;
+
+            List<TParameter> parama = new List<TParameter>();
             paramNames = new string[length];
-            TParameter[] parama = new TParameter[length];
+
+            List<InParameter> inParams = new List<InParameter>();
+
             for (int i = 0; i < length; i++)
             {
-                string paramName = "@p" + i;
-                paramNames[i] = paramName;
-                parama[i] = new TParameter() { ParameterName = paramName, Value = parameters[i] ?? DBNull.Value }; //v3.8 修正一个2.4版本就该解决的问题，value参数赋null值时导致提示"未提供该参数"错误
+                var parameter = parameters[i];
+                var collection = parameter as ICollection;
+                if (collection != null) //线性化可枚举的参数
+                {
+                    int j = 0;
+                    TParameter[] paras = new TParameter[collection.Count];
+                    foreach (var element in collection)
+                    {
+                        var paramName = $"{InStatementAutoVariablePrefix}{i}_{j}";
+                        var param = new TParameter() { ParameterName = paramName, Value = element ?? DBNull.Value };
+                        paras[j] = param;
+                        parama.Add(param);//v3.8 修正一个2.4版本就该解决的问题，value参数赋null值时导致提示"未提供该参数"错误
+                        j++;
+                    }
+                    inParams.Add(new InParameter(i.ToString(), paras));
+                }
+                else
+                {
+                    var paramName = "@p" + i;
+                    parama.Add(new TParameter() { ParameterName = paramName, Value = parameter ?? DBNull.Value });//v3.8 修正一个2.4版本就该解决的问题，value参数赋null值时导致提示"未提供该参数"错误
+                    paramNames[i] = paramName;
+                }
             }
-            return parama;
+
+            inParameters = new InParameters(inParams.ToArray());
+            return parama.ToArray();
         }
 
         /// <summary>
@@ -165,11 +235,13 @@ namespace ZDevTools.Data
         /// </summary>
         /// <param name="sql">sql语句，语句中支持{update}|{where}|{insf}|{insv}|{q\d+}这样的占位符</param>
         /// <param name="paramNames">作为填充为占位符的基础数据</param>
+        /// <param name="inParameters">In语句参数，可以为null</param>
         /// <returns></returns>
-        static string buildSql(string sql, string[] paramNames)
+        static string buildSql(string sql, string[] paramNames, InParameters inParameters)
         //v2.0 重大升级，支持sql语句中包含{update}、{where}等类似的占位符，自动填充参数
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
         {
-            var matches = Regex.Matches(sql, @"\{update\}|\{where\}|\{insf\}|\{insv\}|\{q\d+\}"); //v3.1 修改正则表达式，使匹配速度更优
+            var matches = Regex.Matches(sql, @"\{update\}|\{where\}|\{insf\}|\{insv\}|\{in:\w+\}|\{q\d+\}"); //v3.1 修改正则表达式，使匹配速度更优
             int length = matches.Count;
             int queryCount = 0;
             for (int i = length - 1; i > -1; i--)
@@ -227,8 +299,24 @@ namespace ZDevTools.Data
                             sql = buildFromPattern(sql, paramNames, patternHead, patternBody, value, from, to);
                         }
                         break;
-                    default://仅剩{q\d+}这一种形式，删除之
-                        sql = sql.Replace(value, null);
+                    default:
+                        if (value.StartsWith("{in:"))
+                        {
+                            var name = value.Substring(4, value.Length - 5);
+                            var num = inParameters.InParameterDictionary[name];
+                            if (num > 0)
+                            {
+                                StringBuilder sb = new StringBuilder();
+                                sb.Append($"{InStatementAutoVariablePrefix}{name}_0");
+                                for (int j = 1; j < num; j++)
+                                    sb.Append($",{InStatementAutoVariablePrefix}{name}_{j}");
+                                sql = sql.Replace(value, sb.ToString());
+                            }
+                            else //in的数量为0，直接替换为空
+                                sql = sql.Replace(value, null);
+                        }
+                        else//仅剩{q\d+}这一种形式，删除之
+                            sql = sql.Replace(value, null);
                         break;
                 }
             }
@@ -245,9 +333,11 @@ namespace ZDevTools.Data
             if (to - from > 0)
             {
                 StringBuilder sb = new StringBuilder();
-                sb.Append(string.Format(patternHead, paramNames[from].TrimStart('@')));//v2.1 添加一个TrimStart处理，以兼容用户输入"@parametername"这样的参数名
+                if (paramNames[from] != null)
+                    sb.Append(string.Format(patternHead, paramNames[from].TrimStart('@')));//v2.1 添加一个TrimStart处理，以兼容用户输入"@parametername"这样的参数名
                 for (int i = from + 1; i < to; i++)
-                    sb.Append(string.Format(patternBody, paramNames[i].TrimStart('@')));//v2.1 添加一个TrimStart处理，以兼容用户输入"@parametername"这样的参数名
+                    if (paramNames[i] != null)
+                        sb.Append(string.Format(patternBody, paramNames[i].TrimStart('@')));//v2.1 添加一个TrimStart处理，以兼容用户输入"@parametername"这样的参数名
                 sql = sql.Replace(value, sb.ToString());
             }
             else
@@ -412,6 +502,35 @@ namespace ZDevTools.Data
         /// <param name="sql">sql语句</param>
         /// <param name="commandType">命令类型</param>
         /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        public T GetScalar<T>(string sql, CommandType commandType, InParameters inParameters, params TParameter[] parameters)//v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            T r = default(T);
+            Execute((TCommand cmd) =>
+            {
+                string[] paramNames;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                    cmd.CommandType = commandType;
+                    r = (T)cmd.ExecuteScalar();
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return r;
+        }
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <typeparam name="T">类型参数</typeparam>
+        /// <param name="sql">sql语句</param>
+        /// <param name="commandType">命令类型</param>
+        /// <param name="parameters">参数</param>
         public T GetScalar<T>(string sql, CommandType commandType, params TParameter[] parameters)
         {
             T r = default(T);
@@ -421,7 +540,7 @@ namespace ZDevTools.Data
                 cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames);
+                    cmd.CommandText = buildSql(sql, paramNames, null);
                     cmd.CommandType = commandType;
                     r = (T)cmd.ExecuteScalar();
                 }
@@ -448,7 +567,36 @@ namespace ZDevTools.Data
                 cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames);
+                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    r = (T)cmd.ExecuteScalar();
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return r;
+        }
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <typeparam name="T">类型参数</typeparam>
+        /// <param name="sql">sql语句</param>
+        /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        public T GetScalar<T>(string sql, InParameters inParameters, params TParameter[] parameters)
+        //v2.3 添加一个重载方法
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            T r = default(T);
+            Execute((TCommand cmd) =>
+            {
+                string[] paramNames;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
                     r = (T)cmd.ExecuteScalar();
                 }
                 finally
@@ -466,13 +614,15 @@ namespace ZDevTools.Data
         /// <param name="sql">sql语句</param>
         /// <param name="parameters">参数，sql语句对应索引位置名称为@p0,@p1,@p2...</param>
         public T GetScalar<T>(string sql, params object[] parameters)
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
         {
             T r = default(T);
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
-                cmd.CommandText = buildSql(sql, paramNames);
+                InParameters inParameters;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames, out inParameters));
+                cmd.CommandText = buildSql(sql, paramNames, inParameters);
                 r = (T)cmd.ExecuteScalar();
             });
             return r;
@@ -497,7 +647,6 @@ namespace ZDevTools.Data
         #endregion
 
         #region Execute
-
         /// <summary>
         /// 执行查询
         /// </summary>
@@ -514,7 +663,36 @@ namespace ZDevTools.Data
                 cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames);
+                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandType = commandType;
+                    affectedRowCount = cmd.ExecuteNonQuery();
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return affectedRowCount;
+        }
+
+        /// <summary>
+        /// 执行查询
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
+        /// <param name="commandType">命令类型</param>
+        /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        /// <returns></returns>
+        public int Execute(string sql, CommandType commandType, InParameters inParameters, params TParameter[] parameters)//v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            int affectedRowCount = 0;
+            Execute((TCommand cmd) =>
+            {
+                string[] paramNames;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
                     cmd.CommandType = commandType;
                     affectedRowCount = cmd.ExecuteNonQuery();
                 }
@@ -541,7 +719,36 @@ namespace ZDevTools.Data
                 cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames);
+                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    affectedRowCount = cmd.ExecuteNonQuery();
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return affectedRowCount;
+        }
+
+        /// <summary>
+        /// 执行查询
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
+        /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        /// <returns></returns>
+        public int Execute(string sql, InParameters inParameters, params TParameter[] parameters)
+        //v2.3 添加一个重载方法
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            int affectedRowCount = 0;
+            Execute((TCommand cmd) =>
+            {
+                string[] paramNames;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
                     affectedRowCount = cmd.ExecuteNonQuery();
                 }
                 finally
@@ -559,13 +766,15 @@ namespace ZDevTools.Data
         /// <param name="parameters">参数，sql语句对应索引位置名称为@p0,@p1,@p2...</param>
         /// <returns></returns>
         public int Execute(string sql, params object[] parameters)
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
         {
             int affectedRowCount = 0;
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
-                cmd.CommandText = buildSql(sql, paramNames);
+                InParameters inParameters;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames, out inParameters));
+                cmd.CommandText = buildSql(sql, paramNames, inParameters);
                 affectedRowCount = cmd.ExecuteNonQuery();
             });
             return affectedRowCount;
@@ -602,7 +811,36 @@ namespace ZDevTools.Data
                 cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames);
+                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandType = commandType;
+                    using (var reader = (TDataReader)cmd.ExecuteReader())
+                        job(reader);
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+        }
+
+        /// <summary>
+        /// 执行一个数据库操作，允许访问DataReader对象，reader对象自动销毁，不需要手动释放资源
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
+        /// <param name="job">对Reader操作的委托</param>
+        /// <param name="commandType">命令类型</param>
+        /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        public void Execute(string sql, CommandType commandType, Action<TDataReader> job, InParameters inParameters, params TParameter[] parameters)
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            Execute((TCommand cmd) =>
+            {
+                string[] paramNames;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
                     cmd.CommandType = commandType;
                     using (var reader = (TDataReader)cmd.ExecuteReader())
                         job(reader);
@@ -628,7 +866,35 @@ namespace ZDevTools.Data
                 cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames);
+                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    using (var reader = (TDataReader)cmd.ExecuteReader())
+                        job(reader);
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+        }
+
+        /// <summary>
+        /// 执行一个数据库操作，允许访问DataReader对象，reader对象自动销毁，不需要手动释放资源
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
+        /// <param name="job">对Reader操作的委托</param>
+        /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        public void Execute(string sql, Action<TDataReader> job, InParameters inParameters, params TParameter[] parameters)
+        //v2.3 添加一个重载方法
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            Execute((TCommand cmd) =>
+            {
+                string[] paramNames;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
                     using (var reader = (TDataReader)cmd.ExecuteReader())
                         job(reader);
                 }
@@ -646,12 +912,14 @@ namespace ZDevTools.Data
         /// <param name="job">对Reader操作的委托</param>
         /// <param name="parameters">参数，sql语句对应索引位置名称为@p0,@p1,@p2...</param>
         public void Execute(string sql, Action<TDataReader> job, params object[] parameters)
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
         {
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
-                cmd.CommandText = buildSql(sql, paramNames);
+                InParameters inParameters;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames, out inParameters));
+                cmd.CommandText = buildSql(sql, paramNames, inParameters);
                 using (var reader = (TDataReader)cmd.ExecuteReader())
                     job(reader);
             });
@@ -740,7 +1008,41 @@ namespace ZDevTools.Data
                 cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames);
+                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandType = commandType;
+                    using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
+                    {
+                        dataSet = new DataSet();
+                        adapter.Fill(dataSet);
+                    }
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return dataSet;
+        }
+
+        /// <summary>
+        /// 获取数据集
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
+        /// <param name="commandType">命令类型</param>
+        /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        /// <returns></returns>
+        public DataSet GetDataSet(string sql, CommandType commandType, InParameters inParameters, params TParameter[] parameters)
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            DataSet dataSet = null;
+            Execute((TCommand cmd) =>
+            {
+                string[] paramNames;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
                     cmd.CommandType = commandType;
                     using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
                     {
@@ -771,7 +1073,40 @@ namespace ZDevTools.Data
                 cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames);
+                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
+                    {
+                        dataSet = new DataSet();
+                        adapter.Fill(dataSet);
+                    }
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return dataSet;
+        }
+
+        /// <summary>
+        /// 获取数据集
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
+        /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        /// <returns></returns>
+        public DataSet GetDataSet(string sql, InParameters inParameters, params TParameter[] parameters)
+        //v2.3 添加一个重载方法
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            DataSet dataSet = null;
+            Execute((TCommand cmd) =>
+            {
+                string[] paramNames;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, paramNames, null);
                     using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
                     {
                         dataSet = new DataSet();
@@ -793,13 +1128,15 @@ namespace ZDevTools.Data
         /// <param name="parameters">参数，sql语句对应索引位置名称为@p0,@p1,@p2...</param>
         /// <returns></returns>
         public DataSet GetDataSet(string sql, params object[] parameters)
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
         {
             DataSet dataSet = null;
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
-                cmd.CommandText = buildSql(sql, paramNames);
+                InParameters inParameters;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames, out inParameters));
+                cmd.CommandText = buildSql(sql, paramNames, inParameters);
                 using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
                 {
                     dataSet = new DataSet();
@@ -864,7 +1201,41 @@ namespace ZDevTools.Data
                 cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames);
+                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandType = commandType;
+                    using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
+                    {
+                        dataTable = new DataTable();
+                        adapter.Fill(dataTable);
+                    }
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return dataTable;
+        }
+
+        /// <summary>
+        /// 获取数据表
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
+        /// <param name="commandType">命令类型</param>
+        /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        /// <returns></returns>
+        public DataTable GetDataTable(string sql, CommandType commandType, InParameters inParameters, params TParameter[] parameters)
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            DataTable dataTable = null;
+            Execute((TCommand cmd) =>
+            {
+                string[] paramNames;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
                     cmd.CommandType = commandType;
                     using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
                     {
@@ -895,7 +1266,40 @@ namespace ZDevTools.Data
                 cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames);
+                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
+                    {
+                        dataTable = new DataTable();
+                        adapter.Fill(dataTable);
+                    }
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return dataTable;
+        }
+
+        /// <summary>
+        /// 获取数据表
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
+        /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        /// <returns></returns>
+        public DataTable GetDataTable(string sql, InParameters inParameters, params TParameter[] parameters)
+        //v2.3 添加一个重载方法
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            DataTable dataTable = null;
+            Execute((TCommand cmd) =>
+            {
+                string[] paramNames;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
                     using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
                     {
                         dataTable = new DataTable();
@@ -917,13 +1321,15 @@ namespace ZDevTools.Data
         /// <param name="parameters">参数，sql语句对应索引位置名称为@p0,@p1,@p2...</param>
         /// <returns></returns>
         public DataTable GetDataTable(string sql, params object[] parameters)
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
         {
             DataTable dataTable = null;
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
-                cmd.CommandText = buildSql(sql, paramNames);
+                InParameters inParameters;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames, out inParameters));
+                cmd.CommandText = buildSql(sql, paramNames, inParameters);
                 using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
                 {
                     dataTable = new DataTable();
@@ -1032,6 +1438,151 @@ namespace ZDevTools.Data
             parameter.Size = size;
             parameter.Value = value ?? DBNull.Value;//v2.4 当为CreateParameter函数的value参数赋null值时导致提示"未提供该参数"错误
             return parameter;
+        }
+
+        /// <summary>
+        /// In语句参数
+        /// </summary>
+        public class InParameters
+        {
+            /// <summary>
+            /// 初始化一个In语句参数
+            /// </summary>
+            /// <param name="inParameters">要操作的In语句参数们</param>
+            public InParameters(InParameter[] inParameters)
+            {
+                //此处假设inParameters不可能为null
+                this.InParameterDictionary = new Dictionary<string, int>();
+
+                var lenth = inParameters.Length;
+                this.Parameters = new TParameter[lenth][];
+                for (int i = 0; i < lenth; i++)
+                {
+                    var inParam = inParameters[i];
+                    InParameterDictionary.Add(inParam.Name, inParam.Parameters.Length);
+                    this.Parameters[i] = inParam.Parameters;
+                }
+            }
+
+
+            /// <summary>
+            /// In语句参数字典(参数名，参数个数)
+            /// </summary>
+            public Dictionary<string, int> InParameterDictionary { get; }
+
+            /// <summary>
+            /// 定义的参数们
+            /// </summary>
+            public TParameter[][] Parameters { get; }
+        }
+
+        /// <summary>
+        /// 单个In语句参数
+        /// </summary>
+        public class InParameter
+        {
+            /// <summary>
+            /// 初始化一个In语句参数
+            /// </summary>
+            /// <param name="name">参数名</param>
+            /// <param name="parameters">参数对象</param>
+            public InParameter(string name, TParameter[] parameters)
+            {
+                if (string.IsNullOrEmpty(name))
+                    throw new ArgumentException("参数名不能为空");
+                if (parameters == null || parameters.Length == 0)
+                    throw new ArgumentException("参数不能为空");
+
+                this.Name = name;
+                this.Parameters = parameters;
+            }
+
+            /// <summary>
+            /// 参数名
+            /// </summary>
+            public string Name { get; }
+
+            /// <summary>
+            /// 参数对象
+            /// </summary>
+            public TParameter[] Parameters { get; }
+        }
+
+        /// <summary>
+        /// 创建为In语句赋值的可枚举参数
+        /// </summary>
+        /// <param name="name">参数名称</param>
+        /// <param name="values">参数值</param>
+        /// <returns></returns>
+        public InParameter CreateInParameter(string name, params object[] values)
+        {
+            TParameter[] parameters = new TParameter[values.Length];
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                var parameter = new TParameter();
+                parameter.ParameterName = $"{InStatementAutoVariablePrefix}{name}_{i}";
+                parameter.Value = values[i] ?? DBNull.Value;
+                parameters[i] = parameter;
+            }
+
+            return new InParameter(name, parameters);
+        }
+
+        /// <summary>
+        /// 创建为In语句赋值的可枚举参数
+        /// </summary>
+        /// <param name="name">参数名称</param>
+        /// <param name="values">参数值</param>
+        /// <param name="dbType">参数类型</param>
+        public InParameter CreateInParameter(string name, DbType dbType, params object[] values)
+        {
+            TParameter[] parameters = new TParameter[values.Length];
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                var parameter = new TParameter();
+                parameter.ParameterName = $"{InStatementAutoVariablePrefix}{name}_{i}";
+                parameter.DbType = dbType;
+                parameter.Value = values[i] ?? DBNull.Value;
+                parameters[i] = parameter;
+            }
+
+            return new InParameter(name, parameters);
+        }
+
+        /// <summary>
+        /// 创建为In语句赋值的可枚举参数
+        /// </summary>
+        /// <param name="name">参数名</param>
+        /// <param name="values">参数值</param>
+        /// <param name="dbType">参数类型</param>
+        /// <param name="size">参数大小</param>
+        public InParameter CreateInParameter(string name, DbType dbType, int size, params object[] values)
+        {
+            TParameter[] parameters = new TParameter[values.Length];
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                var parameter = new TParameter();
+                parameter.ParameterName = $"{InStatementAutoVariablePrefix}{name}_{i}";
+                parameter.DbType = dbType;
+                parameter.Size = size;
+                parameter.Value = values[i] ?? DBNull.Value;
+                parameters[i] = parameter;
+            }
+
+            return new InParameter(name, parameters);
+        }
+
+        /// <summary>
+        /// 创建一个In语句参数数组对象
+        /// </summary>
+        /// <param name="inParameters">In语句参数数组</param>
+        /// <returns></returns>
+        public InParameters CreateInParameters(params InParameter[] inParameters)
+        {
+            return new InParameters(inParameters);
         }
         #endregion
 

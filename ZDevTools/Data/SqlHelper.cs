@@ -3,6 +3,7 @@ using System.Data.SqlClient;
 using System.Data;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
 namespace ZDevTools.Data
 {
@@ -50,6 +51,49 @@ namespace ZDevTools.Data
             parameter.Value = value ?? DBNull.Value;//v2.4 当为CreateParameter函数的value参数赋null值时导致提示"未提供该参数"错误
             return parameter;
         }
+
+        /// <summary>
+        /// 创建为In语句赋值的可枚举参数
+        /// </summary>
+        /// <param name="name">参数名称</param>
+        /// <param name="values">参数值</param>
+        /// <param name="sqlDbType">参数类型</param>
+        public InParameter CreateInParameter(string name, SqlDbType sqlDbType,params object[] values)
+        {
+            SqlParameter[] parameters = new SqlParameter[values.Length];
+            for (int i = 0; i < values.Length; i++)
+            {
+                var parameter = new SqlParameter();
+                parameter.ParameterName = $"{InStatementAutoVariablePrefix}{name}_{i}";
+                parameter.SqlDbType = sqlDbType;
+                parameter.Value = values[i] ?? DBNull.Value;
+                parameters[i] = parameter;
+            }
+            return new InParameter(name, parameters);
+        }
+
+        /// <summary>
+        /// 创建为In语句赋值的可枚举参数
+        /// </summary>
+        /// <param name="name">参数名</param>
+        /// <param name="values">参数值</param>
+        /// <param name="sqlDbType">参数类型</param>
+        /// <param name="size">参数大小</param>
+        public InParameter CreateInParameter(string name, SqlDbType sqlDbType, int size, params object[] values)
+        {
+            SqlParameter[] parameters = new SqlParameter[values.Length];
+            for (int i = 0; i < values.Length; i++)
+            {
+                var parameter = new SqlParameter();
+                parameter.ParameterName = $"{InStatementAutoVariablePrefix}{name}_{i}";
+                parameter.SqlDbType = sqlDbType;
+                parameter.Size = size;
+                parameter.Value = values[i] ?? DBNull.Value;
+                parameters[i] = parameter;
+            }
+            return new InParameter(name, parameters);
+        }
+
 
         /// <summary>
         /// 还原到保存的事务点
