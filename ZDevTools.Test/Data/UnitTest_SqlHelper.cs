@@ -49,6 +49,12 @@ namespace ZDevTools.Test.Data
         }
 
         [TestMethod]
+        public void GetScalar2()
+        {
+            Assert.IsTrue(h.GetScalar<int>("select count(*) from books where {where}", h.CreateParameter("bookcategory", SqlDbType.Int, 3)) > 0);
+        }
+
+        [TestMethod]
         public void ExecuteReader1()
         {
             List<Book> books = new List<Data.Book>();
@@ -124,10 +130,56 @@ namespace ZDevTools.Test.Data
             Assert.IsTrue(bookCategories.Count > 0);
         }
 
+
+        [TestMethod]
+        public void ExecuteReader4() //嵌套Reader，连接字符串需设置MultipleActiveResultSets=true
+        {
+            List<BookCategory> bookCategories = new List<BookCategory>();
+            List<Book> books = new List<Data.Book>();
+
+            h.Execute("select * from bookcategories", reader =>
+            {
+                while (reader.Read())
+                {
+                    var bookCategory = new BookCategory();
+                    bookCategory.Id = reader.GetInt32(0);
+                    bookCategory.CategoryName = reader.IsDBNull(1) ? null : reader.GetString(1);
+
+                    h.Execute("select * from books where bookcategory=@id", reader2 =>
+                    {
+                        while (reader2.Read())
+                        {
+                            var book = new Book();
+                            book.Id = reader2.GetInt32(0);
+                            book.BookName = reader2.IsDBNull(1) ? null : reader2.GetString(1);
+                            book.BookPages = reader2.IsDBNull(2) ? null : (int?)reader2.GetInt32(2);
+                            book.BookCategory = reader2.IsDBNull(3) ? null : (int?)reader2.GetInt32(3);
+                            books.Add(book);
+                            bookCategory.Books.Add(book);
+                        }
+                    }, h.CreateParameter("@id", bookCategory.Id));
+
+                    bookCategories.Add(bookCategory);
+                }
+            });
+
+            foreach (var bookCategory in bookCategories)
+            {
+                Console.WriteLine("类别名称：" + bookCategory.CategoryName);
+            }
+
+            foreach (var book in books)
+            {
+                Console.WriteLine("书名：" + book.BookName);
+            }
+
+            Assert.IsTrue(bookCategories.Count > 0 && books.Count > 0);
+        }
+
         [TestMethod]
         public void GetDataTable()
         {
-            var datatable = h.GetDataTable("select * from books where bookcategory in ({in:0})", new int[] { 1 ,3});
+            var datatable = h.GetDataTable("select * from books where bookcategory in ({in:0})", new int[] { 1, 3 });
 
             foreach (DataRow row in datatable.Rows)
             {
