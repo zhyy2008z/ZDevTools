@@ -11,8 +11,8 @@
     <iconUrl>https://github.com/zhyy2008z/ZDevTools/noicon</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>DBHelper增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持，为SqlHelper增加测试项目及用例</releaseNotes>
-    <copyright>Copyright 自由软件 2016</copyright>
+    <releaseNotes>新增TreeNode树结构类型及算法</releaseNotes>
+    <copyright>Copyright 自由软件 2017</copyright>
     <tags>SqlHelper AutoComplete</tags>
   </metadata>
 </package>
