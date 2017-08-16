@@ -104,9 +104,6 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 当前节点及子节点中是否包含具有指定Id的节点
         /// </summary>
-        /// <typeparam name="TTreeNode"></typeparam>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="node"></param>
         /// <param name="id"></param>
         /// <returns></returns>
         public bool Contains(TKey id)
@@ -130,9 +127,6 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 在当前节点及子节点中查找具有指定Id的节点
         /// </summary>
-        /// <typeparam name="TTreeNode"></typeparam>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="node"></param>
         /// <param name="id"></param>
         /// <returns></returns>
         public TTreeNode Find(TKey id)

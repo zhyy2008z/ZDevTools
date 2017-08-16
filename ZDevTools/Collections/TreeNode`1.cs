@@ -90,7 +90,6 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 在当前节点及其所有子节点中查找所有符合断言的节点
         /// </summary>
-        /// <param name="menuItem"></param>
         /// <param name="predicate"></param>
         /// <returns></returns>
         public List<T> FindAll(Func<T, bool> predicate)
@@ -113,7 +112,6 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 查找第一个发现的可以通过断言的节点
         /// </summary>
-        /// <param name="node"></param>
         /// <param name="predicate"></param>
         /// <returns></returns>
         public T Find(Func<T, bool> predicate)
@@ -139,7 +137,6 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 当前节点及其子节点是否包含能够通过断言的节点
         /// </summary>
-        /// <param name="node"></param>
         /// <param name="predicate"></param>
         /// <returns></returns>
         public bool Contains(Func<T, bool> predicate)
