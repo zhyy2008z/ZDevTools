@@ -1,12 +1,11 @@
 ﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ZDevTools.Data;
 using System.Collections.Generic;
 using System.Data;
+using Xunit;
 
 namespace ZDevTools.Test.Data
 {
-    [TestClass]
     public class UnitTest_SqlHelper
     {
         SqlHelper h = GetSqlhelper();
@@ -17,21 +16,19 @@ namespace ZDevTools.Test.Data
             return new SqlHelper("server=(localdb)\\MSSqllocaldb;AttachDbFilename=|DataDirectory|\\Data\\datadb.mdf;MultipleActiveResultSets=true;Integrated Security=true;");
         }
 
-
-        [TestMethod]
+        [Fact]
         public void New()
         {
-            Assert.IsInstanceOfType(h, typeof(SqlHelper));
+            Assert.IsType<SqlHelper>(h);
         }
 
-        [TestMethod]
+        [Fact]
         public void Execute1()
         {
-
             h.Execute("select count(*) from Books");
         }
 
-        [TestMethod]
+        [Fact]
         public void Execute2()
         {
             var random = new Random();
@@ -39,22 +36,22 @@ namespace ZDevTools.Test.Data
 
             h.Execute($"update books set bookpages=@p1 where id= @p0", 1, pages);
 
-            Assert.IsTrue(h.GetScalar<int>("select bookpages from books where id=@p0", 1) == pages);
+            Assert.True(h.GetScalar<int>("select bookpages from books where id=@p0", 1) == pages);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetScalar1()
         {
-            Assert.IsTrue(h.GetScalar<int>("select count(*) from Books") > 0);
+            Assert.True(h.GetScalar<int>("select count(*) from Books") > 0);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetScalar2()
         {
-            Assert.IsTrue(h.GetScalar<int>("select count(*) from books where {where}", h.CreateParameter("bookcategory", SqlDbType.Int, 3)) > 0);
+            Assert.True(h.GetScalar<int>("select count(*) from books where {where}", h.CreateParameter("bookcategory", SqlDbType.Int, 3)) > 0);
         }
 
-        [TestMethod]
+        [Fact]
         public void ExecuteReader1()
         {
             List<Book> books = new List<Data.Book>();
@@ -77,10 +74,10 @@ namespace ZDevTools.Test.Data
                 Console.WriteLine("书名：" + book.BookName);
             }
 
-            Assert.IsTrue(books.Count > 0);
+            Assert.True(books.Count > 0);
         }
 
-        [TestMethod]
+        [Fact]
         public void ExecuteReader2()
         {
             List<Book> books = new List<Data.Book>();
@@ -103,10 +100,10 @@ namespace ZDevTools.Test.Data
                 Console.WriteLine("书名：" + book.BookName);
             }
 
-            Assert.IsTrue(books.Count > 0);
+            Assert.True(books.Count > 0);
         }
 
-        [TestMethod]
+        [Fact]
         public void ExecuteReader3()
         {
             List<BookCategory> bookCategories = new List<BookCategory>();
@@ -127,11 +124,11 @@ namespace ZDevTools.Test.Data
                 Console.WriteLine("类别名称：" + bookCategory.CategoryName);
             }
 
-            Assert.IsTrue(bookCategories.Count > 0);
+            Assert.True(bookCategories.Count > 0);
         }
 
 
-        [TestMethod]
+        [Fact]
         public void ExecuteReader4() //嵌套Reader，连接字符串需设置MultipleActiveResultSets=true
         {
             List<BookCategory> bookCategories = new List<BookCategory>();
@@ -173,10 +170,10 @@ namespace ZDevTools.Test.Data
                 Console.WriteLine("书名：" + book.BookName);
             }
 
-            Assert.IsTrue(bookCategories.Count > 0 && books.Count > 0);
+            Assert.True(bookCategories.Count > 0 && books.Count > 0);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetDataTable()
         {
             var datatable = h.GetDataTable("select * from books where bookcategory in ({in:0})", new int[] { 1, 3 });
@@ -186,10 +183,10 @@ namespace ZDevTools.Test.Data
                 Console.WriteLine("书名：" + row[1]);
             }
 
-            Assert.IsTrue(datatable.Rows.Count > 0);
+            Assert.True(datatable.Rows.Count > 0);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetDataset()
         {
             var dataset = h.GetDataSet("select * from books where {where}", h.CreateParameter("@id", 3));
@@ -199,8 +196,7 @@ namespace ZDevTools.Test.Data
                 Console.WriteLine("书名：" + row[1]);
             }
 
-            Assert.IsTrue(dataset.Tables[0].Rows.Count > 0);
+            Assert.True(dataset.Tables[0].Rows.Count > 0);
         }
-
     }
 }
