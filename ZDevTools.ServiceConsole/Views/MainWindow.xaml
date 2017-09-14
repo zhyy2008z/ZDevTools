@@ -1,0 +1,100 @@
+﻿<Window x:Class="ZDevTools.ServiceConsole.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ZDevTools.ServiceConsole"
+        xmlns:prism="http://prismlibrary.com/"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+        xmlns:vm="clr-namespace:ZDevTools.ServiceConsole.ViewModels"
+        xmlns:v="clr-namespace:ZDevTools.ServiceConsole.Views"
+        xmlns:cvt="clr-namespace:ZDevTools.ServiceConsole.Converters"
+        prism:ViewModelLocator.AutoWireViewModel="True"
+        mc:Ignorable="d"
+        Title="{Binding Title}"
+        Height="471.869"
+        Width="921.639"
+        Closing="Window_Closing"
+        Closed="Window_Closed"
+        Icon="../server.ico"
+        WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition></RowDefinition>
+            <RowDefinition Height="28"></RowDefinition>
+            <RowDefinition  MaxHeight="400"
+                            Height="2*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <ListBox ItemsSource="{Binding Messages}"
+                 SelectedItem="{Binding SelectedMessage}">
+            <ListBox.InputBindings>
+                <KeyBinding Key="C"
+                            Modifiers="Ctrl"
+                            Command="{Binding CopyMessageCommand}"></KeyBinding>
+            </ListBox.InputBindings>
+            <ListBox.Resources>
+                <cvt:LogLevelBrushConverter x:Key="LogLevelBrushConverter"></cvt:LogLevelBrushConverter>
+            </ListBox.Resources>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Content}"
+                               Foreground="{Binding Level, Converter={StaticResource LogLevelBrushConverter}}"></TextBlock>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250"></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="全部服务"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"></TextBlock>
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+                <StackPanel.Resources>
+                    <Style TargetType="Button">
+                        <Setter Property="Width"
+                                Value="70"></Setter>
+                        <Setter Property="Height"
+                                Value="23"></Setter>
+                        <Setter Property="Margin"
+                                Value="3,0"></Setter>
+                    </Style>
+                    <cvt:BooleanVisibilityConverter x:Key="BooleanVisibilityConverter"></cvt:BooleanVisibilityConverter>
+                </StackPanel.Resources>
+                <Button Command="{Binding RefreshStatusCommand}"
+                        Visibility="{Binding ShowRefreshButton,Converter={StaticResource BooleanVisibilityConverter}}">刷新状态</Button>
+                <Button Visibility="{Binding ShowInstallButton,Converter={StaticResource BooleanVisibilityConverter}}"
+                        Content="{Binding InstallButtonText}"
+                        Command="{Binding InstallCommand}"></Button>
+                <Button Command="{Binding ConfigOneKeyStartCommand}">设置</Button>
+                <Button Command="{Binding DoOneKeyStartCommand}">一键启动</Button>
+                <Button Command="{Binding StopAllCommand}">全部停用</Button>
+            </StackPanel>
+        </Grid>
+        <ScrollViewer Grid.Row="2"
+                      VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding ServiceViewModels}">
+                <ItemsControl.Resources>
+                    <DataTemplate DataType="{x:Type vm:WindowsServiceUIViewModel}">
+                        <v:WindowsServiceUI></v:WindowsServiceUI>
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type vm:ScheduledServiceUIViewModel}">
+                        <v:ScheduledServiceUI></v:ScheduledServiceUI>
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type vm:HostedServiceUIViewModel}">
+                        <v:HostedServiceUI></v:HostedServiceUI>
+                    </DataTemplate>
+                </ItemsControl.Resources>
+                <ItemsControl.ItemContainerStyle>
+                    <Style TargetType="ContentPresenter">
+                        <Setter Property="Margin"
+                                Value="0,5"></Setter>
+                    </Style>
+                </ItemsControl.ItemContainerStyle>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</Window>

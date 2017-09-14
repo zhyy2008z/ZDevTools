@@ -1,47 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.ComponentModel.Composition;
-using System.ComponentModel.Composition.Hosting;
-using ZDevTools.ServiceCore;
+using System.Windows;
 
 namespace ZDevTools.ServiceConsole
 {
-    static class Program
-    {
-        static log4net.ILog log;
+    using ServiceCore;
+    using ViewModels;
 
-        /// <summary>
-        /// The main entry point for the application.
-        /// </summary>
+    class Program
+    {
+        static log4net.ILog _log;
+
+
         [STAThread]
         static void Main(string[] args)
         {
             if (args.Length == 2 && args[0] == "-Daemon")
             {
-                var services = MainForm.GetServicesFromMef();
+                var services = MainWindowViewModel.GetServicesFromMef();
 
-                var service = (from s in services
-                               where s is WindowsServiceBase && s.ServiceName == args[1]
-                               select s).SingleOrDefault() as WindowsServiceBase;
-                if (service != null)
+                if ((from s in services
+                     where s is WindowsServiceBase && s.ServiceName == args[1]
+                     select s).SingleOrDefault() is WindowsServiceBase service)
                     System.ServiceProcess.ServiceBase.Run(service);
             }
             else
             {
                 log4net.Config.XmlConfigurator.Configure();
-                log = log4net.LogManager.GetLogger(typeof(Program));
+                _log = log4net.LogManager.GetLogger(typeof(Program));
+
 #if !DEBUG
-                //设置UI线程异常不要被界面捕获，直接抛出
-                Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
                 //处理所有异常
                 AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 #endif
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
-                Application.Run(new MainForm());
+
+                App.Main();
             }
         }
 
@@ -53,14 +49,14 @@ namespace ZDevTools.ServiceConsole
         private static void handleException(object exception)
         {
             if (exception == null)
-                log.Fatal("！v！<发生异常，但异常对象为空>！v！");
+                _log.Fatal("！v！<发生异常，但异常对象为空>！v！");
             else
             {
                 var except = exception as Exception;
                 if (except == null)
-                    log.Fatal($"！v！<未知类型的异常:{exception}>！v！");
+                    _log.Fatal($"！v！<未知类型的异常:{exception}>！v！");
                 else
-                    log.Fatal("！v！<未捕获的异常>！v！", except);
+                    _log.Fatal("！v！<未捕获的异常>！v！", except);
             }
         }
     }

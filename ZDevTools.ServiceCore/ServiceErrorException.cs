@@ -10,7 +10,7 @@ namespace ZDevTools.ServiceCore
     /// 服务错误异常
     /// </summary>
     [Serializable]
-    class ServiceErrorException : Exception
+    public class ServiceErrorException : Exception
     {
         /// <summary>
         /// 初始化一个异常

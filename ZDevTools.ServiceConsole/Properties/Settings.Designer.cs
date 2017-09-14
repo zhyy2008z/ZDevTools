@@ -40,5 +40,23 @@ namespace ZDevTools.ServiceConsole.Properties {
                 return ((int)(this["ServiceWaitTimeOut"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string AutoUpdateUri {
+            get {
+                return ((string)(this["AutoUpdateUri"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("600")]
+        public int AutoUpdateInterval {
+            get {
+                return ((int)(this["AutoUpdateInterval"]));
+            }
+        }
     }
 }

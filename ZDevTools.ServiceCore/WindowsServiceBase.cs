@@ -18,21 +18,21 @@ namespace ZDevTools.ServiceCore
         /// 记录错误
         /// </summary>
         void logError(string message) => this.EventLog.WriteEntry($"【{DisplayName}】{message}", EventLogEntryType.Error);
-        
+
         /// <summary>
         /// 记录错误
         /// </summary>
         void logError(string message, Exception exception) => this.EventLog.WriteEntry($"【{DisplayName}】{message}\r\n{exception}", EventLogEntryType.Error);
-        
+
         /// <summary>
         /// 服务显示名称
         /// </summary>
         public abstract string DisplayName { get; }
 
         /// <summary>
-        /// 服务失败（针对该事件，Windows服务永不会发生）
+        /// 服务失败（针对该事件，Windows服务永不会被监听，因此没必要触发它）
         /// </summary>
-        public event EventHandler Faulted;
+        public event EventHandler<ErrorEventArgs> Faulted;
 
         /// <summary>
         /// 异步启动

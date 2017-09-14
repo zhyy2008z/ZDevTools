@@ -23,7 +23,7 @@ namespace ZDevTools.ServiceCore
         /// <summary>
         /// 当服务执行失败时发生
         /// </summary>
-        public event EventHandler Faulted;
+        public event EventHandler<ErrorEventArgs> Faulted;
 
         /// <summary>
         /// 开始服务
@@ -44,8 +44,7 @@ namespace ZDevTools.ServiceCore
             serviceHost.Close();
             logError("WCF服务失败");
             ReportError("状态：已停止，WCF服务失败");
-            if (Faulted != null)
-                Faulted(this, EventArgs.Empty);
+            Faulted?.Invoke(this, new ErrorEventArgs("WCF服务失败"));
         }
 
         /// <summary>

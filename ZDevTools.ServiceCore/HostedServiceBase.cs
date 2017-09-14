@@ -22,7 +22,7 @@ namespace ZDevTools.ServiceCore
         /// <summary>
         /// 当服务执行失败时发生
         /// </summary>
-        public event EventHandler Faulted;
+        public event EventHandler<ErrorEventArgs> Faulted;
 
         /// <summary>
         /// 开始服务
@@ -41,7 +41,7 @@ namespace ZDevTools.ServiceCore
         /// <summary>
         /// 需要重复执行的服务核心代码
         /// </summary>
-        /// <param name="cancelationToken">是否取消，状态获取令牌</param>
+        /// <param name="cancelationToken">是否已取消，状态获取令牌</param>
         /// <returns>返回要让服务休息的毫秒数，小于等于0就不休息</returns>
         protected abstract int ServiceCore(CancellationToken cancelationToken);
 
@@ -77,8 +77,7 @@ namespace ZDevTools.ServiceCore
                 {
                     logError($"承载服务失败：{ex.Message}", ex);
                     ReportError("状态：已停止，承载服务失败", ex);
-                    if (Faulted != null)
-                        Faulted(this, EventArgs.Empty);
+                    Faulted?.Invoke(this, new ErrorEventArgs(ex));
                 }
 #endif
                 finally { }

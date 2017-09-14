@@ -26,6 +26,6 @@ namespace ZDevTools.ServiceCore
         /// <summary>
         /// 承载服务因某种原因失败时发生
         /// </summary>
-        event EventHandler Faulted;
+        event EventHandler<ErrorEventArgs> Faulted;
     }
 }

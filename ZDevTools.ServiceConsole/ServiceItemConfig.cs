@@ -13,10 +13,5 @@ namespace ZDevTools.ServiceConsole
         public string ServiceName { get; set; }
 
         public bool OneKeyStart { get; set; }
-
-        public override string ToString()
-        {
-            return ServiceName;
-        }
     }
 }

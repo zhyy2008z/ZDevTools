@@ -20,7 +20,7 @@ namespace ZDevTools.ServiceConsole
         {
             InitializeComponent();
 
-            DirectoryCatalog directoryCatalog = new DirectoryCatalog(Path.Combine(Path.GetDirectoryName(typeof(MainForm).Assembly.Location), "services"));
+            DirectoryCatalog directoryCatalog = new DirectoryCatalog(Path.Combine(Path.GetDirectoryName(typeof(Program).Assembly.Location), "services"));
             CompositionContainer container = new CompositionContainer(directoryCatalog);
 
             //定义载入的服务

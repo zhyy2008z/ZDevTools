@@ -8,5 +8,11 @@
     <Setting Name="ServiceWaitTimeOut" Type="System.Int32" Scope="Application">
       <Value Profile="(Default)">600</Value>
     </Setting>
+    <Setting Name="AutoUpdateUri" Type="System.String" Scope="Application">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="AutoUpdateInterval" Type="System.Int32" Scope="Application">
+      <Value Profile="(Default)">600</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

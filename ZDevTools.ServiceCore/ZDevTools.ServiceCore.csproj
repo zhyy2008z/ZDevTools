@@ -73,6 +73,7 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ErrorEventArgs.cs" />
     <Compile Include="ExecutionExtraInfo.cs" />
     <Compile Include="HostedServiceBase.cs" />
     <Compile Include="IHostedService.cs" />

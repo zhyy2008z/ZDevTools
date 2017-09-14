@@ -16,7 +16,7 @@ using log4net.Core;
 using System.ServiceProcess;
 using System.Configuration.Install;
 using System.Collections;
-using Microsoft.Win32;
+using FSLib.App.SimpleUpdater;
 
 
 namespace ZDevTools.ServiceConsole
@@ -30,7 +30,7 @@ namespace ZDevTools.ServiceConsole
 
         const int MaxMessageCount = 1000;
         const int RemoveItemsCount = 300;
-        const string configFile = "config.json";
+        const string ConfigFile = "config.json";
 
         public static MainForm Instance { get; private set; }
 
@@ -38,6 +38,7 @@ namespace ZDevTools.ServiceConsole
         Dictionary<string, IBindedServiceUI> bindedServiceUIs = new Dictionary<string, IBindedServiceUI>();
 
         AppConfig appConfig;
+        Updater updater;
         public MainForm()
         {
             InitializeComponent();
@@ -47,9 +48,9 @@ namespace ZDevTools.ServiceConsole
             IServiceBase[] services = GetServicesFromMef();
 
             //加载/初始化配置
-            if (File.Exists(configFile))
+            if (File.Exists(ConfigFile))
             {
-                var jsonStr = File.ReadAllText(configFile);
+                var jsonStr = File.ReadAllText(ConfigFile);
                 appConfig = JsonConvert.DeserializeObject<AppConfig>(jsonStr);
             }
             else
@@ -147,6 +148,14 @@ namespace ZDevTools.ServiceConsole
                 refreshServicesStatus();
 
             MainForm.Instance = this;
+
+            if (!string.IsNullOrEmpty(Properties.Settings.Default.AutoUpdateUri))
+            {
+                updater = Updater.CreateUpdaterInstance(Properties.Settings.Default.AutoUpdateUri, "update_c.xml");
+                tAutoUpdater.Interval = Properties.Settings.Default.AutoUpdateInterval * 1000;
+                tAutoUpdater.Start();
+                
+            }
         }
 
         /// <summary>
@@ -256,7 +265,7 @@ namespace ZDevTools.ServiceConsole
                 appConfig.ServicesConfig = dic;
 
                 var configStr = JsonConvert.SerializeObject(appConfig);
-                File.WriteAllText(configFile, configStr);
+                File.WriteAllText(ConfigFile, configStr);
 
                 MainForm.Instance = null;
             }
@@ -449,6 +458,11 @@ namespace ZDevTools.ServiceConsole
         {
             foreach (var controllableUI in controllableUIs.Values)
                 controllableUI.RefreshStatus();
+        }
+
+        private void tAutoUpdate_Tick(object sender, EventArgs e)
+        {
+
         }
     }
 }
