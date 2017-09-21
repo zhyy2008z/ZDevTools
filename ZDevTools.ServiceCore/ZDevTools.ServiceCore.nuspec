@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>$id$</id>
-    <version>$version$-alpha</version>
+    <version>$version$</version>
     <title>$title$</title>
     <authors>$author$</authors>
     <owners>$author$</owners>
@@ -12,7 +12,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
     <releaseNotes>新增Windows服务基类，增加承载Windows服务的能力</releaseNotes>
-    <copyright>Copyright 自由软件 2016</copyright>
+    <copyright>Copyright 自由软件 2017</copyright>
     <tags>ServiceCore HostService</tags>
   </metadata>
 </package>

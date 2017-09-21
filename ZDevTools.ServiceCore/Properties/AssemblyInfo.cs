@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("ZDevTools.ServiceCore")]
-[assembly: AssemblyDescription("服务核心类库用于创建服务实现时使用（该项目目前尚未完成，请等待）")]
+[assembly: AssemblyDescription("服务核心类库用于创建服务实现时使用")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("穿越中的逍遥")]
 [assembly: AssemblyProduct("服务核心类库")]
-[assembly: AssemblyCopyright("Copyright © 自由软件 2016")]
+[assembly: AssemblyCopyright("Copyright © 自由软件 2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.9.*")]
-[assembly: AssemblyFileVersion("0.9.0.0")]
+[assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
