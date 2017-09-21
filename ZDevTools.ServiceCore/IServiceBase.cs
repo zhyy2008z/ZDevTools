@@ -18,7 +18,7 @@ namespace ZDevTools.ServiceCore
         string DisplayName { get; }
 
         /// <summary>
-        /// 服务內部（唯一）名称
+        /// 服务內部名称（其实就是类名，名称唯一）
         /// </summary>
         string ServiceName { get; }
     }

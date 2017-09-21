@@ -14,15 +14,80 @@ namespace ZDevTools.ServiceCore
     /// </summary>
     public abstract class WindowsServiceBase : System.ServiceProcess.ServiceBase, IHostedService
     {
-        /// <summary>
-        /// 记录错误
-        /// </summary>
-        void logError(string message) => this.EventLog.WriteEntry($"【{DisplayName}】{message}", EventLogEntryType.Error);
+        public const string WindowsServiceLogsFolder = "wslogs";
+
+
+        public WindowsServiceBase()
+        {
+            this.ServiceName = this.GetType().Name; //设置服务名称
+        }
 
         /// <summary>
         /// 记录错误
         /// </summary>
-        void logError(string message, Exception exception) => this.EventLog.WriteEntry($"【{DisplayName}】{message}\r\n{exception}", EventLogEntryType.Error);
+        void logError(string message) => writeLog(message, "ERROR", null);
+
+        /// <summary>
+        /// 记录错误
+        /// </summary>
+        void logError(string message, Exception exception) => writeLog(message, "ERROR", exception);
+
+
+        FileStream _logStream;
+        StreamWriter _streamWriter;
+        static readonly object Locker = new object();
+
+        /// <summary>
+        /// 写入日志（该方法允许多线程调用）
+        /// </summary>
+        /// <param name="message"></param>
+        void writeLog(string message, string level, Exception exception)
+        {
+            if (_disposed) //记录日志功能失效
+                return;
+
+            lock (Locker)
+            {
+                if (_logStream == null)
+                {
+                    string saveFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, WindowsServiceLogsFolder);
+                    if (!Directory.Exists(saveFolder))
+                        Directory.CreateDirectory(saveFolder);
+
+                    string logFullName = Path.Combine(saveFolder, ServiceName + ".log");
+
+                    bool fileExists = File.Exists(logFullName);
+
+                    _logStream = File.Open(logFullName, FileMode.OpenOrCreate);
+                    _streamWriter = new StreamWriter(_logStream);
+
+                    if (!fileExists) //write log header
+                        _streamWriter.WriteLine("时间\t\t\t线程\t级别\t消息");
+                }
+
+                _streamWriter.WriteLine($"{ServiceBase.FormatDateTime(DateTime.Now)}\t[{System.Threading.Thread.CurrentThread.ManagedThreadId}]\t{level} - 【{DisplayName}】{message}");
+
+                if (exception != null)
+                    _streamWriter.WriteLine(exception);
+
+                _streamWriter.Flush();
+            }
+        }
+
+        bool _disposed;
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && _logStream != null)
+            {
+                lock (Locker)
+                {
+                    _streamWriter?.Dispose();
+                    _logStream?.Dispose();
+                }
+            }
+            _disposed = true;
+            base.Dispose(disposing);
+        }
 
         /// <summary>
         /// 服务显示名称
@@ -65,7 +130,7 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         public void LogInfo(string message)
         {
-            this.EventLog.WriteEntry($"【{DisplayName}】{message}");
+            writeLog(message, "INFO", null);
         }
 
         /// <summary>
@@ -73,7 +138,7 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         public void LogWarn(string message)
         {
-            this.EventLog.WriteEntry($"【{DisplayName}】{message}", EventLogEntryType.Warning);
+            writeLog(message, "WARN", null);
         }
 
         /// <summary>
@@ -81,31 +146,66 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         public void LogWarn(string message, Exception exception)
         {
-            this.EventLog.WriteEntry($"【{DisplayName}】{message}\r\n{exception}", EventLogEntryType.Warning);
+            writeLog(message, "WARN", exception);
         }
 
         /// <summary>
         /// 基类实现为记录服务正在运行状态，请将本基类方法在您的实现中作为最后一条调用语句
         /// </summary>
         /// <param name="args"></param>
-        protected override void OnStart(string[] args)
+        protected sealed override void OnStart(string[] args)
         {
-            ReportStatus("状态：正在运行");
+            try
+            {
+                DoWork(args);
+                ReportStatus("状态：正在运行");
+            }
+            catch (Exception ex)
+            {
+                logError("无法启动服务", ex); //由于错误无法传达到壳程序里，故在此处记录错误
+                throw;//扔出错误，错误会出现在事件管理器里
+            }
         }
 
+
         /// <summary>
-        /// 基类实现为记录服务停止运行状态，请将本基类方法在您的实现中作为最后一条调用语句
+        /// 重写该方法以启动你的业务逻辑
         /// </summary>
-        /// <param name="args"></param>
-        protected override void OnStop()
+        /// <param name="args">启动参数</param>
+        protected abstract void DoWork(string[] args);
+
+
+        protected sealed override void OnStop()
         {
-            if (!errorStop)
-                ReportStatus("状态：停止运行");
+            if (!_errorStop)
+            {
+                try
+                {
+                    CleanUp();
+                    ReportStatus("状态：停止运行");
+                }
+                catch (Exception ex)
+                {
+                    logError("无法停止服务", ex);//由于错误无法传达到壳程序里，故在此处记录错误
+                    throw;//扔出错误，错误会出现在事件管理器里
+                }
+            }
         }
 
-        bool errorStop;
         /// <summary>
-        /// 报告错误并停止运行服务
+        /// 体面地结束你的任务
+        /// </summary>
+        protected abstract void CleanUp();
+
+
+        //服务不支持暂停与恢复
+        protected sealed override void OnContinue() { }
+        protected sealed override void OnPause() { }
+
+
+        bool _errorStop;
+        /// <summary>
+        /// 发生严重错误，报告错误并停止运行服务，请不要在<see cref="DoWork(string[])"/>或<see cref="CleanUp()"/>执行时调用此方法，系统会自动捕获这两个方法所Throw出的异常，并做相应记录。
         /// </summary>
         public void ReportErrorAndStop(string message, Exception exception)
         {
@@ -126,7 +226,7 @@ namespace ZDevTools.ServiceCore
             }
 
             //发出停止命令
-            errorStop = true;
+            _errorStop = true;
             Stop();
         }
 

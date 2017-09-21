@@ -17,13 +17,8 @@ namespace ZDevTools.ServiceSample.Services
     {
         public override string DisplayName => "Windows服务样例服务";
 
-        public SampleWindowsService()
-        {
-            this.ServiceName = nameof(SampleWindowsService);
-        }
-
         System.Timers.Timer timer = new System.Timers.Timer();
-        protected override void OnStart(string[] args)
+        protected override void DoWork(string[] args)
         {
             timer.Interval = 10000;
 
@@ -32,20 +27,17 @@ namespace ZDevTools.ServiceSample.Services
             timer.Start();
 
             // TODO: Add code here to start your service.
-
-            base.OnStart(args);
         }
 
         private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            ReportErrorAndStop("这是个错误", null);
+            ReportErrorAndStop("这是个严重错误，会导致服务停止", null);
         }
 
-        protected override void OnStop()
+        protected override void CleanUp()
         {
-            // TODO: Add code here to perform any tear-down necessary to stop your service.
 
-            base.OnStop();
         }
+
     }
 }

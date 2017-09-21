@@ -15,6 +15,11 @@ namespace ZDevTools.ServiceCore
     /// </summary>
     public abstract class ServiceBase : IServiceBase
     {
+        public ServiceBase()
+        {
+            this.ServiceName = this.GetType().Name; //设置服务名称
+        }
+
         static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(ServiceBase));
         void logInfo(string message) => log.Info($"【{DisplayName}】{message}");
         void logWarn(string message, Exception exception) => log.Error($"【{DisplayName}】{message}", exception);
@@ -27,7 +32,7 @@ namespace ZDevTools.ServiceCore
         /// <summary>
         /// 服务內部名称（其实就是类名）
         /// </summary>
-        public string ServiceName => this.GetType().Name;
+        public string ServiceName { get; }
 
         /// <summary>
         /// 提供一个标准的时间格式化方法
