@@ -58,7 +58,7 @@ namespace ZDevTools.ServiceCore
 
                     bool fileExists = File.Exists(logFullName);
 
-                    _logStream = File.Open(logFullName, FileMode.OpenOrCreate);
+                    _logStream = File.Open(logFullName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read);
                     _streamWriter = new StreamWriter(_logStream);
 
                     if (!fileExists) //write log header
