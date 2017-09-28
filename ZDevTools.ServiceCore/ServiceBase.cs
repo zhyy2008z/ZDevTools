@@ -129,7 +129,7 @@ namespace ZDevTools.ServiceCore
                 }
             }
 
-            logInfo($"生成条目{dic.Count}条，已保存到hashid为{hashId}的哈希集合中");
+            LogInfo($"生成条目{dic.Count}条，已保存到hashid为{hashId}的哈希集合中");
         }
 
         /// <summary>
@@ -145,7 +145,7 @@ namespace ZDevTools.ServiceCore
                 client.SetValue(key, value);
             }
 
-            logInfo($"生成条目{key}");
+            LogInfo($"生成条目{key}");
         }
 
         void reportStatus(ServiceReport serviceReport)
@@ -155,7 +155,7 @@ namespace ZDevTools.ServiceCore
                 serviceReport.ServiceName = DisplayName;
                 serviceReport.UpdateTime = DateTime.Now;
 
-                saveReportHistory(serviceReport);
+                writeReport(serviceReport);
 
                 if (RedisManagerPool != null)
                     using (var client = RedisManagerPool.GetClient())
@@ -164,25 +164,47 @@ namespace ZDevTools.ServiceCore
                         client.PublishMessage(RedisKeys.ServiceReports, ServiceName);
                     }
             }
-            catch (Exception ex) { logWarn("状态汇报出错，错误：" + ex.Message, ex); }
+            catch (Exception ex) { LogWarn("状态汇报出错，错误：" + ex.Message, ex); }
         }
 
-        private void saveReportHistory(ServiceReport serviceReport)
+        FileStream _reportStream;
+        StreamWriter _reportStreamWriter;
+        static readonly object ReportLocker = new object();
+        /// <summary>
+        /// 写入报告（该方法允许多线程调用）
+        /// </summary>
+        /// <param name="serviceReport">服务报告</param>
+        void writeReport(ServiceReport serviceReport)
         {
-            string saveFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServiceReportsFolder);
-            if (!Directory.Exists(saveFolder))
-                Directory.CreateDirectory(saveFolder);
-
-            string reportFullName = Path.Combine(saveFolder, ServiceName + ".log");
-
-            if (!File.Exists(reportFullName))
+            lock (ReportLocker)
             {
-                File.WriteAllText(reportFullName, "时间\t\t\t错误\t消息\t\t\t消息组\r\n");
-            }
+                if (_reportStream == null)
+                {
+                    string saveFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServiceReportsFolder);
+                    if (!Directory.Exists(saveFolder))
+                        Directory.CreateDirectory(saveFolder);
 
-            File.AppendAllText(reportFullName, $"{FormatDateTime(serviceReport.UpdateTime)}\t{(serviceReport.HasError ? "[有]" : "[无]")}\t{serviceReport.Message}\t{(serviceReport.MessageArray == null ? null : string.Join("、", serviceReport.MessageArray))}\r\n");
+                    string reportFullName = Path.Combine(saveFolder, ServiceName + ".log");
+
+                    bool fileExists = File.Exists(reportFullName);
+
+                    _reportStream = File.Open(reportFullName, FileMode.Append, FileAccess.Write, FileShare.Read);
+                    _reportStreamWriter = new StreamWriter(_reportStream);
+
+                    if (!fileExists) //write log header
+                        _reportStreamWriter.WriteLine("时间\t\t\t错误\t消息\t\t\t消息组");
+                }
+
+                _reportStreamWriter.WriteLine($"{FormatDateTime(serviceReport.UpdateTime)}\t{(serviceReport.HasError ? "[有]" : "[无]")}\t{serviceReport.Message}\t{(serviceReport.MessageArray == null ? null : string.Join("、", serviceReport.MessageArray))}");
+
+                _reportStreamWriter.Flush();
+            }
         }
 
+        /// <summary>
+        /// 报告服务状态
+        /// </summary>
+        /// <param name="message"></param>
         public void ReportStatus(string message)
         {
             ServiceReport report = new ServiceReport();
@@ -192,6 +214,10 @@ namespace ZDevTools.ServiceCore
             reportStatus(report);
         }
 
+        /// <summary>
+        /// 报告服务执行状态及额外信息
+        /// </summary>
+        /// <param name="executionExtraInfo"></param>
         public void ReportStatus(ExecutionExtraInfo executionExtraInfo)
         {
             ServiceReport report = new ServiceReport();
@@ -205,6 +231,10 @@ namespace ZDevTools.ServiceCore
             reportStatus(report);
         }
 
+        /// <summary>
+        /// 报告服务错误
+        /// </summary>
+        /// <param name="message"></param>
         public void ReportError(string message)
         {
             ServiceReport report = new ServiceReport();
@@ -215,6 +245,11 @@ namespace ZDevTools.ServiceCore
             reportStatus(report);
         }
 
+        /// <summary>
+        /// 报告服务错误
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="exception"></param>
         public void ReportError(string message, Exception exception)
         {
             ServiceReport report = new ServiceReport();

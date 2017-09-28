@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using ServiceStack.Redis;
 
 namespace ZDevTools.ServiceCore
 {
@@ -16,7 +17,9 @@ namespace ZDevTools.ServiceCore
     {
         public const string WindowsServiceLogsFolder = "wslogs";
 
-
+        /// <summary>
+        /// 初始化一个服务
+        /// </summary>
         public WindowsServiceBase()
         {
             this.ServiceName = this.GetType().Name; //设置服务名称
@@ -34,8 +37,8 @@ namespace ZDevTools.ServiceCore
 
 
         FileStream _logStream;
-        StreamWriter _streamWriter;
-        static readonly object Locker = new object();
+        StreamWriter _logStreamWriter;
+        static readonly object LogLocker = new object();
 
         /// <summary>
         /// 写入日志（该方法允许多线程调用）
@@ -46,7 +49,7 @@ namespace ZDevTools.ServiceCore
             if (_disposed) //记录日志功能失效
                 return;
 
-            lock (Locker)
+            lock (LogLocker)
             {
                 if (_logStream == null)
                 {
@@ -59,31 +62,39 @@ namespace ZDevTools.ServiceCore
                     bool fileExists = File.Exists(logFullName);
 
                     _logStream = File.Open(logFullName, FileMode.Append, FileAccess.Write, FileShare.Read);
-                    _streamWriter = new StreamWriter(_logStream);
+                    _logStreamWriter = new StreamWriter(_logStream);
 
                     if (!fileExists) //write log header
-                        _streamWriter.WriteLine("时间\t\t\t线程\t级别\t消息");
+                        _logStreamWriter.WriteLine("时间\t\t\t线程\t级别\t消息");
                 }
 
-                _streamWriter.WriteLine($"{ServiceBase.FormatDateTime(DateTime.Now)}\t[{System.Threading.Thread.CurrentThread.ManagedThreadId}]\t{level} - 【{DisplayName}】{message}");
+                _logStreamWriter.WriteLine($"{FormatDateTime(DateTime.Now)}\t[{System.Threading.Thread.CurrentThread.ManagedThreadId}]\t{level} - 【{DisplayName}】{message}");
 
                 if (exception != null)
-                    _streamWriter.WriteLine(exception);
+                    _logStreamWriter.WriteLine(exception);
 
-                _streamWriter.Flush();
+                _logStreamWriter.Flush();
             }
         }
 
         bool _disposed;
         protected override void Dispose(bool disposing)
         {
-            if (disposing && _logStream != null)
+            if (disposing)
             {
-                lock (Locker)
-                {
-                    _streamWriter?.Dispose();
-                    _logStream?.Dispose();
-                }
+                if (_logStream != null)
+                    lock (LogLocker)
+                    {
+                        _logStreamWriter?.Dispose();
+                        _logStream?.Dispose();
+                    }
+
+                if (_reportStream != null)
+                    lock (ReportLocker)
+                    {
+                        _reportStreamWriter?.Dispose();
+                        _reportStream?.Dispose();
+                    }
             }
             _disposed = true;
             base.Dispose(disposing);
@@ -149,10 +160,6 @@ namespace ZDevTools.ServiceCore
             writeLog(message, "WARN", exception);
         }
 
-        /// <summary>
-        /// 基类实现为记录服务正在运行状态，请将本基类方法在您的实现中作为最后一条调用语句
-        /// </summary>
-        /// <param name="args"></param>
         protected sealed override void OnStart(string[] args)
         {
             try
@@ -230,16 +237,38 @@ namespace ZDevTools.ServiceCore
             Stop();
         }
 
-        #region 已导入
+        #region 导入ServiceBase通用成员
+        /// <summary>
+        /// RedisManagerPool
+        /// </summary>
+        public static RedisManagerPool RedisManagerPool { get { return ServiceBase.RedisManagerPool; } }
+
+        /// <summary>
+        /// 提供格式化日期时间的统一方案
+        /// </summary>
+        /// <param name="dateTime"></param>
+        /// <returns></returns>
+        public static string FormatDateTime(DateTime dateTime)
+        {
+            return ServiceBase.FormatDateTime(dateTime);
+        }
+
+        /// <summary>
+        /// 服务报告存放位置
+        /// </summary>
+        public const string ServiceReportsFolder = ServiceBase.ServiceReportsFolder;
+        #endregion
+
+        #region 导入ServiceBase实例方法
         /// <summary>
         /// 保存Hash对象
         /// </summary>
         public void SaveHash(string hashId, Dictionary<string, string> dic)
         {
-            if (ServiceBase.RedisManagerPool == null)
+            if (RedisManagerPool == null)
                 return;
 
-            using (var client = ServiceBase.RedisManagerPool.GetClient())
+            using (var client = RedisManagerPool.GetClient())
             {
                 using (var trans = client.CreateTransaction())
                 {
@@ -257,10 +286,10 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         public void SaveValue(string key, string value)
         {
-            if (ServiceBase.RedisManagerPool == null)
+            if (RedisManagerPool == null)
                 return;
 
-            using (var client = ServiceBase.RedisManagerPool.GetClient())
+            using (var client = RedisManagerPool.GetClient())
             {
                 client.SetValue(key, value);
             }
@@ -275,10 +304,10 @@ namespace ZDevTools.ServiceCore
                 serviceReport.ServiceName = DisplayName;
                 serviceReport.UpdateTime = DateTime.Now;
 
-                saveReportHistory(serviceReport);
+                writeReport(serviceReport);
 
-                if (ServiceBase.RedisManagerPool != null)
-                    using (var client = ServiceBase.RedisManagerPool.GetClient())
+                if (RedisManagerPool != null)
+                    using (var client = RedisManagerPool.GetClient())
                     {
                         client.SetEntryInHash(RedisKeys.ServiceReports, ServiceName, JsonConvert.SerializeObject(serviceReport));
                         client.PublishMessage(RedisKeys.ServiceReports, ServiceName);
@@ -287,22 +316,47 @@ namespace ZDevTools.ServiceCore
             catch (Exception ex) { LogWarn("状态汇报出错，错误：" + ex.Message, ex); }
         }
 
-        private void saveReportHistory(ServiceReport serviceReport)
+        FileStream _reportStream;
+        StreamWriter _reportStreamWriter;
+        static readonly object ReportLocker = new object();
+        /// <summary>
+        /// 写入报告（该方法允许多线程调用）
+        /// </summary>
+        /// <param name="serviceReport">服务报告</param>
+        void writeReport(ServiceReport serviceReport)
         {
-            string saveFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServiceBase.ServiceReportsFolder);
-            if (!Directory.Exists(saveFolder))
-                Directory.CreateDirectory(saveFolder);
+            if (_disposed) //记录日志功能失效
+                return;
 
-            string reportFullName = Path.Combine(saveFolder, ServiceName + ".log");
-
-            if (!File.Exists(reportFullName))
+            lock (ReportLocker)
             {
-                File.WriteAllText(reportFullName, "时间\t\t\t错误\t消息\t\t\t消息组\r\n");
-            }
+                if (_reportStream == null)
+                {
+                    string saveFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServiceReportsFolder);
+                    if (!Directory.Exists(saveFolder))
+                        Directory.CreateDirectory(saveFolder);
 
-            File.AppendAllText(reportFullName, $"{ServiceBase.FormatDateTime(serviceReport.UpdateTime)}\t{(serviceReport.HasError ? "[有]" : "[无]")}\t{serviceReport.Message}\t{(serviceReport.MessageArray == null ? null : string.Join("、", serviceReport.MessageArray))}\r\n");
+                    string reportFullName = Path.Combine(saveFolder, ServiceName + ".log");
+
+                    bool fileExists = File.Exists(reportFullName);
+
+                    _reportStream = File.Open(reportFullName, FileMode.Append, FileAccess.Write, FileShare.Read);
+                    _reportStreamWriter = new StreamWriter(_reportStream);
+
+                    if (!fileExists) //write log header
+                        _reportStreamWriter.WriteLine("时间\t\t\t错误\t消息\t\t\t消息组");
+                }
+
+                _reportStreamWriter.WriteLine($"{FormatDateTime(serviceReport.UpdateTime)}\t{(serviceReport.HasError ? "[有]" : "[无]")}\t{serviceReport.Message}\t{(serviceReport.MessageArray == null ? null : string.Join("、", serviceReport.MessageArray))}");
+
+                _reportStreamWriter.Flush();
+            }
         }
 
+        /// <summary>
+        /// 报告服务状态
+        /// </summary>
+        /// <param name="message"></param>
         public void ReportStatus(string message)
         {
             ServiceReport report = new ServiceReport();
@@ -312,6 +366,10 @@ namespace ZDevTools.ServiceCore
             reportStatus(report);
         }
 
+        /// <summary>
+        /// 报告服务执行状态及额外信息
+        /// </summary>
+        /// <param name="executionExtraInfo"></param>
         public void ReportStatus(ExecutionExtraInfo executionExtraInfo)
         {
             ServiceReport report = new ServiceReport();
@@ -325,6 +383,10 @@ namespace ZDevTools.ServiceCore
             reportStatus(report);
         }
 
+        /// <summary>
+        /// 报告服务错误
+        /// </summary>
+        /// <param name="message"></param>
         public void ReportError(string message)
         {
             ServiceReport report = new ServiceReport();
@@ -335,6 +397,11 @@ namespace ZDevTools.ServiceCore
             reportStatus(report);
         }
 
+        /// <summary>
+        /// 报告服务错误
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="exception"></param>
         public void ReportError(string message, Exception exception)
         {
             ServiceReport report = new ServiceReport();
