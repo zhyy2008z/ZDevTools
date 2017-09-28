@@ -11,7 +11,7 @@
     <iconUrl>https://github.com/zhyy2008z/ZDevTools/noicon</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>Windows服务基类改为使用本地日志文件作为日志输出目标，其它小改进</releaseNotes>
+    <releaseNotes>服务报告支持多线程调用</releaseNotes>
     <copyright>Copyright 自由软件 2017</copyright>
     <tags>ServiceCore HostService</tags>
   </metadata>
