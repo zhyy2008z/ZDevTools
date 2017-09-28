@@ -15,18 +15,33 @@ namespace ZDevTools.ServiceCore
     /// </summary>
     public abstract class ServiceBase : IServiceBase
     {
+        /// <summary>
+        /// 服务基类构造函数
+        /// </summary>
         public ServiceBase()
         {
             this.ServiceName = this.GetType().Name; //设置服务名称
         }
 
         static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(ServiceBase));
+
         void logInfo(string message) => log.Info($"【{DisplayName}】{message}");
+
         void logWarn(string message, Exception exception) => log.Error($"【{DisplayName}】{message}", exception);
 
+        /// <summary>
+        /// 服务报告文件夹
+        /// </summary>
         public const string ServiceReportsFolder = "reports";
+
+        /// <summary>
+        /// RedisManagerPool
+        /// </summary>
         public static RedisManagerPool RedisManagerPool { get; } = string.IsNullOrEmpty(Properties.Settings.Default.RedisServer) ? null : new RedisManagerPool(Properties.Settings.Default.RedisServer);
 
+        /// <summary>
+        /// 服务显示名称
+        /// </summary>
         public abstract string DisplayName { get; }
 
         /// <summary>
@@ -41,6 +56,9 @@ namespace ZDevTools.ServiceCore
         /// <returns></returns>
         public static string FormatDateTime(DateTime dateTime) => $"{dateTime:yyyy-MM-dd HH:mm:ss}";
 
+        /// <summary>
+        /// 日志对象，必须被重写，由用户定义使用哪个日志对象
+        /// </summary>
         protected abstract log4net.ILog Log { get; }
 
         /// <summary>
@@ -65,6 +83,7 @@ namespace ZDevTools.ServiceCore
         /// 记录调试信息
         /// </summary>
         /// <param name="message"></param>
+        /// <param name="exception"></param>
         public void LogDebug(string message, Exception exception)
         {
             Log.Debug($"【{DisplayName}】{message}", exception);
@@ -129,7 +148,7 @@ namespace ZDevTools.ServiceCore
                 }
             }
 
-            LogInfo($"生成条目{dic.Count}条，已保存到hashid为{hashId}的哈希集合中");
+            logInfo($"生成条目{dic.Count}条，已保存到hashid为{hashId}的哈希集合中");
         }
 
         /// <summary>
@@ -145,7 +164,7 @@ namespace ZDevTools.ServiceCore
                 client.SetValue(key, value);
             }
 
-            LogInfo($"生成条目{key}");
+            logInfo($"生成条目{key}");
         }
 
         void reportStatus(ServiceReport serviceReport)
@@ -164,7 +183,7 @@ namespace ZDevTools.ServiceCore
                         client.PublishMessage(RedisKeys.ServiceReports, ServiceName);
                     }
             }
-            catch (Exception ex) { LogWarn("状态汇报出错，错误：" + ex.Message, ex); }
+            catch (Exception ex) { logWarn("状态汇报出错，错误：" + ex.Message, ex); }
         }
 
         FileStream _reportStream;

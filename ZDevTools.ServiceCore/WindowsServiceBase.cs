@@ -15,6 +15,9 @@ namespace ZDevTools.ServiceCore
     /// </summary>
     public abstract class WindowsServiceBase : System.ServiceProcess.ServiceBase, IHostedService
     {
+        /// <summary>
+        /// Windows服务日志文件夹
+        /// </summary>
         public const string WindowsServiceLogsFolder = "wslogs";
 
         /// <summary>
@@ -44,6 +47,8 @@ namespace ZDevTools.ServiceCore
         /// 写入日志（该方法允许多线程调用）
         /// </summary>
         /// <param name="message"></param>
+        /// <param name="level"></param>
+        /// <param name="exception"></param>
         void writeLog(string message, string level, Exception exception)
         {
             if (_disposed) //记录日志功能失效
@@ -78,6 +83,10 @@ namespace ZDevTools.ServiceCore
         }
 
         bool _disposed;
+        /// <summary>
+        /// 重写服务释放方法
+        /// </summary>
+        /// <param name="disposing"></param>
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -160,6 +169,10 @@ namespace ZDevTools.ServiceCore
             writeLog(message, "WARN", exception);
         }
 
+        /// <summary>
+        /// 被密封，由框架管理
+        /// </summary>
+        /// <param name="args"></param>
         protected sealed override void OnStart(string[] args)
         {
             try
@@ -182,6 +195,9 @@ namespace ZDevTools.ServiceCore
         protected abstract void DoWork(string[] args);
 
 
+        /// <summary>
+        /// 被密封，由框架管理
+        /// </summary>
         protected sealed override void OnStop()
         {
             if (!_errorStop)
@@ -206,7 +222,13 @@ namespace ZDevTools.ServiceCore
 
 
         //服务不支持暂停与恢复
+        /// <summary>
+        /// 被密封，由框架管理
+        /// </summary>
         protected sealed override void OnContinue() { }
+        /// <summary>
+        /// 被密封，由框架管理
+        /// </summary>
         protected sealed override void OnPause() { }
 
 
