@@ -11,7 +11,7 @@
     <iconUrl>https://github.com/zhyy2008z/ZDevTools/noicon</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>服务报告支持多线程调用</releaseNotes>
+    <releaseNotes>Windows服务现在支持日志级别过滤Info/Warn/Error</releaseNotes>
     <copyright>Copyright 自由软件 2017</copyright>
     <tags>ServiceCore HostService</tags>
   </metadata>

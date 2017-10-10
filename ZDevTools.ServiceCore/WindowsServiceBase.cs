@@ -31,12 +31,20 @@ namespace ZDevTools.ServiceCore
         /// <summary>
         /// 记录错误
         /// </summary>
-        void logError(string message) => writeLog(message, "ERROR", null);
+        void logError(string message)
+        {
+            if (Properties.Settings.Default.WindowsServiceLogLevel >= WindowsServiceLogLevel.Error)
+                writeLog(message, "ERROR", null);
+        }
 
         /// <summary>
         /// 记录错误
         /// </summary>
-        void logError(string message, Exception exception) => writeLog(message, "ERROR", exception);
+        void logError(string message, Exception exception)
+        {
+            if (Properties.Settings.Default.WindowsServiceLogLevel >= WindowsServiceLogLevel.Error)
+                writeLog(message, "ERROR", exception);
+        }
 
 
         FileStream _logStream;
@@ -150,7 +158,8 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         public void LogInfo(string message)
         {
-            writeLog(message, "INFO", null);
+            if (Properties.Settings.Default.WindowsServiceLogLevel >= WindowsServiceLogLevel.Info)
+                writeLog(message, "INFO", null);
         }
 
         /// <summary>
@@ -158,7 +167,8 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         public void LogWarn(string message)
         {
-            writeLog(message, "WARN", null);
+            if (Properties.Settings.Default.WindowsServiceLogLevel >= WindowsServiceLogLevel.Warn)
+                writeLog(message, "WARN", null);
         }
 
         /// <summary>
@@ -166,7 +176,8 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         public void LogWarn(string message, Exception exception)
         {
-            writeLog(message, "WARN", exception);
+            if (Properties.Settings.Default.WindowsServiceLogLevel >= WindowsServiceLogLevel.Warn)
+                writeLog(message, "WARN", exception);
         }
 
         /// <summary>

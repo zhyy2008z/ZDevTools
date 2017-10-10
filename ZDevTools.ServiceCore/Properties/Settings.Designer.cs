@@ -31,5 +31,14 @@ namespace ZDevTools.ServiceCore.Properties {
                 return ((string)(this["RedisServer"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("All")]
+        public global::ZDevTools.ServiceCore.WindowsServiceLogLevel WindowsServiceLogLevel {
+            get {
+                return ((global::ZDevTools.ServiceCore.WindowsServiceLogLevel)(this["WindowsServiceLogLevel"]));
+            }
+        }
     }
 }
