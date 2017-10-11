@@ -20,7 +20,7 @@ namespace ZDevTools.ServiceSample.Services
         System.Timers.Timer timer = new System.Timers.Timer();
         protected override void DoWork(string[] args)
         {
-            timer.Interval = 10000;
+            timer.Interval = 30000;
 
             timer.Elapsed += Timer_Elapsed;
 
