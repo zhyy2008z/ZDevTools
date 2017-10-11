@@ -11,8 +11,8 @@
     <iconUrl>https://github.com/zhyy2008z/ZDevTools/noicon</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>发布针对MySql.Data的SQL Helper实现</releaseNotes>
+    <releaseNotes>更新Nuget引用及所用框架版本</releaseNotes>
     <copyright>Copyright 自由软件 2017</copyright>
-    <tags>MySqlHelper AutoComplete</tags>
+    <tags>MySqlHelper</tags>
   </metadata>
 </package>
