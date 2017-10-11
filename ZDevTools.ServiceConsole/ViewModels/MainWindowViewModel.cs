@@ -23,17 +23,13 @@ namespace ZDevTools.ServiceConsole.ViewModels
     using ServiceCore;
     using DIServices;
 
-    public class MainWindowViewModel : BindableBase, IDisposable
+    public class MainWindowViewModel : WindowViewModelBase<MainWindow>, IDisposable
     {
         static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(MainWindowViewModel));
         void logError(string message, Exception exception) => log.Error($"【主界面】{message}", exception);
+        void logError(string message) => log.Error($"【主界面】{message}");
+
         void logInfo(string message) => log.Info($"【主界面】{message}");
-
-
-        public Synchronizer Synchronizer { get; set; }
-
-        public MainWindow Window { get; set; }
-
 
         private string _title;
         public string Title { get { return _title; } set { SetProperty(ref _title, value); } }
@@ -53,20 +49,17 @@ namespace ZDevTools.ServiceConsole.ViewModels
         const int MaxMessageCount = 1000;
         const int RemoveItemsCount = 300;
         const string ConfigFile = "config.json";
+        const string LastRunningServicesConfigFile = "lastrunningconfig.json";
 
-
-        Dictionary<string, IControllableUI> _controllableUIs = new Dictionary<string, IControllableUI>();
-        Dictionary<string, IBindedServiceUI> _bindedServiceUIs = new Dictionary<string, IBindedServiceUI>();
+        Dictionary<string, ServiceViewModelBase> _serviceUIs = new Dictionary<string, ServiceViewModelBase>();
 
         AppConfig _appConfig;
-        Updater _updater;
-
-
 
         System.Windows.Forms.NotifyIcon _niMain = new System.Windows.Forms.NotifyIcon();
         System.Windows.Forms.ContextMenu _contextMenu = new System.Windows.Forms.ContextMenu();
         IDialogs _dialogs;
-        Timer _autoUpdateTimer;
+        public DelegateCommand ShowVersionCommand { get; }
+
         public MainWindowViewModel(IDialogs dialogs)
         {
             _dialogs = dialogs;
@@ -76,6 +69,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
             ConfigOneKeyStartCommand = new DelegateCommand(configOneKeyStart);
             InstallCommand = new DelegateCommand(install);
             RefreshStatusCommand = new DelegateCommand(refreshStatus);
+            ShowVersionCommand = new DelegateCommand(() => _dialogs.ShowVersionsDialog());
 
             Title = Properties.Settings.Default.ServiceConsoleTitle;
 
@@ -86,13 +80,14 @@ namespace ZDevTools.ServiceConsole.ViewModels
             _niMain.ContextMenu = _contextMenu;
             _contextMenu.MenuItems.Add("退出").Click += (sender, e) =>
             {
-                bool isAllStopped = checkIsAllStopped();
-
-                if (isAllStopped || ShowConfirm("某些服务还未停止，真的要退出吗？"))
+                if (!_serviceUIs.All(ui => ui.Value is WindowsServiceUIViewModel || ui.Value.IsStopped))
                 {
-                    CanClose = true;
-                    Window.Close();
+                    ShowError("某些驻留在控制台的服务还未停止！请先关闭这些服务，之后才能正常退出！");
+                    return;
                 }
+
+                CanClose = true;
+                Window.Close();
             };
 
 
@@ -116,7 +111,6 @@ namespace ZDevTools.ServiceConsole.ViewModels
 
             List<ServiceViewModelBase> serviceViewModels = new List<ServiceViewModelBase>();
 
-            int i = 0;
             foreach (var service in services)
             {
                 ServiceViewModelBase ui = null;
@@ -134,24 +128,18 @@ namespace ZDevTools.ServiceConsole.ViewModels
                 if (ui == null)
                     continue;
 
-                IBindedServiceUI bindedServiceUI = ui as IBindedServiceUI;
-                IConfigurableUI configurableUI = ui as IConfigurableUI;
-                IControllableUI controllableUI = ui as IControllableUI;
+                ui.BindedService = service;
 
-                bindedServiceUI.BindedService = service;
+                IConfigurableUI configurableUI = ui as IConfigurableUI;
 
                 //加载服务配置到界面
                 var serviceName = service.ServiceName;
                 if (configurableUI != null && _appConfig.ServicesConfig.TryGetValue(serviceName, out string jsonString))
                     configurableUI.LoadConfig(jsonString);
 
-                _bindedServiceUIs.Add(serviceName, bindedServiceUI);
-                if (controllableUI != null)
-                    _controllableUIs.Add(serviceName, controllableUI);
+                _serviceUIs.Add(serviceName, ui);
 
                 serviceViewModels.Add(ui);
-
-                i++;
             }
 
             ServiceViewModels = new ObservableCollection<ServiceViewModelBase>(serviceViewModels);
@@ -164,19 +152,19 @@ namespace ZDevTools.ServiceConsole.ViewModels
             var keys = oneKeyStart.Keys.ToArray();
             foreach (var key in keys)
             {
-                if (!_controllableUIs.ContainsKey(key))
+                if (!_serviceUIs.ContainsKey(key))
                     oneKeyStart.Remove(key);
             }
 
             //添加应有配置
-            foreach (var keyValue in _controllableUIs)
+            foreach (var keyValue in _serviceUIs)
             {
                 if (!oneKeyStart.TryGetValue(keyValue.Key, out ServiceItemConfig serviceItemConfig))
                 {
                     serviceItemConfig = new ServiceItemConfig();
                     oneKeyStart.Add(keyValue.Key, serviceItemConfig);
                 }
-                serviceItemConfig.ServiceName = _bindedServiceUIs[keyValue.Key].DisplayName;
+                serviceItemConfig.ServiceName = _serviceUIs[keyValue.Key].DisplayName;
             }
 
             updateInstallButton();
@@ -184,18 +172,119 @@ namespace ZDevTools.ServiceConsole.ViewModels
             if (_containWindowsService && !_containNotInstall) //有windows服务并且都已安装到系统中
                 refreshServicesStatus();
 
+            //配置自动升级
             if (!string.IsNullOrEmpty(Properties.Settings.Default.AutoUpdateUri))
-            {
-                _updater = Updater.CreateUpdaterInstance(Properties.Settings.Default.AutoUpdateUri, "update_c.xml");
-                _autoUpdateTimer = new Timer(Properties.Settings.Default.AutoUpdateInterval * 1000);
-                _autoUpdateTimer.Elapsed += (sender, e) =>
-                {
-                    //自动升级检查
-                    _updater.CheckUpdateSync();
+                configAutoUpdate();
+        }
 
-                };
-                _autoUpdateTimer.Start();
+        /// <summary>
+        /// 根据参数确定是否自动启动某些服务
+        /// </summary>
+        public void AutoStart()
+        {
+            var args = Environment.GetCommandLineArgs();
+            if (args.Contains("-AutoStart"))
+            {
+                var cmdIndex = Array.IndexOf(args, "-AutoStart") + 1;
+                var cmd = args.Length > cmdIndex ? args[cmdIndex] : null;
+                if (cmd == "LastRun") //从上次非正常停止时服务状态运行
+                {
+                    var services = LoadLastRunningConfig();
+                    foreach (var service in services)
+                    {
+                        if (_serviceUIs.TryGetValue(service, out var ui))
+                        {
+                            ui.Start();
+                        }
+                    }
+                }
+                else //一键启动
+                {
+                    DoOneKeyStartCommand.Execute();
+                }
             }
+        }
+
+
+        Updater _updater;
+        Timer _autoUpdateTimer;
+        void configAutoUpdate()
+        {
+            _updater = Updater.CreateUpdaterInstance(Properties.Settings.Default.AutoUpdateUri, "update_c.xml");
+
+            //开启时做一次检查
+            _updater.Context.EnableEmbedDialog = false;
+            _updater.Context.AutoKillProcesses = false;
+
+            _updater.Error += (sender, e) =>
+            {
+                logError("自动更新时发生错误：" + _updater.Context.Exception.Message, _updater.Context.Exception);
+            };
+
+            _updater.UpdatesFound += (sender, e) =>
+            {
+                _autoUpdateTimer.Stop();
+
+                //保存上次运行的服务配置
+                SaveLastRunningConfig();
+
+                //刷新一次服务状态
+                refreshServicesStatus();
+
+                //给于半分钟时间等待所有服务退出
+                int i;
+                for (i = 0; i < 10; i++)
+                {
+                    foreach (var controllableUI in _serviceUIs)
+                    {
+                        controllableUI.Value.Stop();
+                    }
+
+                    System.Threading.Thread.Sleep(3000);
+
+                    //刷新一次服务状态
+                    refreshServicesStatus();
+
+                    if (_serviceUIs.All(cui => cui.Value.IsStopped))
+                        break;
+                }
+
+                if (i == 10)//等待超时
+                {
+                    logError("自动更新错误：等待服务关闭超时，将启用强制更新模式");
+                    //尽量保存配置信息
+                    SaveConfig();
+
+                    //配置外部更新程序为强制结束进程模式
+                    _updater.Context.AutoExitCurrentProcess = true;
+                    _updater.Context.AutoKillProcesses = true;
+                    _updater.Context.AutoEndProcessesWithinAppDir = true;
+                    //启动外部更新程序
+                    _updater.StartExternalUpdater();
+                }
+                else//所有服务正常关闭
+                {
+                    //启动更新进程
+                    _updater.StartExternalUpdater();
+
+                    //退出控制台
+                    CanClose = true;
+                    Synchronizer.Invoke(() => { Window.Close(); });
+                }
+            };
+
+            if (!_updater.BeginCheckUpdateInProcess())
+                logError("开始检测更新时发生错误：" + _updater.Context.Exception.Message, _updater.Context.Exception);
+
+            _autoUpdateTimer = new Timer(Properties.Settings.Default.AutoUpdateInterval * 1000);
+            _autoUpdateTimer.Elapsed += (sender, e) =>
+             {
+                 //自动升级检查
+                 if (!_updater.BeginCheckUpdateInProcess())
+                     logError("开始检测更新时发生错误：" + _updater.Context.Exception.Message, _updater.Context.Exception);
+             };
+
+            _autoUpdateTimer.Start();
         }
 
         bool _showInstallButton;
@@ -250,8 +339,18 @@ namespace ZDevTools.ServiceConsole.ViewModels
         {
             if (_services == null)
             {
-                DirectoryCatalog directoryCatalog = new DirectoryCatalog("services");
-                CompositionContainer container = new CompositionContainer(directoryCatalog);
+                CompositionContainer container;
+
+                if (string.IsNullOrEmpty(Properties.Settings.Default.ServicesAssembly))
+                {
+                    string servicesDir = GetAbsolutePath("services");
+                    if (!Directory.Exists(servicesDir))
+                        Directory.CreateDirectory(servicesDir);
+                    container = new CompositionContainer(new DirectoryCatalog(servicesDir));
+                }
+                else
+                    container = new CompositionContainer(new AssemblyCatalog(GetAbsolutePath(Properties.Settings.Default.ServicesAssembly)));
+
                 //定义载入的服务
                 _services = (from l in container.GetExports<IServiceBase, IServiceMetadata>()
                              orderby l.Metadata.DisplayOrder
@@ -281,12 +380,34 @@ namespace ZDevTools.ServiceConsole.ViewModels
         public DelegateCommand StopAllCommand { get; }
         private void stopAll()
         {
-            foreach (var controllableUI in _controllableUIs.Values)
+            foreach (var controllableUI in _serviceUIs.Values)
                 controllableUI.Stop();
-            logInfo("已停止所有服务");
+            logInfo("停止所有服务");
         }
 
         public bool CanClose { get; private set; }
+
+        /// <summary>
+        /// 保存上次运行的服务配置
+        /// </summary>
+        public void SaveLastRunningConfig()
+        {
+            File.WriteAllText(LastRunningServicesConfigFile, JsonConvert.SerializeObject(_serviceUIs.Where(kv => !kv.Value.IsStopped).Select(kv => kv.Key)));
+        }
+
+        /// <summary>
+        /// 加载上次运行的服务配置
+        /// </summary>
+        /// <returns></returns>
+        public List<string> LoadLastRunningConfig()
+        {
+            if (File.Exists(LastRunningServicesConfigFile))
+            {
+                return JsonConvert.DeserializeObject<List<string>>(File.ReadAllText(LastRunningServicesConfigFile));
+            }
+            else
+                return new List<string>();
+        }
 
         public void SaveConfig()
         {
@@ -294,11 +415,10 @@ namespace ZDevTools.ServiceConsole.ViewModels
             var dic = new Dictionary<string, string>();
             foreach (ServiceViewModelBase serviceViewModel in ServiceViewModels)
             {
-                var bindedServiceUI = serviceViewModel as IBindedServiceUI;
                 var configurableUI = serviceViewModel as IConfigurableUI;
 
                 if (configurableUI != null)
-                    dic.Add(bindedServiceUI.BindedService.ServiceName, configurableUI.SaveConfig());
+                    dic.Add(serviceViewModel.BindedService.ServiceName, configurableUI.SaveConfig());
             }
             //保存配置到文件
             _appConfig.ServicesConfig = dic;
@@ -316,20 +436,6 @@ namespace ZDevTools.ServiceConsole.ViewModels
                 Window.Show();
                 Window.Activate();
             }
-        }
-
-
-        private bool checkIsAllStopped()
-        {
-            bool isAllStopped = true;
-            foreach (var controllableUI in _controllableUIs.Values)
-                if (!controllableUI.IsStopped)
-                {
-                    isAllStopped = false;
-                    break;
-                }
-
-            return isAllStopped;
         }
 
         public DelegateCommand CopyMessageCommand { get; }
@@ -357,7 +463,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
             if (shouldOneKeyStartServiceKeys.Length > 0)
             {
                 foreach (var key in shouldOneKeyStartServiceKeys)
-                    _controllableUIs[key].Start();
+                    _serviceUIs[key].Start();
                 logInfo("完成一键启动操作");
             }
             else
@@ -375,16 +481,20 @@ namespace ZDevTools.ServiceConsole.ViewModels
         public DelegateCommand InstallCommand { get; }
         private void install()
         {
+            var exePath = GetExePath();
+
             try
             {
+
                 if (_containNotInstall) //安装
                 {
                     if (ShowConfirm("如果您之前执行过安装操作，请先使用原程序卸载服务再使用本程序执行安装操作！"))
                     {
+
                         using (TransactedInstaller transactedInstaller = new TransactedInstaller())
                         {
                             var installLog = new Hashtable();
-                            AssemblyInstaller assemblyInstaller = new AssemblyInstaller(System.Windows.Forms.Application.ExecutablePath, null);
+                            AssemblyInstaller assemblyInstaller = new AssemblyInstaller(exePath, null);
                             transactedInstaller.Installers.Add(assemblyInstaller);
                             transactedInstaller.Install(installLog);
                         }
@@ -395,9 +505,8 @@ namespace ZDevTools.ServiceConsole.ViewModels
                         {
                             if (service is WindowsServiceBase)
                             {
-                                bool delayedAutoStart;
-                                ServiceInfo serviceInfo = ServiceHelper.QueryServiceConfig(service.ServiceName, out delayedAutoStart);
-                                ServiceHelper.ChangeExePath(service.ServiceName, $"{serviceInfo.binaryPathName} -Daemon {service.ServiceName}");
+                                ServiceHelper.ChangeExePath(service.ServiceName, $"\"{exePath}\" -Daemon {service.ServiceName}"); //添加启动参数
+                                ((WindowsServiceUIViewModel)_serviceUIs[service.ServiceName]).ApplyCommand.Execute(); //设置启动模式
                             }
                         }
                         updateInstallButton();
@@ -411,7 +520,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
                     {
                         using (TransactedInstaller transactedInstaller = new TransactedInstaller())
                         {
-                            AssemblyInstaller assemblyInstaller = new AssemblyInstaller(System.Windows.Forms.Application.ExecutablePath, null);
+                            AssemblyInstaller assemblyInstaller = new AssemblyInstaller(exePath, null);
                             transactedInstaller.Installers.Add(assemblyInstaller);
                             transactedInstaller.Uninstall(null);
                         }
@@ -433,7 +542,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
                     System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
                     startInfo.UseShellExecute = true;
                     startInfo.WorkingDirectory = Environment.CurrentDirectory;
-                    startInfo.FileName = System.Windows.Forms.Application.ExecutablePath;
+                    startInfo.FileName = exePath;
                     //设置启动动作,确保以管理员身份运行
                     startInfo.Verb = "runas";
                     try
@@ -450,55 +559,48 @@ namespace ZDevTools.ServiceConsole.ViewModels
         private void refreshStatus()
         {
             refreshServicesStatus();
-            logInfo("已刷新所有Windows服务状态");
+            logInfo("刷新所有Windows服务状态");
         }
 
         private void refreshServicesStatus()
         {
-            foreach (var controllableUI in _controllableUIs.Values)
+            foreach (var controllableUI in _serviceUIs.Values)
                 controllableUI.RefreshStatus();
         }
 
         // Track whether Dispose has been called.
         bool _disposed = false;
-
         /// <summary>
-        /// 释放资源内部包装方法
+        /// 释放资源方法
         /// </summary>
         /// <param name="disposing">true值表示用户直接或间接调用了这个方法，释放托管和非托管资源；false值表示垃圾回收器调用该方法，仅释放非托管资源</param>
-        void dispose(bool disposing)
+        protected virtual void Dispose(bool disposing)
         {
             // Check to see if Dispose has already been called.
             if (!_disposed)
             {
-                Dispose(disposing);
+                // If disposing equals true, dispose all managed
+                // and unmanaged resources.
+                if (disposing)
+                {
+                    _niMain.Dispose();
+                    _contextMenu.Dispose();
+                    _autoUpdateTimer?.Dispose();
+                    _updater?.Dispose();
+                }
+
+                // Call the appropriate methods to clean up
+                // unmanaged resources here.
+
+                // Note disposing has been done.
                 _disposed = true;
             }
-        }
-
-        /// <summary>
-        /// 只能在包装器（dispose）中调用此方法，其它地方请勿调用
-        /// </summary>
-        /// <param name="disposing"></param>
-        protected virtual void Dispose(bool disposing)
-        {
-            // If disposing equals true, dispose all managed
-            // and unmanaged resources.
-            if (disposing)
-            {
-                _niMain.Dispose();
-                _contextMenu.Dispose();
-                _autoUpdateTimer?.Dispose();
-            }
-
-            // Call the appropriate methods to clean up
-            // unmanaged resources here.
         }
 
         public void Dispose()
         {
             //手动释放资源
-            this.dispose(true);
+            this.Dispose(true);
             //请求系统不要调用该对象的析构函数。
             GC.SuppressFinalize(this);
         }
@@ -508,7 +610,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
         /// </summary>
         ~MainWindowViewModel()
         {
-            this.dispose(false);
+            this.Dispose(false);
         }
     }
 }

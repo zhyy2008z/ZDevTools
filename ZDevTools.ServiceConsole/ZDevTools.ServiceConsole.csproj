@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ZDevTools.ServiceConsole</RootNamespace>
     <AssemblyName>ZDevTools.ServiceConsole</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFrameworkProfile />
@@ -151,6 +151,7 @@
     <Compile Include="Bootstrapper.cs" />
     <Compile Include="Converters\BooleanVisibilityConverter.cs" />
     <Compile Include="Converters\LogLevelBrushConverter.cs" />
+    <Compile Include="Models\ModuleInfo.cs" />
     <Compile Include="Models\ScheduleModel.cs" />
     <Compile Include="Models\ServiceItemModel.cs" />
     <Compile Include="Models\WitchMonth.cs" />
@@ -165,7 +166,9 @@
     <Compile Include="ViewModels\OneKeyStartConfigWindowViewModel.cs" />
     <Compile Include="ViewModels\ScheduledServiceUIViewModel.cs" />
     <Compile Include="ViewModels\ScheduleManageWindowViewModel.cs" />
-    <Compile Include="ViewModels\ServiceViewModelBase.cs" />
+    <Compile Include="ServiceViewModelBase.cs" />
+    <Compile Include="ViewModels\VersionWindowViewModel.cs" />
+    <Compile Include="WindowViewModelBase.cs" />
     <Compile Include="Views\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -190,6 +193,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\VersionWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\WindowsServiceUI.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -207,9 +214,7 @@
       <DependentUpon>ProjectInstaller.cs</DependentUpon>
     </Compile>
     <Compile Include="Schedules\DayRepeatSchedule.cs" />
-    <Compile Include="IBindedServiceUI.cs" />
     <Compile Include="IConfigurableUI.cs" />
-    <Compile Include="IControllableUI.cs" />
     <Compile Include="FormAppender.cs" />
     <Compile Include="IServiceMetadata.cs" />
     <Compile Include="Schedules\BasicSchedule.cs" />
@@ -237,6 +242,9 @@
       <DependentUpon>ScheduleWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="ViewModels\ScheduleWindowViewModel.cs" />
+    <Compile Include="Views\VersionWindow.xaml.cs">
+      <DependentUpon>VersionWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\WindowsServiceUI.xaml.cs">
       <DependentUpon>WindowsServiceUI.xaml</DependentUpon>
     </Compile>

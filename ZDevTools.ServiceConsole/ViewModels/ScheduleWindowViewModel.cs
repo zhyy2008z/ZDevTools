@@ -30,7 +30,6 @@ namespace ZDevTools.ServiceConsole.ViewModels
             RepeatPeriod = new TimeSpan(0, 30, 0);
             RepeatUntilTime = new TimeSpan(4, 0, 0);
             IsEnabled = true;
-
         }
         public DelegateCommand OKCommand { get; }
         private void okOperate()

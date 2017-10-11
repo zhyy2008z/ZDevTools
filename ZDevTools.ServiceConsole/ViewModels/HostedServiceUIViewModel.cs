@@ -15,7 +15,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
 {
     using ServiceCore;
 
-    public class HostedServiceUIViewModel : ServiceViewModelBase, IControllableUI
+    public class HostedServiceUIViewModel : ServiceViewModelBase
     {
         static readonly log4net.ILog Log = log4net.LogManager.GetLogger(typeof(HostedServiceUIViewModel));
         void logInfo(string message) => Log.Info($"【{DisplayName}】{message}");
@@ -47,12 +47,10 @@ namespace ZDevTools.ServiceConsole.ViewModels
 
         private void _bindedService_Faulted(object sender, ErrorEventArgs e)
         {
-            Synchronizer.Invoke(() => UpdateServiceStatus(HostedServiceStatus.Stopped, true, e.ErrorMessage));
+            UpdateServiceStatus(HostedServiceStatus.Stopped, true, e.ErrorMessage);
         }
 
-        public Synchronizer Synchronizer { get; set; }
-
-        public virtual void RefreshStatus() { }
+        public override void RefreshStatus() { }
 
         /// <summary>
         /// 获取当前服务的执行状态名称
@@ -127,7 +125,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
             logInfo(statusName);
         }
 
-        public void Stop()
+        public override void Stop()
         {
             if (HostedServiceStatus == HostedServiceStatus.Running)
             {
@@ -135,7 +133,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
             }
         }
 
-        public void Start()
+        public override void Start()
         {
             if (HostedServiceStatus == HostedServiceStatus.Stopped)
             {
@@ -188,7 +186,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
 
         public HostedServiceStatus HostedServiceStatus { get; private set; } = HostedServiceStatus.Stopped;
 
-        public bool IsStopped => HostedServiceStatus == HostedServiceStatus.Stopped;
+        public override bool IsStopped => HostedServiceStatus == HostedServiceStatus.Stopped;
     }
 
     public enum HostedServiceStatus

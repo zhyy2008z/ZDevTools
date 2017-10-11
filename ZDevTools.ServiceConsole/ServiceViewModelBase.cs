@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 using Prism.Mvvm;
 using System.Windows.Media;
 
-namespace ZDevTools.ServiceConsole.ViewModels
+namespace ZDevTools.ServiceConsole
 {
     using ServiceCore;
 
-    public abstract class ServiceViewModelBase : BindableBase, IBindedServiceUI
+    public abstract class ServiceViewModelBase : BindableBase
     {
         public ServiceViewModelBase()
         {
@@ -18,6 +18,12 @@ namespace ZDevTools.ServiceConsole.ViewModels
             StatusText = "已停止";
             StatusColor = Brushes.Black;
         }
+
+        /// <summary>
+        /// 同步器
+        /// </summary>
+        public Synchronizer Synchronizer { get; set; }
+
 
         /// <summary>
         /// 绑定的服务
@@ -59,5 +65,25 @@ namespace ZDevTools.ServiceConsole.ViewModels
         /// 状态提示
         /// </summary>
         public string StatusToolTip { get { return _statusTooltip; } set { SetProperty(ref _statusTooltip, value); } }
+
+        /// <summary>
+        /// 停止当前服务
+        /// </summary>
+        public abstract void Stop();
+
+        /// <summary>
+        /// 当前服务是否为停止状态
+        /// </summary>
+        public abstract bool IsStopped { get; }
+
+        /// <summary>
+        /// 启动当前服务
+        /// </summary>
+        public abstract void Start();
+
+        /// <summary>
+        /// 刷新当前服务状态
+        /// </summary>
+        public abstract void RefreshStatus();
     }
 }

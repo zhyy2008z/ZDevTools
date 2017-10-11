@@ -20,13 +20,8 @@ namespace ZDevTools.ServiceConsole
         {
             InitializeComponent();
 
-            DirectoryCatalog directoryCatalog = new DirectoryCatalog(Path.Combine(Path.GetDirectoryName(typeof(Program).Assembly.Location), "services"));
-            CompositionContainer container = new CompositionContainer(directoryCatalog);
-
-            //定义载入的服务
-            IServiceBase[] services = (from l in container.GetExports<IServiceBase, IServiceMetadata>()
-                                       orderby l.Metadata.DisplayOrder
-                                       select l.Value).ToArray();
+            //引入服务
+            IServiceBase[] services = ViewModels.MainWindowViewModel.GetServicesFromMef();
 
             foreach (var service in services)
             {

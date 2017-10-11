@@ -18,10 +18,8 @@ namespace ZDevTools.ServiceConsole.ViewModels
     using Schedules;
     using DIServices;
 
-    public class ScheduledServiceUIViewModel : ServiceViewModelBase, IConfigurableUI, IControllableUI
+    public class ScheduledServiceUIViewModel : ServiceViewModelBase, IConfigurableUI
     {
-        public Synchronizer Synchronizer { get; set; }
-
         static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(ScheduledServiceUIViewModel));
         void logInfo(string message) => log.Info($"【{DisplayName}】{message}");
         void logError(string message) => log.Error($"【{DisplayName}】{message}");
@@ -101,7 +99,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
             }
         }
 
-        public bool IsStopped => ServiceStatus == ScheduledServiceStatus.Stopped;
+        public override bool IsStopped => ServiceStatus == ScheduledServiceStatus.Stopped;
 
 
         /// <summary>
@@ -397,19 +395,19 @@ namespace ZDevTools.ServiceConsole.ViewModels
         }
 
 
-        public void Stop()
+        public override void Stop()
         {
             if (isServiceEnabled)
                 operate();
         }
 
-        public void Start()
+        public override void Start()
         {
             if (!isServiceEnabled)
                 operate();
         }
 
-        public void RefreshStatus() { }
+        public override void RefreshStatus() { }
 
     }
 

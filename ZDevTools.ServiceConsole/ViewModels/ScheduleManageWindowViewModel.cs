@@ -16,7 +16,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
     using DIServices;
     using Models;
 
-    public class ScheduleManageWindowViewModel : BindableBase
+    public class ScheduleManageWindowViewModel : WindowViewModelBase<ScheduleManageWindow>
     {
 
         IDialogs _dialogs;
@@ -37,10 +37,6 @@ namespace ZDevTools.ServiceConsole.ViewModels
             Window.DialogResult = true;
         }
         public DelegateCommand OKCommand { get; }
-
-        public Synchronizer Synchronizer { get; set; }
-
-        public ScheduleManageWindow Window { get; set; }
 
         bool _canManage;
         public bool CanManage { get { return _canManage; } set { SetProperty(ref _canManage, value); } }

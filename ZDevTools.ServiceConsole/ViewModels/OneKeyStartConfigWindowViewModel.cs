@@ -13,7 +13,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
     using Views;
     using Models;
 
-    public class OneKeyStartConfigWindowViewModel : BindableBase
+    public class OneKeyStartConfigWindowViewModel : WindowViewModelBase<OneKeyStartConfigWindow>
     {
         public OneKeyStartConfigWindowViewModel()
         {
@@ -27,9 +27,5 @@ namespace ZDevTools.ServiceConsole.ViewModels
         public ObservableCollection<ServiceItemModel> Configs { get { return _configs; } set { SetProperty(ref _configs, value); } }
 
         public DelegateCommand OKCommand { get; }
-
-        public Synchronizer Synchronizer { get; set; }
-
-        public OneKeyStartConfigWindow Window { get; set; }
     }
 }

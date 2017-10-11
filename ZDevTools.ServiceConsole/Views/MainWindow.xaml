@@ -16,6 +16,7 @@
         Width="921.639"
         Closing="Window_Closing"
         Closed="Window_Closed"
+        Loaded="Window_Loaded"
         Icon="../server.ico"
         WindowStartupLocation="CenterScreen">
     <Grid>
@@ -64,6 +65,7 @@
                     </Style>
                     <cvt:BooleanVisibilityConverter x:Key="BooleanVisibilityConverter"></cvt:BooleanVisibilityConverter>
                 </StackPanel.Resources>
+                <Button Content="版本信息" Command="{Binding ShowVersionCommand}"></Button>
                 <Button Command="{Binding RefreshStatusCommand}"
                         Visibility="{Binding ShowRefreshButton,Converter={StaticResource BooleanVisibilityConverter}}">刷新状态</Button>
                 <Button Visibility="{Binding ShowInstallButton,Converter={StaticResource BooleanVisibilityConverter}}"

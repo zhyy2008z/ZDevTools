@@ -58,5 +58,9 @@ namespace ZDevTools.ServiceConsole.Views
             ViewModel.Dispose();
         }
 
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            ViewModel.AutoStart();
+        }
     }
 }

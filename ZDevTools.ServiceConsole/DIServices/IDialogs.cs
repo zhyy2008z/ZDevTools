@@ -7,13 +7,11 @@ using System.Windows;
 
 namespace ZDevTools.ServiceConsole.DIServices
 {
-    using ServiceCore;
     using Schedules;
 
 
     public interface IDialogs
     {
-
         /// <summary>
         /// 显示计划列表对话框
         /// </summary>
@@ -34,5 +32,10 @@ namespace ZDevTools.ServiceConsole.DIServices
         /// <param name="basicSchedule">基本计划</param>
         /// <returns></returns>
         BasicSchedule ShowScheduleDialog(BasicSchedule basicSchedule);
+
+        /// <summary>
+        /// 显示版本信息对话框
+        /// </summary>
+        void ShowVersionsDialog();
     }
 }

@@ -5,14 +5,17 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 using System.Windows;
-using static ZDevTools.ServiceConsole.CommonFunctions;
-
+using System.Diagnostics;
+using System.Reflection;
+using System.IO;
 
 namespace ZDevTools.ServiceConsole.DIServices
 {
     using Schedules;
     using Views;
     using Models;
+    using ViewModels;
+    using static CommonFunctions;
 
     public class Dialogs : IDialogs
     {
@@ -56,6 +59,14 @@ namespace ZDevTools.ServiceConsole.DIServices
                 return null;
         }
 
+        public void ShowVersionsDialog()
+        {
+            VersionWindow window = new VersionWindow();
+            window.Owner = GetActiveWindow();
+            window.ViewModel.Modules = new ObservableCollection<ModuleInfo>(
+                Enumerable.Repeat(typeof(Dialogs).Assembly, 1).Concat(MainWindowViewModel.GetServicesFromMef().Select(s => s.GetType().Assembly).Distinct()).Select(s => new ModuleInfo() { Name = s.ManifestModule.ScopeName, Version = FileVersionInfo.GetVersionInfo(s.Location).FileVersion }));
+            window.ShowDialog();
+        }
 
     }
 }
