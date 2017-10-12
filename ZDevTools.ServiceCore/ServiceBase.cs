@@ -32,7 +32,12 @@ namespace ZDevTools.ServiceCore
         /// <summary>
         /// 服务报告文件夹
         /// </summary>
-        public const string ServiceReportsFolder = "reports";
+        const string ServiceReportsFolder = "reports";
+
+        /// <summary>
+        /// 日志存放位置
+        /// </summary>
+        const string LogsFolder = "logs";
 
         /// <summary>
         /// RedisManagerPool
@@ -129,6 +134,33 @@ namespace ZDevTools.ServiceCore
             throw new ServiceErrorException(message, innerException);
         }
 
+        /// <summary>
+        /// 获取日志文件夹路径（确保日志文件夹存在）
+        /// </summary>
+        /// <returns></returns>
+        public static string GetLogsFolder()
+        {
+            string logsFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, LogsFolder);
+            if (!Directory.Exists(logsFolder))
+                Directory.CreateDirectory(logsFolder);
+            return logsFolder;
+        }
+
+        /// <summary>
+        /// 获取报告文件夹路径（确保报告文件夹存在）
+        /// </summary>
+        /// <returns></returns>
+        public static string GetReportsFolder()
+        {
+            string logsFolder = GetLogsFolder();
+
+            string reportsFolder = Path.Combine(logsFolder, ServiceReportsFolder);
+            if (!Directory.Exists(reportsFolder))
+                Directory.CreateDirectory(reportsFolder);
+
+            return reportsFolder;
+        }
+
         #region 已导出
         /// <summary>
         /// 保存Hash对象
@@ -199,11 +231,9 @@ namespace ZDevTools.ServiceCore
             {
                 if (_reportStream == null)
                 {
-                    string saveFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServiceReportsFolder);
-                    if (!Directory.Exists(saveFolder))
-                        Directory.CreateDirectory(saveFolder);
+                    string reportsFolder = GetReportsFolder();
 
-                    string reportFullName = Path.Combine(saveFolder, ServiceName + ".log");
+                    string reportFullName = Path.Combine(reportsFolder, ServiceName + ".log");
 
                     bool fileExists = File.Exists(reportFullName);
 

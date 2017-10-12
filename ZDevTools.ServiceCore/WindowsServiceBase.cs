@@ -33,7 +33,7 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         void logError(string message)
         {
-            if (Properties.Settings.Default.WindowsServiceLogLevel >= WindowsServiceLogLevel.Error)
+            if (Properties.Settings.Default.WindowsServiceLogLevel <= WindowsServiceLogLevel.Error)
                 writeLog(message, "ERROR", null);
         }
 
@@ -42,7 +42,7 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         void logError(string message, Exception exception)
         {
-            if (Properties.Settings.Default.WindowsServiceLogLevel >= WindowsServiceLogLevel.Error)
+            if (Properties.Settings.Default.WindowsServiceLogLevel <= WindowsServiceLogLevel.Error)
                 writeLog(message, "ERROR", exception);
         }
 
@@ -50,6 +50,8 @@ namespace ZDevTools.ServiceCore
         FileStream _logStream;
         StreamWriter _logStreamWriter;
         static readonly object LogLocker = new object();
+
+
 
         /// <summary>
         /// 写入日志（该方法允许多线程调用）
@@ -66,15 +68,13 @@ namespace ZDevTools.ServiceCore
             {
                 if (_logStream == null)
                 {
-                    string saveFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, WindowsServiceLogsFolder);
-                    if (!Directory.Exists(saveFolder))
-                        Directory.CreateDirectory(saveFolder);
+                    string wsLogsFolder = getWSLogsFolder();
 
-                    string logFullName = Path.Combine(saveFolder, ServiceName + ".log");
+                    string wsLogFullName = Path.Combine(wsLogsFolder, ServiceName + ".log");
 
-                    bool fileExists = File.Exists(logFullName);
+                    bool fileExists = File.Exists(wsLogFullName);
 
-                    _logStream = File.Open(logFullName, FileMode.Append, FileAccess.Write, FileShare.Read);
+                    _logStream = File.Open(wsLogFullName, FileMode.Append, FileAccess.Write, FileShare.Read);
                     _logStreamWriter = new StreamWriter(_logStream);
 
                     if (!fileExists) //write log header
@@ -88,6 +88,20 @@ namespace ZDevTools.ServiceCore
 
                 _logStreamWriter.Flush();
             }
+        }
+
+        /// <summary>
+        /// 获取Windows服务日志文件夹路径（并确保该文件夹存在）
+        /// </summary>
+        /// <returns></returns>
+        static string getWSLogsFolder()
+        {
+            string logsFolder = GetLogsFolder();
+
+            string wsLogsFolder = Path.Combine(logsFolder, WindowsServiceLogsFolder);
+            if (!Directory.Exists(wsLogsFolder))
+                Directory.CreateDirectory(wsLogsFolder);
+            return wsLogsFolder;
         }
 
         bool _disposed;
@@ -158,7 +172,7 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         public void LogInfo(string message)
         {
-            if (Properties.Settings.Default.WindowsServiceLogLevel >= WindowsServiceLogLevel.Info)
+            if (Properties.Settings.Default.WindowsServiceLogLevel <= WindowsServiceLogLevel.Info)
                 writeLog(message, "INFO", null);
         }
 
@@ -167,7 +181,7 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         public void LogWarn(string message)
         {
-            if (Properties.Settings.Default.WindowsServiceLogLevel >= WindowsServiceLogLevel.Warn)
+            if (Properties.Settings.Default.WindowsServiceLogLevel <= WindowsServiceLogLevel.Warn)
                 writeLog(message, "WARN", null);
         }
 
@@ -176,7 +190,7 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         public void LogWarn(string message, Exception exception)
         {
-            if (Properties.Settings.Default.WindowsServiceLogLevel >= WindowsServiceLogLevel.Warn)
+            if (Properties.Settings.Default.WindowsServiceLogLevel <= WindowsServiceLogLevel.Warn)
                 writeLog(message, "WARN", exception);
         }
 
@@ -287,9 +301,17 @@ namespace ZDevTools.ServiceCore
         }
 
         /// <summary>
-        /// 服务报告存放位置
+        /// 获取日志文件夹路径（确保日志文件夹存在）
         /// </summary>
-        public const string ServiceReportsFolder = ServiceBase.ServiceReportsFolder;
+        /// <returns></returns>
+        public static string GetLogsFolder() => ServiceBase.GetLogsFolder();
+
+        /// <summary>
+        /// 获取报告文件夹路径（确保报告文件夹存在）
+        /// </summary>
+        /// <returns></returns>
+        public static string GetReportsFolder() => ServiceBase.GetReportsFolder();
+
         #endregion
 
         #region 导入ServiceBase实例方法
@@ -349,6 +371,8 @@ namespace ZDevTools.ServiceCore
             catch (Exception ex) { LogWarn("状态汇报出错，错误：" + ex.Message, ex); }
         }
 
+
+
         FileStream _reportStream;
         StreamWriter _reportStreamWriter;
         static readonly object ReportLocker = new object();
@@ -365,11 +389,9 @@ namespace ZDevTools.ServiceCore
             {
                 if (_reportStream == null)
                 {
-                    string saveFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServiceReportsFolder);
-                    if (!Directory.Exists(saveFolder))
-                        Directory.CreateDirectory(saveFolder);
+                    string reportsFolder = GetReportsFolder();
 
-                    string reportFullName = Path.Combine(saveFolder, ServiceName + ".log");
+                    string reportFullName = Path.Combine(reportsFolder, ServiceName + ".log");
 
                     bool fileExists = File.Exists(reportFullName);
 
