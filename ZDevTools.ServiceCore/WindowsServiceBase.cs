@@ -18,7 +18,7 @@ namespace ZDevTools.ServiceCore
         /// <summary>
         /// Windows服务日志文件夹
         /// </summary>
-        public const string WindowsServiceLogsFolder = "wslogs";
+        const string WindowsServiceLogsFolder = "wslogs";
 
         /// <summary>
         /// 初始化一个服务
