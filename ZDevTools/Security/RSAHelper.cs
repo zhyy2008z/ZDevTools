@@ -65,9 +65,9 @@ namespace ZDevTools.Security
         {
             using (StreamReader reader = new StreamReader(path))
             {
-                string publickey = reader.ReadToEnd();
+                string xmlKeys = reader.ReadToEnd();
                 RSACryptoServiceProvider rcp = new RSACryptoServiceProvider();
-                rcp.FromXmlString(publickey);
+                rcp.FromXmlString(xmlKeys);
                 var rsaParams = rcp.ExportParameters(includePrivateparameters);
                 RSAKey rsaKeys;
                 if (includePrivateparameters)
