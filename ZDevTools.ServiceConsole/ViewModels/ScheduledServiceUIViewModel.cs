@@ -273,9 +273,12 @@ namespace ZDevTools.ServiceConsole.ViewModels
                     break;
                 case ScheduledServiceStatus.Running: //运行状态下，停止计时器防止再次启动任务，将任务状态标记为停止中，再取消任务
 
-                    stopSchedules();
-                    updateServiceStatus(ScheduledServiceStatus.Stopping);
-                    (_bindedService as IServiceRevokable).Cancel();
+                    if (_bindedService is IServiceRevokable revokable) //修正不可停止的任务被强行终止造成bug的问题
+                    {
+                        stopSchedules();
+                        updateServiceStatus(ScheduledServiceStatus.Stopping);
+                        revokable.Cancel();
+                    }
 
                     break;
                 case ScheduledServiceStatus.Stopping: //这个状态下无操作
