@@ -71,9 +71,8 @@ namespace ZDevTools.Collections
         /// </remarks>
         public static TTreeNode Parse(Tree<TTreeNode, TKey> tree, IEnumerable<TTreeNode> nodes, out Dictionary<TKey, TTreeNode> flattenNodes)
         {
-            var treeNodes = nodes.ToList();
-
-            flattenNodes = treeNodes.ToDictionary(node => node.Id);
+            flattenNodes = nodes.ToDictionary(node => node.Id);
+            var treeNodes = nodes.Reverse().ToList(); //逆转顺序后可以让nodes节点的形成层级后，同级节点的相对顺序保持不变
 
             //整理为树
             for (int i = treeNodes.Count - 1; i > -1; i--)
