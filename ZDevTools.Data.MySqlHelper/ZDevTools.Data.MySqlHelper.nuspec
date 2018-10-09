@@ -11,8 +11,8 @@
     <iconUrl>https://github.com/zhyy2008z/ZDevTools/noicon</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>更新Nuget引用及所用框架版本</releaseNotes>
-    <copyright>Copyright 自由软件 2017</copyright>
+    <releaseNotes>更新Nuget引用及所用框架版本，框架改为支持4.5.2版本</releaseNotes>
+    <copyright>Copyright 自由软件 2018</copyright>
     <tags>MySqlHelper</tags>
   </metadata>
 </package>
