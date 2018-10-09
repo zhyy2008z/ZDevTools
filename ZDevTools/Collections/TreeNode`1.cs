@@ -154,5 +154,41 @@ namespace ZDevTools.Collections
             return false;
         }
         #endregion
+
+        #region 排序
+        static void insertionSort(IList<T> list, Comparison<T> comparison)
+        {
+            if (list == null)
+                throw new ArgumentNullException("list");
+            if (comparison == null)
+                throw new ArgumentNullException("comparison");
+
+            int count = list.Count;
+            for (int j = 1; j < count; j++)
+            {
+                T key = list[j];
+
+                int i = j - 1;
+                for (; i >= 0 && comparison(list[i], key) > 0; i--)
+                {
+                    list[i + 1] = list[i];
+                }
+                list[i + 1] = key;
+            }
+        }
+
+        /// <summary>
+        /// 使用稳定排序算法，排序本节点的<see cref="Children"/>，及所有子节点的<see cref="Children"/>
+        /// </summary>
+        /// <param name="comparison"></param>
+        internal void StableSort(Comparison<T> comparison)
+        {
+            insertionSort(this.Children as IList<T>, comparison);
+
+            foreach (var node in this.Children)
+                node.StableSort(comparison);
+        }
+
+        #endregion
     }
 }

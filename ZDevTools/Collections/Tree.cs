@@ -207,6 +207,15 @@ namespace ZDevTools.Collections
             //由于是移动节点，故无需操作树节点缓存，整个操作中没有节点Id被改变。
         }
 
+        /// <summary>
+        /// 使用稳定排序，排序树中所有节点
+        /// </summary>
+        /// <param name="comparison"></param>
+        public void StableSort(Comparison<TTreeNode> comparison)
+        {
+            Root.StableSort(comparison);
+        }
+
         #endregion
 
         #region 线性化
