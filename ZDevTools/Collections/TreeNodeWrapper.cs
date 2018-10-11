@@ -40,7 +40,7 @@ namespace ZDevTools.Collections
                 {
                     _nodes.Add(node);
                     foreach (var n in node.AllToList())
-                        _flattenNodes.Add(n.Id, n);
+                        _flattenNodes[n.Id] = n;
                 }
             }
             else
@@ -65,7 +65,7 @@ namespace ZDevTools.Collections
                 return _flattenNodes.Values;
             else
             {
-                return _nodes.SelectMany(node => node.AllToList());
+                return _nodes.SelectMany(node => node.AllToList()).Distinct();
             }
         }
         #endregion
@@ -165,7 +165,7 @@ namespace ZDevTools.Collections
             }
             else
             {
-                return _nodes.SelectMany(node => node.FindAll(predicate));
+                return _nodes.SelectMany(node => node.FindAll(predicate)).Distinct();
             }
         }
         #endregion
