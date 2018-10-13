@@ -66,7 +66,7 @@ namespace ZDevTools.Collections
         /// <param name="nodes">treeNode可枚举对象</param>
         /// <param name="flattenNodes">平化的节点字典</param>
         /// <param name="tree">所属Tree</param>
-        /// <remarks>您必须保证nodes中有且仅有一个根节点，否则会报错。节点排序：后入先出，因此，nodes中排序靠后的节点会最先出现在节点树中。
+        /// <remarks>您必须保证nodes中有且仅有一个根节点，否则会报错。
         /// 如果整理出错，请不要再次使用这些节点，因为节点状态已更改并且无法保证处于未附加状态中。
         /// </remarks>
         public static TTreeNode Parse(Tree<TTreeNode, TKey> tree, IEnumerable<TTreeNode> nodes, out Dictionary<TKey, TTreeNode> flattenNodes)
@@ -78,7 +78,7 @@ namespace ZDevTools.Collections
             for (int i = treeNodes.Count - 1; i > -1; i--)
             {
                 var current = treeNodes[i];
-                //检查条件，不允许附加到其他树的节点附加到本树
+                //检查条件，不允许已附加到树的节点参与解析
                 if (current.Tree != null)
                     throw new TreeNodeException<TTreeNode, TKey>("同一个节点不能同时被多个树引用！", current);
                 current.Tree = tree;
