@@ -32,6 +32,7 @@
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Release\ZDevTools.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
@@ -56,6 +57,10 @@
     <Compile Include="Collections\TreeNodeWrapper.cs" />
     <Compile Include="Collections\TreeNode`1.cs" />
     <Compile Include="Collections\TreeNode`2.cs" />
+    <Compile Include="IO\SymbolicLink.cs" />
+    <Compile Include="IO\SymbolicLinkReparseData.cs" />
+    <Compile Include="Net\SocketListener.cs" />
+    <Compile Include="Net\Token.cs" />
     <Compile Include="Security\RSAHelper.cs" />
     <Compile Include="UI\WinForm\CustomCompleteTextBox.cs">
       <SubType>Component</SubType>

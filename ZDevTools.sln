@@ -18,6 +18,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZDevTools.Test", "ZDevTools.Test\ZDevTools.Test.csproj", "{29AED024-0F71-4DD7-95C3-C4E948B94A8A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZDevTools.Data.MySqlHelper", "ZDevTools.Data.MySqlHelper\ZDevTools.Data.MySqlHelper.csproj", "{81A1A2B8-30A7-4064-8801-3D5D79D1176B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9BB4EA34-29A0-4CCA-9B5C-D86B3B30C4B4} = {9BB4EA34-29A0-4CCA-9B5C-D86B3B30C4B4}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

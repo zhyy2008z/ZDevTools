@@ -11,8 +11,8 @@
     <iconUrl>https://github.com/zhyy2008z/ZDevTools/noicon</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>Tree增加稳定排序功能</releaseNotes>
+    <releaseNotes>新增SocketListener与SymbolicLink</releaseNotes>
     <copyright>Copyright 自由软件 2018</copyright>
-    <tags>SqlHelper AutoComplete TreeNode RSAHelper</tags>
+    <tags>SqlHelper AutoComplete TreeNode RSAHelper SocketListener SymbolicLink</tags>
   </metadata>
 </package>
