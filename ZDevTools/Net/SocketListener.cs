@@ -19,39 +19,43 @@ namespace ZDevTools.Net
         /// <summary>
         /// The socket used to listen for incoming connection requests.
         /// </summary>
-        private volatile Socket _socket;
+        volatile Socket _socket;
+
+        /// <summary>
+        /// 正在停止中
+        /// </summary>
+        volatile bool _isStopping;
 
         /// <summary>
         /// Buffer size to use for each socket I/O operation.
         /// </summary>
-        private readonly int _bufferSize;
+        readonly int BufferSize;
 
         /// <summary>
         /// the maximum number of connections the sample is designed to handle simultaneously.
         /// </summary>
-        private readonly int _maxConnectionCount;
+        readonly int MaxConnectionCount;
 
         /// <summary>
         /// Pool of reusable SocketAsyncEventArgs objects for write, read and accept socket operations.
         /// </summary>
-        private readonly ConcurrentStack<SocketAsyncEventArgs> _ePool;
+        readonly ConcurrentStack<SocketAsyncEventArgs> EPool;
 
         /// <summary>
         /// Controls the total number of clients connected to the server.
         /// </summary>
-        private readonly SemaphoreSlim _semaphore;
+        readonly SemaphoreSlim Semaphore;
 
-        private readonly ManualResetEvent _manualResetEvent;
+        /// <summary>
+        /// 同步构造
+        /// </summary>
+        readonly ManualResetEvent ManualResetEvent;
 
-        ConcurrentDictionary<Socket, Socket> _clients = new ConcurrentDictionary<Socket, Socket>();
 
         /// <summary>
         /// 所有正在与本监听器通讯的Sockets
         /// </summary>
-        public ConcurrentDictionary<Socket, Socket> Clients { get { return _clients; } }
-
-
-        volatile bool _isStopping;
+        public ConcurrentDictionary<Socket, Socket> Clients { get; } = new ConcurrentDictionary<Socket, Socket>();
 
         /// <summary>
         /// 是否正在停止中
@@ -108,22 +112,22 @@ namespace ZDevTools.Net
         public SocketListener(int maxConnections, int bufferSize)
         {
             // Create the socket which listens for incoming connections.
-            this._maxConnectionCount = maxConnections;
-            this._bufferSize = bufferSize;
+            this.MaxConnectionCount = maxConnections;
+            this.BufferSize = bufferSize;
 
-            this._ePool = new ConcurrentStack<SocketAsyncEventArgs>();
-            this._semaphore = new SemaphoreSlim(maxConnections, maxConnections);
-            this._manualResetEvent = new ManualResetEvent(true);
+            this.EPool = new ConcurrentStack<SocketAsyncEventArgs>();
+            this.Semaphore = new SemaphoreSlim(maxConnections, maxConnections);
+            this.ManualResetEvent = new ManualResetEvent(true);
 
             // Preallocate pool of SocketAsyncEventArgs objects.
-            for (int i = 0; i < this._maxConnectionCount; i++)
+            for (int i = 0; i < this.MaxConnectionCount; i++)
             {
                 SocketAsyncEventArgs e = new SocketAsyncEventArgs();
                 e.Completed += onCompleted;
-                e.SetBuffer(new byte[this._bufferSize], 0, this._bufferSize);
+                e.SetBuffer(new byte[this.BufferSize], 0, this.BufferSize);
 
                 // Add SocketAsyncEventArg to the pool.
-                this._ePool.Push(e);
+                this.EPool.Push(e);
             }
         }
 
@@ -133,23 +137,21 @@ namespace ZDevTools.Net
         /// <param name="e">SocketAsyncEventArg associated with the completed send/receive operation.</param>
         private void closeClientSocket(SocketAsyncEventArgs e)
         {
-            UserToken token = e.UserToken as UserToken;
-            this.closeClientSocket(token, e);
+            this.closeClientSocket((UserToken)e.UserToken, e);
         }
 
         private void closeClientSocket(UserToken token, SocketAsyncEventArgs e)
         {
-            _clients.TryRemove(token.Socket, out _); //移除客户端
+            Clients.TryRemove(token.Socket, out _); //移除客户端
 
             token.Dispose();
             // Free the SocketAsyncEventArg so they can be reused by another client.
-            this._ePool.Push(e);
+            this.EPool.Push(e);
             // Decrement the counter keeping track of the total number of clients connected to the server.
-            this._semaphore.Release();
-            if (_ePool.Count == _maxConnectionCount)
-                _manualResetEvent.Set();
+            this.Semaphore.Release();
+            if (EPool.Count == MaxConnectionCount)
+                ManualResetEvent.Set();
         }
-
 
         /// <summary>
         /// Callback called whenever a receive or send operation is completed on a socket.
@@ -198,18 +200,12 @@ namespace ZDevTools.Net
 
             if (socket.Connected)
             {
-                _clients.TryAdd(socket, socket);//客户端已连接
+                Clients.TryAdd(socket, socket);//客户端已连接
 
-                _ePool.TryPop(out var args);
-                _manualResetEvent.Reset();
+                EPool.TryPop(out var args);
+                ManualResetEvent.Reset();
 
-                args.UserToken = new TUserToken(); //每个新连接都重新分配一个Token上下文
-
-                UserToken token = args.UserToken as UserToken;
-
-                //初始化token
-                token.Socket = socket;//关联Socket
-                //token.MessageBytes.Clear();
+                args.UserToken = new TUserToken() { Socket = socket /* 关联Socket */ }; //每个新连接都重新分配一个UserToken上下文
 
                 if (!socket.ReceiveAsync(args))
                 {
@@ -221,14 +217,14 @@ namespace ZDevTools.Net
             }
             else
             {
-                _semaphore.Release();
+                Semaphore.Release();
                 reportError("接收请求后未能成功建立连接");
             }
         }
 
         private void processError(SocketAsyncEventArgs e, string operationName)
         {
-            UserToken token = e.UserToken as UserToken;
+            UserToken token = (UserToken)e.UserToken;
             reportError($"与{token.Socket.RemoteEndPoint}进行{operationName}通讯操作出错，连接即将关闭");
             this.closeClientSocket(token, e);
         }
@@ -246,19 +242,20 @@ namespace ZDevTools.Net
             {
                 if (e.SocketError == SocketError.Success)
                 {
-                    UserToken token = e.UserToken as UserToken;
+                    UserToken token = (UserToken)e.UserToken;
 
                     token.Stream.Write(e.Buffer, e.Offset, e.BytesTransferred);
 
-                    Socket s = token.Socket;
-                    if (s.Available == 0)
+                    Socket socket = token.Socket;
+
+                    if (socket.Available == 0)
                     {
                         // Set return buffer.
                         byte[] bytes;
 
                         try
                         {
-                            bytes = MessageHandler(e.UserToken as TUserToken, token.Stream.ToArray());
+                            bytes = MessageHandler((TUserToken)token, token.Stream.ToArray());
                         }
                         catch (Exception ex)
                         {
@@ -269,29 +266,28 @@ namespace ZDevTools.Net
 
                         if (bytes != null) //返回的结果不为null，需要进行发送操作
                         {
-                            if (bytes.Length > e.Count) //要发送的信息超过缓冲大小
+                            if (bytes.Length >= e.Count) //要发送的信息大于等于缓冲大小
                             {
                                 e.SetBuffer(bytes, 0, bytes.Length);
                             }
-                            else //小于等于缓冲大小
+                            else //小于缓冲大小（将数据进行复制，而不是替换，这样可以保证缓存大小一定是大于等于_bufferSize的）
                             {
                                 Array.Copy(bytes, e.Buffer, bytes.Length);
                                 e.SetBuffer(0, bytes.Length);
                             }
                             token.Stream.SetLength(0);
-                            if (!s.SendAsync(e))
+                            if (!socket.SendAsync(e))
                             {
-                                // Set the buffer to send back to the client.
                                 this.processSend(e);
                             }
                         }
                         else //不需要进行发送操作，但要将缓存数据清零，以备再次接收数据
                         {
                             token.Stream.SetLength(0);
-                            this.processSend(e); //处理发送（开始接收数据）
+                            this.processSend(e); //处理发送（开始接收下一次数据）
                         }
                     }
-                    else if (!s.ReceiveAsync(e))
+                    else if (!socket.ReceiveAsync(e))
                     {
                         // Read the next block of data sent by client.
                         this.processReceive(e);
@@ -318,9 +314,8 @@ namespace ZDevTools.Net
         {
             if (e.SocketError == SocketError.Success)
             {
-                // Done echoing data back to the client.
-                UserToken token = e.UserToken as UserToken;
-                e.SetBuffer(0, _bufferSize);
+                UserToken token = (UserToken)e.UserToken;
+                e.SetBuffer(0, BufferSize);
                 if (!token.Socket.ReceiveAsync(e))
                 {
                     // Read the next block of data send from the client.
@@ -349,8 +344,8 @@ namespace ZDevTools.Net
 
                 var bindedIPAddress = IPAddress.Parse("0.0.0.0");
                 this._socket = new Socket(bindedIPAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                this._socket.ReceiveBufferSize = this._bufferSize;
-                this._socket.SendBufferSize = this._bufferSize;
+                this._socket.ReceiveBufferSize = this.BufferSize;
+                this._socket.SendBufferSize = this.BufferSize;
                 this._socket.ReceiveTimeout = ReceiveTimeout;
                 this._socket.SendTimeout = SendTimeout;
 
@@ -360,7 +355,7 @@ namespace ZDevTools.Net
                 this._socket.Bind(localEndPoint);
 
                 // Start the server.
-                this._socket.Listen(this._maxConnectionCount);
+                this._socket.Listen(this.MaxConnectionCount);
 
                 // Post accepts on the listening socket.
                 SocketAsyncEventArgs e = new SocketAsyncEventArgs();
@@ -380,7 +375,7 @@ namespace ZDevTools.Net
             if (_isStopping) //不再接收新的请求
                 return;
 
-            this._semaphore.Wait();
+            this.Semaphore.Wait();
             e.AcceptSocket = null;
             if (!this._socket.AcceptAsync(e))
             {
@@ -407,7 +402,7 @@ namespace ZDevTools.Net
 
                 try { this._socket.Shutdown(SocketShutdown.Receive); } catch (Exception) { } //swallow error
 
-                if (_manualResetEvent.WaitOne(ReceiveTimeout))
+                if (ManualResetEvent.WaitOne(ReceiveTimeout))
                 {
                     this._socket.Close();
                     this._socket = null;
