@@ -270,7 +270,7 @@ namespace ZDevTools.Net
                             {
                                 e.SetBuffer(bytes, 0, bytes.Length);
                             }
-                            else //小于缓冲大小（将数据进行复制，而不是替换，这样可以保证缓存大小一定是大于等于_bufferSize的）
+                            else //小于缓冲大小（将数据进行复制，而不是替换，这样可以保证缓存大小一定是大于等于 BufferSize 的）
                             {
                                 Array.Copy(bytes, e.Buffer, bytes.Length);
                                 e.SetBuffer(0, bytes.Length);
