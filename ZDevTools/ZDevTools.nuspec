@@ -11,7 +11,7 @@
     <iconUrl>https://github.com/zhyy2008z/ZDevTools/noicon</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>新增SocketListener与SymbolicLink</releaseNotes>
+    <releaseNotes>优化SocketListener性能与API接口</releaseNotes>
     <copyright>Copyright 自由软件 2018</copyright>
     <tags>SqlHelper AutoComplete TreeNode RSAHelper SocketListener SymbolicLink</tags>
   </metadata>

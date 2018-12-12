@@ -4,30 +4,24 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace ZDevTools.Net
 {
-    public sealed class Token : IDisposable
+    /// <summary>
+    /// 与连接关联的上下文（可继承扩展这个上下文）
+    /// </summary>
+    public class UserToken : IDisposable
     {
-        /// <summary>
-        /// Class constructor.
-        /// </summary>
-        /// <param name="socket">Socket to accept incoming data.</param>
-        /// <param name="bufferSize">Buffer size for accepted data.</param>
-        public Token()
-        {
-            MessageBytes = new List<byte>();
-        }
-
         /// <summary>
         /// Accept socket.
         /// </summary>
-        public Socket Socket { get; set; }
+        public Socket Socket { get; internal set; }
 
         /// <summary>
-        /// 从上次发送到现在接收到的所有数据
+        /// 数据流
         /// </summary>
-        public List<byte> MessageBytes { get; }
+        internal MemoryStream Stream { get; } = new MemoryStream();
 
         /// <summary>
         /// Release instance.
@@ -42,6 +36,7 @@ namespace ZDevTools.Net
             finally
             {
                 this.Socket.Close();
+                this.Stream.Close();
             }
         }
     }

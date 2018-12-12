@@ -13,7 +13,8 @@ namespace ZDevTools.Net
     /// <summary>
     /// 一问一答式高性能Socket监听器
     /// </summary>
-    public sealed class SocketListener
+    public sealed class SocketListener<TUserToken>
+        where TUserToken : UserToken, new()
     {
         /// <summary>
         /// The socket used to listen for incoming connection requests.
@@ -44,6 +45,9 @@ namespace ZDevTools.Net
 
         ConcurrentDictionary<Socket, Socket> _clients = new ConcurrentDictionary<Socket, Socket>();
 
+        /// <summary>
+        /// 所有正在与本监听器通讯的Sockets
+        /// </summary>
         public ConcurrentDictionary<Socket, Socket> Clients { get { return _clients; } }
 
 
@@ -57,7 +61,7 @@ namespace ZDevTools.Net
         /// <summary>
         /// 消息处理函数（返回回应数据）
         /// </summary>
-        public Func<SocketAsyncEventArgs, byte[], byte[]> MessageHandler { get; set; }
+        public Func<TUserToken, byte[], byte[]> MessageHandler { get; set; }
 
         /// <summary>
         /// 发送超时设置，默认30000毫秒，该值仅在<see cref="Start(int)"/>时起作用
@@ -78,6 +82,11 @@ namespace ZDevTools.Net
         /// 关键性错误处理
         /// </summary>
         public Action<string, Exception> CriticalErrorHandler { get; set; }
+
+        /// <summary>
+        /// 监听器基础套接字
+        /// </summary>
+        public Socket Socket { get => _socket; }
 
         void reportError(string message, Exception exception)
         {
@@ -124,11 +133,11 @@ namespace ZDevTools.Net
         /// <param name="e">SocketAsyncEventArg associated with the completed send/receive operation.</param>
         private void closeClientSocket(SocketAsyncEventArgs e)
         {
-            Token token = e.UserToken as Token;
+            UserToken token = e.UserToken as UserToken;
             this.closeClientSocket(token, e);
         }
 
-        private void closeClientSocket(Token token, SocketAsyncEventArgs e)
+        private void closeClientSocket(UserToken token, SocketAsyncEventArgs e)
         {
             _clients.TryRemove(token.Socket, out _); //移除客户端
 
@@ -168,7 +177,7 @@ namespace ZDevTools.Net
             }
             catch (Exception ex)
             {
-                var message = $"未能继续处理{e.LastOperation}操作，{nameof(SocketListener)}内部错误";
+                var message = $"未能继续处理{e.LastOperation}操作，{nameof(SocketListener<TUserToken>)}内部错误";
                 if (CriticalErrorHandler != null)
                     CriticalErrorHandler(message, ex);
                 else
@@ -194,13 +203,13 @@ namespace ZDevTools.Net
                 _ePool.TryPop(out var args);
                 _manualResetEvent.Reset();
 
-                if (args.UserToken == null)
-                    args.UserToken = new Token();
-                Token token = args.UserToken as Token;
+                args.UserToken = new TUserToken(); //每个新连接都重新分配一个Token上下文
+
+                UserToken token = args.UserToken as UserToken;
 
                 //初始化token
-                token.Socket = socket;
-                token.MessageBytes.Clear();
+                token.Socket = socket;//关联Socket
+                //token.MessageBytes.Clear();
 
                 if (!socket.ReceiveAsync(args))
                 {
@@ -219,7 +228,7 @@ namespace ZDevTools.Net
 
         private void processError(SocketAsyncEventArgs e, string operationName)
         {
-            Token token = e.UserToken as Token;
+            UserToken token = e.UserToken as UserToken;
             reportError($"与{token.Socket.RemoteEndPoint}进行{operationName}通讯操作出错，连接即将关闭");
             this.closeClientSocket(token, e);
         }
@@ -237,19 +246,19 @@ namespace ZDevTools.Net
             {
                 if (e.SocketError == SocketError.Success)
                 {
-                    Token token = e.UserToken as Token;
+                    UserToken token = e.UserToken as UserToken;
 
-                    for (int i = 0; i < e.BytesTransferred; i++)
-                        token.MessageBytes.Add(e.Buffer[i + e.Offset]);
+                    token.Stream.Write(e.Buffer, e.Offset, e.BytesTransferred);
 
                     Socket s = token.Socket;
                     if (s.Available == 0)
                     {
                         // Set return buffer.
                         byte[] bytes;
+
                         try
                         {
-                            bytes = MessageHandler(e, token.MessageBytes.ToArray());
+                            bytes = MessageHandler(e.UserToken as TUserToken, token.Stream.ToArray());
                         }
                         catch (Exception ex)
                         {
@@ -257,20 +266,29 @@ namespace ZDevTools.Net
                             closeClientSocket(e);
                             return;
                         }
-                        if (bytes.Length > e.Count) //要发送的信息超过缓冲大小
+
+                        if (bytes != null) //返回的结果不为null，需要进行发送操作
                         {
-                            e.SetBuffer(bytes, 0, bytes.Length);
+                            if (bytes.Length > e.Count) //要发送的信息超过缓冲大小
+                            {
+                                e.SetBuffer(bytes, 0, bytes.Length);
+                            }
+                            else //小于等于缓冲大小
+                            {
+                                Array.Copy(bytes, e.Buffer, bytes.Length);
+                                e.SetBuffer(0, bytes.Length);
+                            }
+                            token.Stream.SetLength(0);
+                            if (!s.SendAsync(e))
+                            {
+                                // Set the buffer to send back to the client.
+                                this.processSend(e);
+                            }
                         }
-                        else //小于等于缓冲大小
+                        else //不需要进行发送操作，但要将缓存数据清零，以备再次接收数据
                         {
-                            Array.Copy(bytes, e.Buffer, bytes.Length);
-                            e.SetBuffer(0, bytes.Length);
-                        }
-                        token.MessageBytes.Clear();
-                        if (!s.SendAsync(e))
-                        {
-                            // Set the buffer to send back to the client.
-                            this.processSend(e);
+                            token.Stream.SetLength(0);
+                            this.processSend(e); //处理发送（开始接收数据）
                         }
                     }
                     else if (!s.ReceiveAsync(e))
@@ -301,7 +319,7 @@ namespace ZDevTools.Net
             if (e.SocketError == SocketError.Success)
             {
                 // Done echoing data back to the client.
-                Token token = e.UserToken as Token;
+                UserToken token = e.UserToken as UserToken;
                 e.SetBuffer(0, _bufferSize);
                 if (!token.Socket.ReceiveAsync(e))
                 {
@@ -396,7 +414,7 @@ namespace ZDevTools.Net
                     _isStopping = false;
                 }
                 else
-                    throw new Exception($"等待{nameof(SocketListener)}关闭超时");
+                    throw new Exception($"等待{nameof(SocketListener<TUserToken>)}关闭超时");
             }
         }
     }

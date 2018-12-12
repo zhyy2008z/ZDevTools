@@ -14,6 +14,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZDevTools.ServiceMonitor", "ZDevTools.ServiceMonitor\ZDevTools.ServiceMonitor.csproj", "{16D82A81-45D1-41A6-AEB6-44415FE7ECAC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZDevTools.ServiceSample", "ZDevTools.ServiceSample\ZDevTools.ServiceSample.csproj", "{66020584-4991-4048-8AAE-752C52E40138}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F2FC89B2-A544-400F-80B7-6E540B747374} = {F2FC89B2-A544-400F-80B7-6E540B747374}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZDevTools.Test", "ZDevTools.Test\ZDevTools.Test.csproj", "{29AED024-0F71-4DD7-95C3-C4E948B94A8A}"
 EndProject

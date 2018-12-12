@@ -60,7 +60,7 @@
     <Compile Include="IO\SymbolicLink.cs" />
     <Compile Include="IO\SymbolicLinkReparseData.cs" />
     <Compile Include="Net\SocketListener.cs" />
-    <Compile Include="Net\Token.cs" />
+    <Compile Include="Net\UserToken.cs" />
     <Compile Include="Security\RSAHelper.cs" />
     <Compile Include="UI\WinForm\CustomCompleteTextBox.cs">
       <SubType>Component</SubType>
