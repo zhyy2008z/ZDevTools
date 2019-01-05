@@ -42,7 +42,7 @@ namespace ZDevTools.Net
         readonly ConcurrentStack<SocketAsyncEventArgs> EPool;
 
         /// <summary>
-        /// Controls the total number of clients connected to the server.
+        /// 控制连接到本服务器的客户端数量
         /// </summary>
         readonly SemaphoreSlim Semaphore;
 
@@ -51,11 +51,10 @@ namespace ZDevTools.Net
         /// </summary>
         readonly ManualResetEvent ManualResetEvent;
 
-
         /// <summary>
         /// 所有正在与本监听器通讯的Sockets
         /// </summary>
-        public ConcurrentDictionary<Socket, Socket> Clients { get; } = new ConcurrentDictionary<Socket, Socket>();
+        public ConcurrentDictionary<Socket, Socket> Clients { get; }
 
         /// <summary>
         /// 是否正在停止中
@@ -78,29 +77,14 @@ namespace ZDevTools.Net
         public int ReceiveTimeout { get; set; } = 30000;
 
         /// <summary>
-        /// 一般错误处理
+        /// 停止客户端连接关闭等待时间，默认30000毫秒，该值仅在<see cref="Stop()"/>时起作用
         /// </summary>
-        public Action<string, Exception> GeneralErrorHandler { get; set; }
-
-        /// <summary>
-        /// 关键性错误处理
-        /// </summary>
-        public Action<string, Exception> CriticalErrorHandler { get; set; }
+        public int StopTimeout { get; set; } = 30000;
 
         /// <summary>
         /// 监听器基础套接字
         /// </summary>
         public Socket Socket { get => _socket; }
-
-        void reportError(string message, Exception exception)
-        {
-            GeneralErrorHandler?.Invoke(message, exception);
-        }
-
-        void reportError(string message)
-        {
-            reportError(message, null);
-        }
 
         /// <summary>
         /// Create an uninitialized server instance.  
@@ -114,9 +98,9 @@ namespace ZDevTools.Net
             // Create the socket which listens for incoming connections.
             this.MaxConnectionCount = maxConnections;
             this.BufferSize = bufferSize;
-
             this.EPool = new ConcurrentStack<SocketAsyncEventArgs>();
-            this.Semaphore = new SemaphoreSlim(maxConnections, maxConnections);
+            this.Clients = new ConcurrentDictionary<Socket, Socket>();
+            this.Semaphore = new SemaphoreSlim(MaxConnectionCount, MaxConnectionCount);
             this.ManualResetEvent = new ManualResetEvent(true);
 
             // Preallocate pool of SocketAsyncEventArgs objects.
@@ -125,33 +109,52 @@ namespace ZDevTools.Net
                 SocketAsyncEventArgs e = new SocketAsyncEventArgs();
                 e.Completed += onCompleted;
                 e.SetBuffer(new byte[this.BufferSize], 0, this.BufferSize);
-
                 // Add SocketAsyncEventArg to the pool.
                 this.EPool.Push(e);
             }
         }
 
         /// <summary>
-        /// Close the socket associated with the client.
+        /// Starts the server listening for incoming connection requests.
         /// </summary>
-        /// <param name="e">SocketAsyncEventArg associated with the completed send/receive operation.</param>
-        private void closeClientSocket(SocketAsyncEventArgs e)
+        /// <param name="port">Port where the server will listen for connection requests.</param>
+        public void Start(int port)
         {
-            this.closeClientSocket((UserToken)e.UserToken, e);
+            if (_isStopping || _socket != null)
+                return;
+
+            lock (_locker)
+            {
+                if (_isStopping || _socket != null)
+                    return;
+
+                var bindedIPAddress = IPAddress.Parse("0.0.0.0");
+                this._socket = new Socket(bindedIPAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                this._socket.ReceiveBufferSize = this.BufferSize;
+                this._socket.SendBufferSize = this.BufferSize;
+                this._socket.ReceiveTimeout = ReceiveTimeout;
+                this._socket.SendTimeout = SendTimeout;
+
+                // Get endpoint for the listener.
+                IPEndPoint localEndPoint = new IPEndPoint(bindedIPAddress, port);
+
+                this._socket.Bind(localEndPoint);
+
+                // Start the server.
+                this._socket.Listen(this.MaxConnectionCount);
+
+                //创建一个接受请求专用的EventArgs
+                SocketAsyncEventArgs e = new SocketAsyncEventArgs();
+                e.Completed += onCompleted;
+                //不要设置Buffer，因为接受连接用不上缓存，除非你真的需要。
+                this.startAccept(e);
+            }
         }
 
-        private void closeClientSocket(UserToken token, SocketAsyncEventArgs e)
-        {
-            Clients.TryRemove(token.Socket, out _); //移除客户端
-
-            token.Dispose();
-            // Free the SocketAsyncEventArg so they can be reused by another client.
-            this.EPool.Push(e);
-            // Decrement the counter keeping track of the total number of clients connected to the server.
-            this.Semaphore.Release();
-            if (EPool.Count == MaxConnectionCount)
-                ManualResetEvent.Set();
-        }
+        /// <summary>
+        /// 关键性错误处理
+        /// </summary>
+        public Action<string, Exception> CriticalErrorHandler { get; set; }
 
         /// <summary>
         /// Callback called whenever a receive or send operation is completed on a socket.
@@ -191,6 +194,29 @@ namespace ZDevTools.Net
         }
 
         /// <summary>
+        /// Begins an operation to accept a connection request from the client.
+        /// </summary>
+        /// <param name="e">The context object to use when issuing 
+        /// the accept operation on the server's listening socket.</param>
+        private void startAccept(SocketAsyncEventArgs e)
+        {
+            if (_isStopping) //不再接收新的请求
+                return;
+
+            this.Semaphore.Wait(); //检查信号量是否充足，如果不足，就一直等待
+            e.AcceptSocket = null;
+            if (!this._socket.AcceptAsync(e))
+            {
+                this.processAccept(e);
+            }
+        }
+
+        /// <summary>
+        /// 接收请求成功建立连接处理器
+        /// </summary>
+        public Func<TUserToken, bool> AcceptHandler { get; set; }
+
+        /// <summary>
         /// Process the accept for the socket listener.
         /// </summary>
         /// <param name="e">SocketAsyncEventArg associated with the completed accept operation.</param>
@@ -203,13 +229,22 @@ namespace ZDevTools.Net
                 Clients.TryAdd(socket, socket);//客户端已连接
 
                 EPool.TryPop(out var args);
+
                 ManualResetEvent.Reset();
 
                 args.UserToken = new TUserToken() { Socket = socket /* 关联Socket */ }; //每个新连接都重新分配一个UserToken上下文
 
-                if (!socket.ReceiveAsync(args))
+                var acceptHandler = AcceptHandler;
+                if (acceptHandler != null && !acceptHandler((TUserToken)args.UserToken))
                 {
-                    this.processReceive(args);
+                    closeClientSocket(args);
+                }
+                else
+                {
+                    if (!socket.ReceiveAsync(args))
+                    {
+                        this.processReceive(args);
+                    }
                 }
 
                 // Accept the next connection request.
@@ -217,16 +252,9 @@ namespace ZDevTools.Net
             }
             else
             {
+                //说明我们把服务器关了，要释放一个接受信号
                 Semaphore.Release();
-                reportError("接收请求后未能成功建立连接");
             }
-        }
-
-        private void processError(SocketAsyncEventArgs e, string operationName)
-        {
-            UserToken token = (UserToken)e.UserToken;
-            reportError($"与{token.Socket.RemoteEndPoint}进行{operationName}通讯操作出错，连接即将关闭");
-            this.closeClientSocket(token, e);
         }
 
         /// <summary>
@@ -259,7 +287,7 @@ namespace ZDevTools.Net
                         }
                         catch (Exception ex)
                         {
-                            reportError($"用户消息处理函数抛出异常，本次通讯连接将被关闭", ex);
+                            reportError($"用户消息处理函数发生错误，本次通讯连接将被关闭", ex);
                             closeClientSocket(e);
                             return;
                         }
@@ -284,7 +312,11 @@ namespace ZDevTools.Net
                         else //不需要进行发送操作，但要将缓存数据清零，以备再次接收数据
                         {
                             token.Stream.SetLength(0);
-                            this.processSend(e); //处理发送（开始接收下一次数据）
+                            if (!socket.ReceiveAsync(e)) //接收下一次数据
+                            {
+                                // Read the next block of data sent by client.
+                                this.processReceive(e);
+                            }
                         }
                     }
                     else if (!socket.ReceiveAsync(e))
@@ -328,67 +360,12 @@ namespace ZDevTools.Net
             }
         }
 
-        /// <summary>
-        /// Starts the server listening for incoming connection requests.
-        /// </summary>
-        /// <param name="port">Port where the server will listen for connection requests.</param>
-        public void Start(int port)
-        {
-            if (_isStopping || _socket != null)
-                return;
-
-            lock (_locker)
-            {
-                if (_isStopping || _socket != null)
-                    return;
-
-                var bindedIPAddress = IPAddress.Parse("0.0.0.0");
-                this._socket = new Socket(bindedIPAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                this._socket.ReceiveBufferSize = this.BufferSize;
-                this._socket.SendBufferSize = this.BufferSize;
-                this._socket.ReceiveTimeout = ReceiveTimeout;
-                this._socket.SendTimeout = SendTimeout;
-
-                // Get endpoint for the listener.
-                IPEndPoint localEndPoint = new IPEndPoint(bindedIPAddress, port);
-
-                this._socket.Bind(localEndPoint);
-
-                // Start the server.
-                this._socket.Listen(this.MaxConnectionCount);
-
-                // Post accepts on the listening socket.
-                SocketAsyncEventArgs e = new SocketAsyncEventArgs();
-                e.Completed += onCompleted;
-                //不要设置Buffer，除非你真的需要。
-                this.startAccept(e);
-            }
-        }
-
-        /// <summary>
-        /// Begins an operation to accept a connection request from the client.
-        /// </summary>
-        /// <param name="e">The context object to use when issuing 
-        /// the accept operation on the server's listening socket.</param>
-        private void startAccept(SocketAsyncEventArgs e)
-        {
-            if (_isStopping) //不再接收新的请求
-                return;
-
-            this.Semaphore.Wait();
-            e.AcceptSocket = null;
-            if (!this._socket.AcceptAsync(e))
-            {
-                this.processAccept(e);
-            }
-        }
-
         static readonly object _locker = new object();
 
         /// <summary>
         /// Stop the server.
         /// </summary>
-        public void Stop()
+        public void Stop(bool waitClientClosed = false)
         {
             if (_isStopping || _socket == null)
                 return;
@@ -400,18 +377,83 @@ namespace ZDevTools.Net
 
                 _isStopping = true;
 
-                try { this._socket.Shutdown(SocketShutdown.Receive); } catch (Exception) { } //swallow error
-
-                if (ManualResetEvent.WaitOne(ReceiveTimeout))
+                if (waitClientClosed)
                 {
-                    this._socket.Close();
-                    this._socket = null;
-                    _isStopping = false;
+                    bool timeOut = !ManualResetEvent.WaitOne(StopTimeout);
+                    closeSocket(); //得体地强制关闭客户端连接
+                    if (timeOut) //扔出超时错误
+                        throw new TimeoutException($"等待 {nameof(SocketListener<TUserToken>)} 关闭超时");
                 }
                 else
-                    throw new Exception($"等待{nameof(SocketListener<TUserToken>)}关闭超时");
+                    closeSocket();
             }
         }
-    }
 
+        private void closeSocket()
+        {
+            //关闭所有正在连接的客户端
+            while (Clients.Count > 0)
+            {
+                foreach (var client in Clients)
+                {
+                    client.Value.Close();
+                }
+                Thread.Sleep(500);
+            }
+            this._socket.Close();
+            this._socket = null;
+            _isStopping = false;
+        }
+
+        /// <summary>
+        /// Close the socket associated with the client.
+        /// </summary>
+        /// <param name="e">SocketAsyncEventArg associated with the completed send/receive operation.</param>
+        private void closeClientSocket(SocketAsyncEventArgs e)
+        {
+            this.closeClientSocket((UserToken)e.UserToken, e);
+        }
+
+        /// <summary>
+        /// 客户端已关闭处理器
+        /// </summary>
+        public Action<TUserToken> ClientClosedHanlder { get; set; }
+
+        private void closeClientSocket(UserToken token, SocketAsyncEventArgs e)
+        {
+            Clients.TryRemove(token.Socket, out _); //移除客户端
+
+            token.Dispose();
+            // Free the SocketAsyncEventArg so they can be reused by another client.
+            this.EPool.Push(e);
+            // Decrement the counter keeping track of the total number of clients connected to the server.
+            this.Semaphore.Release();
+            if (EPool.Count == MaxConnectionCount)
+                ManualResetEvent.Set();
+
+            ClientClosedHanlder?.Invoke((TUserToken)token);
+        }
+
+        /// <summary>
+        /// 一般错误处理
+        /// </summary>
+        public Action<string, Exception> GeneralErrorHandler { get; set; }
+
+        private void processError(SocketAsyncEventArgs e, string operationName)
+        {
+            UserToken token = (UserToken)e.UserToken;
+            reportError($"与{token.Socket.RemoteEndPoint}进行{operationName}通讯操作出错，连接即将关闭");
+            this.closeClientSocket(token, e);
+        }
+
+        void reportError(string message, Exception exception)
+        {
+            GeneralErrorHandler?.Invoke(message, exception);
+        }
+
+        void reportError(string message)
+        {
+            reportError(message, null);
+        }
+    }
 }

@@ -11,7 +11,7 @@
     <iconUrl>https://github.com/zhyy2008z/ZDevTools/noicon</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>优化SocketListener性能与API接口</releaseNotes>
+    <releaseNotes>重构 SocketListener 代码，优化Stop处理流程，新增接收请求处理器和客户端被关闭处理器</releaseNotes>
     <copyright>Copyright 自由软件 2018</copyright>
     <tags>SqlHelper AutoComplete TreeNode RSAHelper SocketListener SymbolicLink</tags>
   </metadata>

@@ -14,7 +14,7 @@ namespace ZDevTools.Net
     public class UserToken : IDisposable
     {
         /// <summary>
-        /// Accept socket.
+        /// 代表客户端与服务器通讯的套接字
         /// </summary>
         public Socket Socket { get; internal set; }
 
@@ -24,20 +24,41 @@ namespace ZDevTools.Net
         internal MemoryStream Stream { get; } = new MemoryStream();
 
         /// <summary>
+        /// 重写该方法以释放你自己的资源
+        /// </summary>
+        /// <param name="disposing"></param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                try
+                {
+                    this.Socket.Shutdown(SocketShutdown.Send);
+                }
+                catch { }
+                finally
+                {
+                    this.Socket.Close();
+                    this.Stream.Close();
+                }
+            }
+        }
+
+        /// <summary>
         /// Release instance.
         /// </summary>
         public void Dispose()
         {
-            try
-            {
-                this.Socket.Shutdown(SocketShutdown.Send);
-            }
-            catch { }
-            finally
-            {
-                this.Socket.Close();
-                this.Stream.Close();
-            }
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// 析构函数
+        /// </summary>
+        ~UserToken()
+        {
+            Dispose(false);
         }
     }
 
