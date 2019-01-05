@@ -212,9 +212,9 @@ namespace ZDevTools.Net
         }
 
         /// <summary>
-        /// 接收请求成功建立连接处理器
+        /// 已成功建立连接处理器，返回值可以确定是否接受该客户端的连接，不接受返回false，监听器会自动关闭该连接
         /// </summary>
-        public Func<TUserToken, bool> AcceptHandler { get; set; }
+        public Func<TUserToken, bool> AcceptedHandler { get; set; }
 
         /// <summary>
         /// Process the accept for the socket listener.
@@ -234,8 +234,8 @@ namespace ZDevTools.Net
 
                 args.UserToken = new TUserToken() { Socket = socket /* 关联Socket */ }; //每个新连接都重新分配一个UserToken上下文
 
-                var acceptHandler = AcceptHandler;
-                if (acceptHandler != null && !acceptHandler((TUserToken)args.UserToken))
+                var acceptedHandler = AcceptedHandler;
+                if (acceptedHandler != null && !acceptedHandler((TUserToken)args.UserToken))
                 {
                     closeClientSocket(args);
                 }
