@@ -311,6 +311,11 @@ namespace ZDevTools.Net
                         }
                         else //不需要进行发送操作，但要将缓存数据清零，以备再次接收数据
                         {
+                            if (token.IsClosingSocket) //如果消息处理器要求关闭连接，那么关闭连接
+                            {
+                                closeClientSocket(e);
+                                return;
+                            }
                             token.Stream.SetLength(0);
                             if (!socket.ReceiveAsync(e)) //接收下一次数据
                             {
@@ -347,6 +352,11 @@ namespace ZDevTools.Net
             if (e.SocketError == SocketError.Success)
             {
                 UserToken token = (UserToken)e.UserToken;
+                if (token.IsClosingSocket) //如果用户处理器要求发送完毕后关闭连接，那么关闭连接
+                {
+                    closeClientSocket(e);
+                    return;
+                }
                 e.SetBuffer(0, BufferSize);
                 if (!token.Socket.ReceiveAsync(e))
                 {

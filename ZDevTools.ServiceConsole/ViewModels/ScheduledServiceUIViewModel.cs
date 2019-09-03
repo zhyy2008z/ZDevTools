@@ -7,7 +7,6 @@ using Prism.Mvvm;
 using System.ComponentModel;
 using Newtonsoft.Json;
 using System.Windows.Media;
-using Microsoft.Practices.Unity;
 using Prism.Commands;
 
 

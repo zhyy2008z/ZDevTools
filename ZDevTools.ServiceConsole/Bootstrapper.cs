@@ -5,8 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using Prism.Unity;
-using Microsoft.Practices.Unity;
+using Unity;
 using Prism.Logging;
+using Unity.Lifetime;
 
 namespace ZDevTools.ServiceConsole
 {

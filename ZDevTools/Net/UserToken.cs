@@ -24,6 +24,11 @@ namespace ZDevTools.Net
         internal MemoryStream Stream { get; } = new MemoryStream();
 
         /// <summary>
+        /// 是否需要关闭与客户通讯的套接字
+        /// </summary>
+        public bool IsClosingSocket { get; set; }
+
+        /// <summary>
         /// 重写该方法以释放你自己的资源
         /// </summary>
         /// <param name="disposing"></param>
