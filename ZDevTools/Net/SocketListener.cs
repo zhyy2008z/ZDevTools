@@ -427,7 +427,7 @@ namespace ZDevTools.Net
         /// <summary>
         /// 客户端已关闭处理器
         /// </summary>
-        public Action<TUserToken> ClientClosedHanlder { get; set; }
+        public Action<TUserToken> ClientClosedHandler { get; set; }
 
         private void closeClientSocket(UserToken token, SocketAsyncEventArgs e)
         {
@@ -441,7 +441,7 @@ namespace ZDevTools.Net
             if (EPool.Count == MaxConnectionCount)
                 ManualResetEvent.Set();
 
-            ClientClosedHanlder?.Invoke((TUserToken)token);
+            ClientClosedHandler?.Invoke((TUserToken)token);
         }
 
         /// <summary>
