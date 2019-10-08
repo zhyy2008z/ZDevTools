@@ -31,6 +31,11 @@ namespace ZDevTools.Collections
         /// </summary>
         public TTreeNode Root { get; }
 
+        /// <summary>
+        /// 当前树是否是空的
+        /// </summary>
+        public bool IsEmpty { get => Root == null; }
+
         #region 判断
         /// <summary>
         /// 在树中是否存在 Id 为 id 的节点
@@ -213,7 +218,7 @@ namespace ZDevTools.Collections
         /// <param name="comparison"></param>
         public void StableSort(Comparison<TTreeNode> comparison)
         {
-            Root.StableSort(comparison);
+            Root?.StableSort(comparison);
         }
 
         #endregion

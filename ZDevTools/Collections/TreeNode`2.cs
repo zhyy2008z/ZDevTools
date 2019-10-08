@@ -95,7 +95,7 @@ namespace ZDevTools.Collections
             if (treeNodes.Count > 1)
                 throw new TreeNodeException<TTreeNode, TKey>("整理失败，发现多个节点疑似根节点！");
 
-            return treeNodes[0];
+            return treeNodes.Count == 1 ? treeNodes[0] : null;
         }
         #endregion
 
