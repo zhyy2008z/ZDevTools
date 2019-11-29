@@ -84,7 +84,7 @@ namespace ZDevTools.Collections
                 current.Tree = tree;
                 TTreeNode parent;
                 flattenNodes.TryGetValue(current.ParentId, out parent);
-                if (!current.ParentId.Equals(current.Id)) //有父节点，否则父节点是本身也就是根节点，根节点的Parent属性值是null
+                if (parent != null && !current.ParentId.Equals(current.Id)) //有父节点且父节点不是自己，这才能判定为根节点，根节点的Parent属性值是null
                 {
                     current.Parent = parent;
                     ((IList<TTreeNode>)parent.Children).Add(current);

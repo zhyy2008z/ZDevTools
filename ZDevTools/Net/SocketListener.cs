@@ -62,7 +62,7 @@ namespace ZDevTools.Net
         public bool IsStopping { get { return _isStopping; } }
 
         /// <summary>
-        /// 消息处理函数（返回回应数据）
+        /// 消息处理函数（返回null如果不需要返回数据，否则返回回应数据，如果需要关闭连接请设置<see cref="UserToken.IsClosingSocket"/>为 true）
         /// </summary>
         public Func<TUserToken, byte[], byte[]> MessageHandler { get; set; }
 
@@ -77,7 +77,7 @@ namespace ZDevTools.Net
         public int ReceiveTimeout { get; set; } = 30000;
 
         /// <summary>
-        /// 停止客户端连接关闭等待时间，默认30000毫秒，该值仅在<see cref="Stop()"/>时起作用
+        /// 停止客户端连接关闭等待时间，默认30000毫秒，该值仅在<see cref="Stop(bool)"/>时起作用
         /// </summary>
         public int StopTimeout { get; set; } = 30000;
 

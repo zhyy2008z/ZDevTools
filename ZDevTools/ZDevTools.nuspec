@@ -11,7 +11,7 @@
     <iconUrl>https://github.com/zhyy2008z/ZDevTools/noicon</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>支持对空节点列表的解析</releaseNotes>
+    <releaseNotes>增加TreeNode解析父节点兼容性</releaseNotes>
     <copyright>Copyright 自由软件 2019</copyright>
     <tags>SqlHelper AutoComplete TreeNode RSAHelper SocketListener SymbolicLink</tags>
   </metadata>
