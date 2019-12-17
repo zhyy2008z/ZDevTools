@@ -14,7 +14,7 @@ namespace ZDevTools.Test.Collections
         Tree<MyMenu, int> getTree()
         {
             return new Tree<MyMenu, int>(new MyMenu[] {
-                    new MyMenu(){ Id=0,ParentId=0,Name="根"},
+                    new MyMenu(){Id=0,ParentId=-1,Name="根"},
                     new MyMenu(){Id=1,ParentId=0,Name="一级菜单"},
                     new MyMenu(){Id=2,ParentId=0,Name="二号一级菜单"},
                     new MyMenu(){Id=3,ParentId=1,Name="二级菜单"},
@@ -197,7 +197,7 @@ namespace ZDevTools.Test.Collections
 
             //附加后应该可以找回
             Assert.NotNull(tree.Find(1));
-            
+
             //附加后的父节点应该与附加前一致
             Assert.True(node.Parent == oldParent);
         }
@@ -257,6 +257,27 @@ namespace ZDevTools.Test.Collections
             Assert.True(node.ParentId == 1);
             //移动后的节点ParentId应该不可以赋值
             Assert.Throws<TreeNodeException<MyMenu, int>>(() => node.ParentId = 5);
+
+        }
+
+        [Fact]
+        public void NodeWrapper_Distinct()
+        {
+            var tree = getTree();
+
+            var wrapper = new TreeNodeWrapper<MyMenu, int>(new MyMenu[] { tree.Root.Children.First(), tree.Root.Children.Last() }, true);
+
+            Assert.Equal(2, wrapper.Nodes.Count);
+
+
+            wrapper = new TreeNodeWrapper<MyMenu, int>(new MyMenu[] {
+                tree.Root.Children.First(),
+                tree.Root.Children.Last(),
+                tree.Root.Children.First().Children.First(),
+                tree.Root.Children.First().Children.Last(),
+                tree.Root
+            }, true);
+            Assert.Equal(1, wrapper.Nodes.Count);
 
         }
     }

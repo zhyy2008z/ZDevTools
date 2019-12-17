@@ -18,34 +18,60 @@ namespace ZDevTools.Collections
         Dictionary<TKey, TTreeNode> _flattenNodes;
 
         /// <summary>
-        /// 根据提供的节点创建节点临时包装
+        /// 根据提供的节点创建节点临时包装(要求所有节点必须来自同一颗树)
         /// </summary>
-        /// <param name="nodes"></param>
-        public TreeNodeWrapper(IEnumerable<TTreeNode> nodes) : this(nodes, false) { }
+        /// <param name="nodes">来自同一颗树的节点</param>
+        public TreeNodeWrapper(IEnumerable<TTreeNode> nodes) : this(nodes, false, false) { }
 
         /// <summary>
-        /// 根据提供的节点创建节点包装
+        /// 根据提供的节点创建节点临时包装(要求所有节点必须来自同一颗树)
         /// </summary>
-        /// <param name="nodes"></param>
+        /// <param name="nodes">来自同一颗树的节点</param>
+        /// <param name="distinct">是否需要去重</param>
+        public TreeNodeWrapper(IEnumerable<TTreeNode> nodes, bool distinct) : this(nodes, distinct, false) { }
+
+        /// <summary>
+        /// 根据提供的节点创建节点包装(要求所有节点必须来自同一颗树)
+        /// </summary>
+        /// <param name="nodes">来自同一颗树的节点</param>
+        /// <param name="distinct">是否需要去重</param>
         /// <param name="longterm">是否长期包装，如果是长期包装则会采取以空间换时间的算法</param>
-        public TreeNodeWrapper(IEnumerable<TTreeNode> nodes, bool longterm)
+        public TreeNodeWrapper(IEnumerable<TTreeNode> nodes, bool distinct, bool longterm)
         {
             _longterm = longterm;
+            _nodes = nodes.ToList();
+
+            if (distinct)
+            {
+                //合并节点
+                for (int i = _nodes.Count - 1; i > 0; i--)
+                {
+                    var thisNode = _nodes[i];
+                    for (int j = i - 1; j > -1; j--)
+                    {
+                        var thatNode = _nodes[j];
+                        if (thatNode.Find(thisNode.Id) != null) //当前节点在其它节点中
+                        {
+                            _nodes.RemoveAt(i);
+                            break;
+                        }
+                        else if (thisNode.Find(thatNode.Id) != null) //其它节点在当前节点中
+                        {
+                            _nodes.RemoveAt(j);
+                            i--;
+                        }
+                    }
+                }
+            }
 
             if (longterm)
             {
                 _flattenNodes = new Dictionary<TKey, TTreeNode>();
-                _nodes = new List<TTreeNode>();
-                foreach (var node in nodes)
+                foreach (var node in _nodes)
                 {
-                    _nodes.Add(node);
                     foreach (var n in node.AllToList())
                         _flattenNodes[n.Id] = n;
                 }
-            }
-            else
-            {
-                _nodes = nodes.ToList();
             }
         }
 
