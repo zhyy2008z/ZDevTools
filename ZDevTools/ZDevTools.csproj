@@ -54,6 +54,7 @@
   <ItemGroup>
     <Compile Include="Collections\Tree.cs" />
     <Compile Include="Collections\TreeNodeException`2.cs" />
+    <Compile Include="Collections\TreeNodeExtensions.cs" />
     <Compile Include="Collections\TreeNodeWrapper.cs" />
     <Compile Include="Collections\TreeNode`1.cs" />
     <Compile Include="Collections\TreeNode`2.cs" />

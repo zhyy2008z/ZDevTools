@@ -280,5 +280,35 @@ namespace ZDevTools.Test.Collections
             Assert.Equal(1, wrapper.Nodes.Count);
 
         }
+
+        [Fact]
+        public void AncestorToList()
+        {
+            var tree = getTree();
+
+            var ancestors = tree.Root.Children.First().Children.First().AncestorsToList();
+
+            Assert.True(ancestors[0] == tree.Root.Children.First() && ancestors[1] == tree.Root);
+
+            ancestors = tree.Root.Children.First().Children.First().AncestorsToList(true);
+            Assert.True(ancestors[0] == tree.Root.Children.First().Children.First() && ancestors[1] == tree.Root.Children.First() && ancestors[2] == tree.Root);
+        }
+
+        [Fact]
+        public void FindAncestor()
+        {
+            var tree = getTree();
+            var last = tree.Root.Children.First().Children.First();
+            Assert.Equal(last.FindAncestor(1), tree.Root.Children[0]);
+        }
+
+        [Fact]
+        public void FindDescendant()
+        {
+            var tree = getTree();
+            Assert.Null(tree.Root.FindDescendant(0));
+            Assert.NotNull(tree.Root.Find(0));
+        }
+
     }
 }

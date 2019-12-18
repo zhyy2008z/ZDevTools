@@ -14,6 +14,7 @@ namespace ZDevTools.Collections
     /// <remarks>非线程安全，请自行做好线程同步操作</remarks>
     public class Tree<TTreeNode, TKey>
         where TTreeNode : TreeNode<TTreeNode, TKey>
+        where TKey : IEquatable<TKey>
     {
         Dictionary<TKey, TTreeNode> _flattenNodes;
 
@@ -40,18 +41,22 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 在树中是否存在 Id 为 id 的节点
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
         public bool Contains(TKey id)
         {
             return _flattenNodes.ContainsKey(id);
         }
 
         /// <summary>
+        /// 在树中是否存在指定节点
+        /// </summary>
+        public bool Contains(TTreeNode node)
+        {
+            return _flattenNodes.ContainsKey(node.Id);
+        }
+
+        /// <summary>
         /// 在树中是否存在满足predicate的节点
         /// </summary>
-        /// <param name="predicate"></param>
-        /// <returns></returns>
         public bool Contains(Func<TTreeNode, bool> predicate)
         {
             return _flattenNodes.Values.Any(predicate);

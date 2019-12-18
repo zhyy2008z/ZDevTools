@@ -14,6 +14,7 @@ namespace ZDevTools.Collections
     [Serializable]
     public class TreeNodeException<TTreeNode, TKey> : Exception
         where TTreeNode : TreeNode<TTreeNode, TKey>
+        where TKey:IEquatable<TKey>
     {
         /// <summary>
         /// 树节点

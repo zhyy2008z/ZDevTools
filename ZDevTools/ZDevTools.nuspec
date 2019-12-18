@@ -11,7 +11,7 @@
     <iconUrl>https://github.com/zhyy2008z/ZDevTools/noicon</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>TreeNodeWrapper支持去重</releaseNotes>
+    <releaseNotes>TreeNode支持更多操作方法</releaseNotes>
     <copyright>Copyright 自由软件 2019</copyright>
     <tags>SqlHelper AutoComplete TreeNode RSAHelper SocketListener SymbolicLink</tags>
   </metadata>

@@ -14,6 +14,7 @@ namespace ZDevTools.Collections
     /// <typeparam name="TKey">节点Id泛型参数</typeparam>
     public class TreeNode<TTreeNode, TKey> : TreeNode<TTreeNode>
         where TTreeNode : TreeNode<TTreeNode, TKey>
+        where TKey : IEquatable<TKey>
     {
         TKey _id;
         /// <summary>
@@ -103,8 +104,6 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 当前节点及子节点中是否包含具有指定Id的节点
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
         public bool Contains(TKey id)
         {
             return contains((TTreeNode)this, id);
@@ -119,6 +118,11 @@ namespace ZDevTools.Collections
                         return true;
             return false;
         }
+
+        /// <summary>
+        /// 当前节点及子节点中是否包含具有指定的节点
+        /// </summary>
+        public bool Contains(TTreeNode node) => Contains(node.Id);
 
         #endregion
 

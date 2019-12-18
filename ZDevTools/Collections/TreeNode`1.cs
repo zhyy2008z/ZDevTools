@@ -56,9 +56,9 @@ namespace ZDevTools.Collections
 
             return list;
         }
-        static void linearSub(T menuItem, List<T> list)
+        static void linearSub(T node, List<T> list)
         {
-            foreach (var item in menuItem.Children)
+            foreach (var item in node.Children)
             {
                 list.Add(item);
                 linearSub(item, list);
@@ -75,11 +75,11 @@ namespace ZDevTools.Collections
             linear((T)this, list);
             return list;
         }
-        static void linear(T menuItem, List<T> list)
+        static void linear(T node, List<T> list)
         {
-            list.Add(menuItem);
+            list.Add(node);
 
-            foreach (var item in menuItem.Children)
+            foreach (var item in node.Children)
             {
                 linear(item, list);
             }
@@ -98,12 +98,12 @@ namespace ZDevTools.Collections
             linear((T)this, list, predicate);
             return list;
         }
-        static void linear(T menuItem, List<T> list, Func<T, bool> predicate)
+        static void linear(T node, List<T> list, Func<T, bool> predicate)
         {
-            if (predicate(menuItem))
-                list.Add(menuItem);
+            if (predicate(node))
+                list.Add(node);
 
-            foreach (var item in menuItem.Children)
+            foreach (var item in node.Children)
             {
                 linear(item, list, predicate);
             }

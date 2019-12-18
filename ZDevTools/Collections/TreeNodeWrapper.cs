@@ -12,6 +12,7 @@ namespace ZDevTools.Collections
     /// <typeparam name="TKey"></typeparam>
     public class TreeNodeWrapper<TTreeNode, TKey>
         where TTreeNode : TreeNode<TTreeNode, TKey>
+        where TKey : IEquatable<TKey>
     {
         bool _longterm;
         List<TTreeNode> _nodes;
@@ -100,8 +101,6 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 包装中是否包含指定Id的节点
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
         public bool Contains(TKey id)
         {
             if (_longterm)
@@ -113,6 +112,26 @@ namespace ZDevTools.Collections
                 foreach (var node in _nodes)
                 {
                     if (node.Contains(id))
+                        return true;
+                }
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 包装中是否包含指定的节点
+        /// </summary>
+        public bool Contains(TTreeNode node)
+        {
+            if (_longterm)
+            {
+                return _flattenNodes.ContainsKey(node.Id);
+            }
+            else
+            {
+                foreach (var n in _nodes)
+                {
+                    if (n.Contains(node))
                         return true;
                 }
                 return false;
