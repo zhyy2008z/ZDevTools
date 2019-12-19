@@ -75,17 +75,6 @@ namespace ZDevTools.Test.Collections
         }
 
         [Fact]
-        public void FindAll_IntegerArray_MyMenus()
-        {
-            var tree = getTree();
-
-            var nodes = tree.FindAll(new int[] { 0, 1, 3 }).ToArray();
-
-            Assert.True(nodes.Length == 3);
-            Assert.True(nodes[0].Name == "根" && nodes[1].Name == "一级菜单");
-        }
-
-        [Fact]
         public void FindAll_Predicate_MyMenus()
         {
             var tree = getTree();
@@ -308,6 +297,28 @@ namespace ZDevTools.Test.Collections
             var tree = getTree();
             Assert.Null(tree.Root.FindDescendant(0));
             Assert.NotNull(tree.Root.Find(0));
+        }
+
+        [Fact]
+        public void NodeWrapperTree_ContainsFind()
+        {
+            var tree = getTree();
+
+            var wrapper = new TreeNodeWrapper<MyMenu, int>(new MyMenu[] { tree.Root.Children.First(), tree.Root.Children.Last() }, true);
+
+            Assert.True(wrapper.ContainsDescendant(3));
+
+            Assert.NotNull(wrapper.FindDescendant(3));
+
+            Assert.False(tree.ContainsDescendant(0));
+
+            Assert.True(tree.ContainsDescendant(2));
+
+
+            Assert.Null(tree.FindDescendant(0));
+
+            Assert.NotNull(tree.FindDescendant(3));
+
         }
 
     }

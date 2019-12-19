@@ -16,6 +16,7 @@ namespace ZDevTools.Collections
         where TTreeNode : TreeNode<TTreeNode, TKey>
         where TKey : IEquatable<TKey>
     {
+        #region 属性
         TKey _id;
         /// <summary>
         /// 节点 Id
@@ -52,6 +53,7 @@ namespace ZDevTools.Collections
         [JsonIgnore]
         [NotMapped]
         public Tree<TTreeNode, TKey> Tree { get; internal set; }
+        #endregion
 
         #region 解析
         /// <summary>
@@ -126,6 +128,45 @@ namespace ZDevTools.Collections
 
         #endregion
 
+        #region 判断祖先
+        /// <summary>
+        /// 当前节点是否存在指定的祖先
+        /// </summary>
+        public bool ContainsAncestor(TKey ancestorKey, bool includeSelf = false)
+        {
+            if (includeSelf && this.Id.Equals(ancestorKey)) return true;
+            var parent = this.Parent;
+            while (parent != null)
+            {
+                if (parent.Id.Equals(ancestorKey)) return true;
+                parent = parent.Parent;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 当前节点是否存在指定的祖先
+        /// </summary>
+        public bool ContainsAncestor(TTreeNode ancestorNode, bool includeSelf = false) => this.ContainsAncestor(ancestorNode.Id, includeSelf);
+        #endregion
+
+        #region 判断后代
+        /// <summary>
+        /// 是否存在指定后代Key的节点
+        /// </summary>
+        public bool ContainsDescendant(TKey descendantKey)
+        {
+            foreach (var childNode in this.Children)
+                if (childNode.Contains(descendantKey)) return true;
+            return false;
+        }
+
+        /// <summary>
+        /// 是否存在指定后代节点
+        /// </summary>
+        public bool ContainsDescendant(TTreeNode descendantNode) => this.ContainsDescendant(descendantNode.Id);
+        #endregion
+
         #region 查找
         /// <summary>
         /// 在当前节点及子节点中查找具有指定Id的节点
@@ -147,6 +188,38 @@ namespace ZDevTools.Collections
                     if (result != null)
                         return result;
                 }
+            return null;
+        }
+        #endregion
+
+        #region 查找祖先
+        /// <summary>
+        /// 查找具有指定id的当前节点的父节点
+        /// </summary>
+        public TTreeNode FindAncestor(TKey ancestorKey, bool includeSelf = false)
+        {
+            if (includeSelf && this.Id.Equals(ancestorKey)) return (TTreeNode)this;
+            var parent = this.Parent;
+            while (parent != null)
+            {
+                if (parent.Id.Equals(ancestorKey)) return parent;
+                parent = parent.Parent;
+            }
+            return null;
+        }
+        #endregion
+
+        #region 查找后代
+        /// <summary>
+        /// 在后代节点中寻找具有指定Key的节点
+        /// </summary>
+        public TTreeNode FindDescendant(TKey descendantKey)
+        {
+            foreach (var childNode in this.Children)
+            {
+                var result = childNode.Find(descendantKey);
+                if (result != null) return result;
+            }
             return null;
         }
         #endregion

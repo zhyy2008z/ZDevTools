@@ -14,6 +14,7 @@ namespace ZDevTools.Collections
     public class TreeNode<T>
         where T : TreeNode<T>
     {
+        #region 属性
         /// <summary>
         /// 孩子节点
         /// </summary>
@@ -42,8 +43,46 @@ namespace ZDevTools.Collections
                     return ((List<T>)Parent.Children).IndexOf((T)this);
             }
         }
+        #endregion
 
         #region 线性化
+        /// <summary>
+        /// 将当前节点及子节点线性化为列表
+        /// </summary>
+        /// <returns></returns>
+        public List<T> AllToList()
+        {
+            var list = new List<T>();
+            linear((T)this, list);
+            return list;
+        }
+        static void linear(T node, List<T> list)
+        {
+            list.Add(node);
+
+            foreach (var item in node.Children)
+            {
+                linear(item, list);
+            }
+        }
+
+        /// <summary>
+        /// 获取指定节点所有的祖先（按照亲疏排序）
+        /// </summary>
+        /// <param name="includeSelf">是否将当前节点包含在内</param>
+        public List<T> AncestorsToList(bool includeSelf = false)
+        {
+            List<T> result = new List<T>();
+            if (includeSelf) result.Add((T)this);
+            var parent = this.Parent;
+            while (parent != null)
+            {
+                result.Add(parent);
+                parent = parent.Parent;
+            }
+            return result;
+        }
+
         /// <summary>
         /// 将所有子节点线性化为列表
         /// </summary>
@@ -64,26 +103,6 @@ namespace ZDevTools.Collections
                 linearSub(item, list);
             }
         }
-
-        /// <summary>
-        /// 将当前节点及子节点线性化为列表
-        /// </summary>
-        /// <returns></returns>
-        public List<T> AllToList()
-        {
-            var list = new List<T>();
-            linear((T)this, list);
-            return list;
-        }
-        static void linear(T node, List<T> list)
-        {
-            list.Add(node);
-
-            foreach (var item in node.Children)
-            {
-                linear(item, list);
-            }
-        }
         #endregion
 
         #region 查找
@@ -95,17 +114,18 @@ namespace ZDevTools.Collections
         public List<T> FindAll(Func<T, bool> predicate)
         {
             var list = new List<T>();
-            linear((T)this, list, predicate);
+            Linear((T)this, list, predicate);
             return list;
         }
-        static void linear(T node, List<T> list, Func<T, bool> predicate)
+
+        internal static void Linear(T node, List<T> list, Func<T, bool> predicate)
         {
             if (predicate(node))
                 list.Add(node);
 
             foreach (var item in node.Children)
             {
-                linear(item, list, predicate);
+                Linear(item, list, predicate);
             }
         }
 
@@ -133,6 +153,66 @@ namespace ZDevTools.Collections
         }
         #endregion
 
+        #region 查找祖先
+        /// <summary>
+        /// 获取离当前节点最近的可以通过指定断言的祖先
+        /// </summary>
+        public T FindAncestor(Func<T, bool> predicate, bool includeSelf = false)
+        {
+            if (includeSelf && predicate((T)this)) return (T)this;
+            var parent = this.Parent;
+            while (parent != null)
+            {
+                if (predicate(parent)) return parent;
+                parent = parent.Parent;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 获取所有通过指定断言的祖先（按照亲疏排序）
+        /// </summary>
+        public List<T> FindAllAncestors(Func<T, bool> predicate, bool includeSelf = false)
+        {
+            List<T> result = new List<T>();
+            if (includeSelf && predicate((T)this)) result.Add((T)this);
+            var parent = this.Parent;
+            while (parent != null)
+            {
+                if (predicate(parent))
+                    result.Add(parent);
+                parent = parent.Parent;
+            }
+            return result;
+        }
+        #endregion
+
+        #region 查找后代
+        /// <summary>
+        /// 在后代节点中寻找第一个通过断言的节点
+        /// </summary>
+        public T FindDescendant(Func<T, bool> predicate)
+        {
+            foreach (var childNode in this.Children)
+            {
+                var result = childNode.Find(predicate);
+                if (result != null) return result;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 在后代节点中寻找所有能够通过断言的节点
+        /// </summary>
+        public List<T> FindAllDescendant(Func<T, bool> predicate)
+        {
+            var result = new List<T>();
+            foreach (var childNode in this.Children)
+                Linear(childNode, result, predicate);
+            return result;
+        }
+        #endregion
+
         #region 判断
         /// <summary>
         /// 当前节点及其子节点是否包含能够通过断言的节点
@@ -155,13 +235,42 @@ namespace ZDevTools.Collections
         }
         #endregion
 
+        #region 判断祖先
+        /// <summary>
+        /// 当前节点是否存在指定的祖先
+        /// </summary>
+        public bool ContainsAncestor(Func<T, bool> predicate, bool includeSelf = false)
+        {
+            if (includeSelf && predicate((T)this)) return true;
+            var parent = this.Parent;
+            while (parent != null)
+            {
+                if (predicate(parent)) return true;
+                parent = parent.Parent;
+            }
+            return false;
+        }
+        #endregion
+
+        #region 判断后代
+        /// <summary>
+        /// 是否存在通过指定断言的后代节点
+        /// </summary>
+        public bool ContainsDescendant(Func<T, bool> predicate)
+        {
+            foreach (var childNode in this.Children)
+                if (childNode.Contains(predicate)) return true;
+            return false;
+        }
+        #endregion
+
         #region 排序
         static void insertionSort(IList<T> list, Comparison<T> comparison)
         {
             if (list == null)
-                throw new ArgumentNullException("list");
+                throw new ArgumentNullException(nameof(list));
             if (comparison == null)
-                throw new ArgumentNullException("comparison");
+                throw new ArgumentNullException(nameof(comparison));
 
             int count = list.Count;
             for (int j = 1; j < count; j++)

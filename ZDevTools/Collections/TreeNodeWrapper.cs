@@ -92,7 +92,7 @@ namespace ZDevTools.Collections
                 return _flattenNodes.Values;
             else
             {
-                return _nodes.SelectMany(node => node.AllToList()).Distinct();
+                return _nodes.SelectMany(node => node.AllToList());
             }
         }
         #endregion
@@ -121,22 +121,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 包装中是否包含指定的节点
         /// </summary>
-        public bool Contains(TTreeNode node)
-        {
-            if (_longterm)
-            {
-                return _flattenNodes.ContainsKey(node.Id);
-            }
-            else
-            {
-                foreach (var n in _nodes)
-                {
-                    if (n.Contains(node))
-                        return true;
-                }
-                return false;
-            }
-        }
+        public bool Contains(TTreeNode node) => Contains(node.Id);
 
         /// <summary>
         /// 包装中是否包含能够通过断言的节点
@@ -161,6 +146,56 @@ namespace ZDevTools.Collections
         }
         #endregion
 
+        #region 判断后代
+        /// <summary>
+        /// 包装中是否包含指定Id的后代节点
+        /// </summary>
+        public bool ContainsDescendant(TKey id)
+        {
+            if (_longterm)
+            {
+                return !_nodes.Any(node => node.Id.Equals(id)) && _flattenNodes.ContainsKey(id);
+            }
+            else
+            {
+                foreach (var node in _nodes)
+                {
+                    if (node.ContainsDescendant(id))
+                        return true;
+                }
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 包装中是否包含指定的后代节点
+        /// </summary>
+        public bool ContainsDescendant(TTreeNode node) => ContainsDescendant(node.Id);
+
+
+        /// <summary>
+        /// 包装中是否包含能够通过断言的后代节点
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <returns></returns>
+        public bool ContainsDescendant(Func<TTreeNode, bool> predicate)
+        {
+            if (_longterm)
+            {
+                return _flattenNodes.Values.Any(node => !_nodes.Any(n => n.Id.Equals(node.Id)) && predicate(node));
+            }
+            else
+            {
+                foreach (var node in _nodes)
+                {
+                    if (node.ContainsDescendant(predicate))
+                        return true;
+                }
+                return false;
+            }
+        }
+        #endregion
+
         #region 查找
         /// <summary>
         /// 查找包装中具有指定Id的节点
@@ -176,7 +211,12 @@ namespace ZDevTools.Collections
             }
             else
             {
-                return _nodes.Select(node => node.Find(id)).FirstOrDefault();
+                foreach (var node in _nodes)
+                {
+                    var result = node.Find(id);
+                    if (result != null) return result;
+                }
+                return null;
             }
         }
 
@@ -193,7 +233,12 @@ namespace ZDevTools.Collections
             }
             else
             {
-                return _nodes.Select(node => node.Find(predicate)).FirstOrDefault();
+                foreach (var node in _nodes)
+                {
+                    var result = node.Find(predicate);
+                    if (result != null) return result;
+                }
+                return null;
             }
         }
 
@@ -202,15 +247,88 @@ namespace ZDevTools.Collections
         /// </summary>
         /// <param name="predicate"></param>
         /// <returns></returns>
-        public IEnumerable<TTreeNode> FindAll(Func<TTreeNode, bool> predicate)
+        public List<TTreeNode> FindAll(Func<TTreeNode, bool> predicate)
         {
             if (this._longterm)
             {
-                return _flattenNodes.Values.Where(predicate);
+                return _flattenNodes.Values.Where(predicate).ToList();
             }
             else
             {
-                return _nodes.SelectMany(node => node.FindAll(predicate)).Distinct();
+                var result = new List<TTreeNode>();
+                foreach (var node in _nodes)
+                    TreeNode<TTreeNode>.Linear(node, result, predicate);
+                return result;
+            }
+        }
+        #endregion
+
+        #region 查找后代
+        /// <summary>
+        /// 查找包装中具有指定Id的后代节点
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public TTreeNode FindDescendant(TKey id)
+        {
+            if (this._longterm)
+            {
+                if (!_nodes.Any(node => node.Id.Equals(id)) && _flattenNodes.TryGetValue(id, out var result))
+                    return result;
+                else
+                    return null;
+            }
+            else
+            {
+                foreach (var node in _nodes)
+                {
+                    var result = node.FindDescendant(id);
+                    if (result != null) return result;
+                }
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 查找包装中符合断言的第一个后代节点
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <returns></returns>
+        public TTreeNode FindDescendant(Func<TTreeNode, bool> predicate)
+        {
+            if (_longterm)
+            {
+                return _flattenNodes.Values.FirstOrDefault(node => !_nodes.Any(n => n.Id.Equals(node.Id)) && predicate(node));
+            }
+            else
+            {
+                foreach (var node in _nodes)
+                {
+                    var result = node.FindDescendant(predicate);
+                    if (result != null) return result;
+                }
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 查找包装中符合断言的所有后代节点
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <returns></returns>
+        public List<TTreeNode> FindAllDescendants(Func<TTreeNode, bool> predicate)
+        {
+            if (this._longterm)
+            {
+                return _flattenNodes.Values.Where(node => !_nodes.Any(n => n.Id.Equals(node.Id)) && predicate(node)).ToList();
+            }
+            else
+            {
+                var result = new List<TTreeNode>();
+                foreach (var node in _nodes)
+                    foreach (var child in node.Children)
+                        TreeNode<TTreeNode>.Linear(child, result, predicate);
+                return result;
             }
         }
         #endregion

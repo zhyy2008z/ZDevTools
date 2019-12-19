@@ -63,6 +63,33 @@ namespace ZDevTools.Collections
         }
         #endregion
 
+
+        #region 判断后代
+        /// <summary>
+        /// 除树根外是否存在 Id 为 id 的节点
+        /// </summary>
+        public bool ContainsDescendant(TKey id)
+        {
+            return !Root.Id.Equals(id) && _flattenNodes.ContainsKey(id);
+        }
+
+        /// <summary>
+        /// 除树根外是否存在指定节点
+        /// </summary>
+        public bool ContainsDescendant(TTreeNode node)
+        {
+            return !Root.Id.Equals(node.Id) && _flattenNodes.ContainsKey(node.Id);
+        }
+
+        /// <summary>
+        /// 除树根外是否存在满足predicate的节点
+        /// </summary>
+        public bool ContainsDescendant(Func<TTreeNode, bool> predicate)
+        {
+            return _flattenNodes.Values.Any(node => !Root.Id.Equals(node.Id) && predicate(node));
+        }
+        #endregion
+
         #region 查找
 
         /// <summary>
@@ -86,15 +113,6 @@ namespace ZDevTools.Collections
             return _flattenNodes.Values.FirstOrDefault(predicate);
         }
 
-        /// <summary>
-        /// 该方法返回的数量可能与ids数量不一致，因为其会抛弃没有对应node的id。
-        /// </summary>
-        /// <param name="ids"></param>
-        /// <returns></returns>
-        public IEnumerable<TTreeNode> FindAll(IEnumerable<TKey> ids)
-        {
-            return ids.Select(id => Find(id)).Where(node => node != null);
-        }
 
         /// <summary>
         /// 返回一组满足 <paramref name="predicate"/> 的节点
@@ -107,6 +125,45 @@ namespace ZDevTools.Collections
         }
 
         #endregion
+
+        #region 查找后代
+
+        /// <summary>
+        /// 从除根节点外的节点中查找 Id 为 id 的节点
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public TTreeNode FindDescendant(TKey id)
+        {
+            if (!Root.Id.Equals(id) && _flattenNodes.TryGetValue(id, out var result))
+                return result;
+            else
+                return null;
+        }
+
+        /// <summary>
+        /// 从除根节点外的节点中查找一个满足 <paramref name="predicate"/> 的节点
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <returns></returns>
+        public TTreeNode FindDescendant(Func<TTreeNode, bool> predicate)
+        {
+            return _flattenNodes.Values.FirstOrDefault(node => !Root.Id.Equals(node.Id) && predicate(node));
+        }
+
+
+        /// <summary>
+        /// 从除根节点外的节点中返回一组满足 <paramref name="predicate"/> 的节点
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <returns></returns>
+        public IEnumerable<TTreeNode> FindAllDescendants(Func<TTreeNode, bool> predicate)
+        {
+            return _flattenNodes.Values.Where(node => !Root.Id.Equals(node.Id) && predicate(node));
+        }
+
+        #endregion
+
 
         #region 操作
 
