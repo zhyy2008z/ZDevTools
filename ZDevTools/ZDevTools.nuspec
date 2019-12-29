@@ -11,7 +11,7 @@
     <iconUrl>https://github.com/zhyy2008z/ZDevTools/noicon</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>提升 TreeNode API 易用性</releaseNotes>
+    <releaseNotes>DBHelper类bug修正</releaseNotes>
     <copyright>Copyright 自由软件 2019</copyright>
     <tags>SqlHelper AutoComplete TreeNode RSAHelper SocketListener SymbolicLink</tags>
   </metadata>

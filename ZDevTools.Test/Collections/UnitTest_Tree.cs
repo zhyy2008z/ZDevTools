@@ -289,6 +289,12 @@ namespace ZDevTools.Test.Collections
             var tree = getTree();
             var last = tree.Root.Children.First().Children.First();
             Assert.Equal(last.FindAncestor(1), tree.Root.Children[0]);
+
+            Assert.Null(last.FindAncestor(3));
+
+            Assert.NotNull(last.FindAncestor(3, true));
+
+            Assert.Equal(3, last.FindAncestor(menu => menu.Name.Contains("菜单"), true).Id);
         }
 
         [Fact]

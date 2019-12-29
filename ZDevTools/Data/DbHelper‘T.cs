@@ -12,8 +12,8 @@ namespace ZDevTools.Data
     /// <summary>
     /// <para>数据库通用访问辅助类</para>
     /// <para>开发者：穿越中的逍遥</para>
-    /// <para>版本：4.2</para>
-    /// <para>日期：2016年10月31日</para>
+    /// <para>版本：4.3</para>
+    /// <para>日期：2019年12月29日</para>
     /// <para>简介：</para>
     /// <para>虽然是个辅助类，但是支持事务管理（仅单事务管理）。您可以通过继承或填充泛型参数直接操作其他类型的数据库，如Oracle、MySql等。</para>
     /// <para>本辅助类支持占位符，使用方法如下： //v3.1 增加占位符功能的描述</para>
@@ -96,6 +96,9 @@ namespace ZDevTools.Data
     /// 2016年10月31日 v4.2
     /// 1.增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
     /// 
+    /// 2019年12月29日 v4.3
+    /// 1.修正<see cref="ConvertParameter(TParameter[], out string[])"/>函数行为不正确问题
+    /// 2.修正<see cref="ConvertParameter(TParameter[], DbHelper{TConnection, TTransaction, TCommand, TDataReader, TParameter, TDataAdapter, TCommandBuilder}.InParameters, out string[])"/>函数行为不正确问题
     /// </para>
     /// </summary>
     public class DbHelper<TConnection, TTransaction, TCommand, TDataReader, TParameter, TDataAdapter, TCommandBuilder> : IDisposable
@@ -148,13 +151,7 @@ namespace ZDevTools.Data
         static TParameter[] ConvertParameter(TParameter[] parameters, out string[] paramNames)
         //v2.0 添加paramNames支持输出参数名称数组，以供进行其他处理
         {
-            List<string> pns = new List<string>();
-            foreach (var item in parameters)
-            {
-                var pa = parameters[0].ParameterName;
-                pns.Add(pa);
-            }
-            paramNames = pns.ToArray();
+            paramNames = parameters.Select(parameter => parameter.ParameterName).ToArray();
             return parameters;
         }
 
@@ -168,13 +165,7 @@ namespace ZDevTools.Data
         static TParameter[] ConvertParameter(TParameter[] parameters, InParameters inParameters, out string[] paramNames) //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
         //v2.0 添加paramNames支持输出参数名称数组，以供进行其他处理
         {
-            List<string> pns = new List<string>();
-            foreach (var item in parameters)
-            {
-                var pa = parameters[0].ParameterName;
-                pns.Add(pa);
-            }
-            paramNames = pns.ToArray();
+            ConvertParameter(parameters, out paramNames);
 
             var inPLength = inParameters.Parameters.Sum(p => p.Length);
             TParameter[] retParameters = new TParameter[parameters.Length + inPLength];
