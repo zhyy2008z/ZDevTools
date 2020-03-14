@@ -1,37 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Prism.Mvvm;
-
+﻿using ZDevTools.ServiceConsole.Schedules;
+using ReactiveUI;
+using System.Reactive.Linq;
+using ReactiveUI.Fody.Helpers;
 
 namespace ZDevTools.ServiceConsole.Models
 {
-    using Schedules;
-
-
-    public class ScheduleModel : BindableBase
+    public class ScheduleModel : ReactiveObject
     {
-        public string StatusText { get { return Schedule.Enabled ? "已启用" : "已禁用"; } }
+        public string StatusText { [ObservableAsProperty]get; }
 
+        public string Description { [ObservableAsProperty]get; }
 
-        public string Description { get { return Schedule.ToString(); } }
+        public string Type { [ObservableAsProperty] get; }
 
-        public string Type { get { return Schedule.Title; } }
+        [Reactive]
+        public BasicSchedule Schedule { get; set; } = new BasicSchedule();
 
-
-        BasicSchedule _schedule;
-        public BasicSchedule Schedule
+        public ScheduleModel()
         {
-            get { return _schedule; }
-            set
-            {
-                SetProperty(ref _schedule, value);
-                RaisePropertyChanged(nameof(StatusText));
-                RaisePropertyChanged(nameof(Description));
-                RaisePropertyChanged(nameof(Type));
-            }
+            this.WhenAnyValue(vm => vm.Schedule).Select(s => s.Enabled ? "已启用" : "已禁用").ToPropertyEx(this, vm => vm.StatusText);
+            this.WhenAnyValue(vm => vm.Schedule).Select(s => s.ToString()).ToPropertyEx(this, vm => vm.Description);
+            this.WhenAnyValue(vm => vm.Schedule).Select(s => s.Title).ToPropertyEx(this, vm => vm.Type);
+
         }
     }
 }

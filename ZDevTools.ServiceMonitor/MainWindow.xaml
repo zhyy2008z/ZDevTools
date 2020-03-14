@@ -1,0 +1,48 @@
+﻿<reactiveui:ReactiveWindow x:Class="ZDevTools.ServiceMonitor.MainWindow"
+                           x:TypeArguments="local:MainViewModel"
+                           x:ClassModifier="internal"
+                           xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                           xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                           xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                           xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                           xmlns:local="clr-namespace:ZDevTools.ServiceMonitor"
+                           xmlns:reactiveui="http://reactiveui.net"
+                           mc:Ignorable="d"
+                           Loaded="window_Loaded"
+                           Closed="reactiveWindow_Closed"
+                           Height="450"
+                           Width="800">
+    <ListView x:Name="reportsListView">
+        <ListView.View>
+            <GridView>
+                <GridView.Columns>
+                    <GridViewColumn Header="服务名称"
+                                    DisplayMemberBinding="{Binding ServiceName,Mode=OneWay}"></GridViewColumn>
+                    <GridViewColumn Header="服务状态"
+                                    DisplayMemberBinding="{Binding HasError,Mode=OneWay}">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock VerticalAlignment="Stretch"
+                                           HorizontalAlignment="Stretch"
+                                           Text="{Binding ServiceStatus,Mode=OneWay}"
+                                           Background="{Binding StatusColorBrush,Mode=OneWay}"></TextBlock>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="服务最近执行时间"
+                                    DisplayMemberBinding="{Binding UpdateTime,Mode=OneWay}"></GridViewColumn>
+                    <GridViewColumn Header="服务消息"
+                                    DisplayMemberBinding="{Binding Message,Mode=OneWay}">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Message,Mode=OneWay}" Cursor="Hand" MouseDown="textBlock_MouseDown"></TextBlock>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <!--<GridViewColumn Header="详情"
+                                    DisplayMemberBinding="{Binding Detail,Mode=OneWay}"></GridViewColumn>-->
+                </GridView.Columns>
+            </GridView>
+        </ListView.View>
+    </ListView>
+</reactiveui:ReactiveWindow>

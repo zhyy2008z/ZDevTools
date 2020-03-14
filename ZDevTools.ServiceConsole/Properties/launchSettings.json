@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ZDevTools.ServiceConsole": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

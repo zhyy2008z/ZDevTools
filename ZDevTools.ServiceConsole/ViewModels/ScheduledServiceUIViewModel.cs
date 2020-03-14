@@ -3,35 +3,49 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Prism.Mvvm;
 using System.ComponentModel;
-using Newtonsoft.Json;
 using System.Windows.Media;
-using Prism.Commands;
-
+using ZDevTools.ServiceCore;
+using ZDevTools.ServiceConsole.Schedules;
+using ZDevTools.ServiceConsole.Services;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using ReactiveUI;
+using ReactiveUI.Fody.Helpers;
+using System.Reactive;
+using Newtonsoft.Json;
 
 namespace ZDevTools.ServiceConsole.ViewModels
 {
-    using ServiceCore;
-    using Properties;
-    using Schedules;
-    using DIServices;
-
     public class ScheduledServiceUIViewModel : ServiceViewModelBase, IConfigurableUI
     {
-        static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(ScheduledServiceUIViewModel));
-        void logInfo(string message) => log.Info($"【{DisplayName}】{message}");
-        void logError(string message) => log.Error($"【{DisplayName}】{message}");
-
+        readonly ILogger<ScheduledServiceUIViewModel> Logger;
+        readonly IOptions<ConsoleOptions> Options;
         static readonly object Locker = new object();
+        readonly IDialogs Dialogs;
 
-        IDialogs _dialogs;
-        public ScheduledServiceUIViewModel(IDialogs dialogs)
+        public ScheduledServiceUIViewModel(IDialogs dialogs, ILogger<ScheduledServiceUIViewModel> logger, IOptions<ConsoleOptions> options)
         {
+            this.Logger = logger;
+            this.Dialogs = dialogs;
+            this.Options = options;
+
             ButtonText = "启用";
-            _dialogs = dialogs;
-            ManageSchedulesCommand = new DelegateCommand(manageSchedule);
-            OperateCommand = new DelegateCommand(operate);
+
+            ManageSchedulesCommand = ReactiveCommand.Create(() =>
+            {
+                Dialogs.ShowSchedulesDialog(_manageScheduleEnabled, _schedules, schedules =>
+                 {
+                     //此处可以这样写，是因为我们并没有直接修改BasicSchedule对象的成员
+                     _schedules = schedules;
+                     _enabledSchedules.Clear();
+                     _schedules.ForEach(bs => addEnabledSchedule(bs));
+                     updateDescription();
+                 });
+            });
+
+            OperateCommand = ReactiveCommand.Create(operate);
+
             ImmediatelyChecked = true;
         }
 
@@ -126,7 +140,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
                 //检查是否存在资源竞争问题
                 if (_relyOnResources.Length > 0)
                 {
-                    if (!MyReaderWriterLock.EnterLocks(_relyOnResources, _requestActions, (_waitTimeOut < Settings.Default.ServiceWaitTimeOut ? Settings.Default.ServiceWaitTimeOut : _waitTimeOut) * 1000))
+                    if (!MyReaderWriterLock.EnterLocks(_relyOnResources, _requestActions, (_waitTimeOut < Options.Value.ServiceWaitTimeout ? Options.Value.ServiceWaitTimeout : _waitTimeOut) * 1000))
                     {
                         const string errorMessage = "等待资源释放超时，未执行";
                         logError(errorMessage);
@@ -149,8 +163,8 @@ namespace ZDevTools.ServiceConsole.ViewModels
             updateServiceStatus(ScheduledServiceStatus.Waitting, hasError);
         }
 
-        string _descriptionText;
-        public string DescriptionText { get { return _descriptionText; } set { SetProperty(ref _descriptionText, value); } }
+        [Reactive]
+        public string DescriptionText { get; set; }
 
         bool _manageScheduleEnabled = true;
         /// <summary>
@@ -246,10 +260,11 @@ namespace ZDevTools.ServiceConsole.ViewModels
             logInfo(statusName);
         }
 
-        bool _immediatelyChecked;
-        public bool ImmediatelyChecked { get { return _immediatelyChecked; } set { SetProperty(ref _immediatelyChecked, value); } }
+        [Reactive]
+        public bool ImmediatelyChecked { get; set; }
 
-        public DelegateCommand OperateCommand { get; }
+        public ReactiveCommand<Unit, Unit> OperateCommand { get; }
+
         private void operate()
         {
             switch (ServiceStatus)
@@ -321,7 +336,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
             var scheduleConfigs = config.scheduleConfigs;
             foreach (var item in scheduleConfigs)
             {
-                var schedule = (BasicSchedule)JsonConvert.DeserializeObject(item.Item2, Type.GetType(item.Item1));
+                var schedule = (BasicSchedule)JsonConvert.DeserializeObject(item.JsonString, Type.GetType(item.Type));
                 _schedules.Add(schedule);
                 addEnabledSchedule(schedule);
             }
@@ -371,30 +386,17 @@ namespace ZDevTools.ServiceConsole.ViewModels
 
         public string SaveConfig()
         {
-            var scheduleConfigs = new List<Tuple<string, string>>();
+            var scheduleConfigs = new List<ScheduleConfig>();
 
             foreach (var schedule in _schedules)
             {
-                scheduleConfigs.Add(new Tuple<string, string>(schedule.GetType().FullName, JsonConvert.SerializeObject(schedule)));
+                scheduleConfigs.Add(new ScheduleConfig() { Type = schedule.GetType().FullName, JsonString = JsonConvert.SerializeObject(schedule) });
             }
 
             return JsonConvert.SerializeObject(new ScheduledServiceConfig() { Immediately = ImmediatelyChecked, scheduleConfigs = scheduleConfigs });
         }
 
-        public DelegateCommand ManageSchedulesCommand { get; }
-
-        private void manageSchedule()
-        {
-            var tempSchedules = _dialogs.ShowSchedulesDialog(_manageScheduleEnabled, _schedules);
-
-            if (tempSchedules != null)//此处可以这样写，是因为我们并没有直接修改BasicSchedule对象的成员
-            {
-                _schedules = tempSchedules;
-                _enabledSchedules.Clear();
-                _schedules.ForEach(bs => addEnabledSchedule(bs));
-                updateDescription();
-            }
-        }
+        public ReactiveCommand<Unit, Unit> ManageSchedulesCommand { get; }
 
 
         public override void Stop()
@@ -411,6 +413,10 @@ namespace ZDevTools.ServiceConsole.ViewModels
 
         public override void RefreshStatus() { }
 
+
+        void logInfo(string message) => Logger.LogInformation($"【{DisplayName}】{message}");
+        void logError(string message) => Logger.LogError($"【{DisplayName}】{message}");
+
     }
 
     public enum ScheduledServiceStatus
@@ -422,6 +428,14 @@ namespace ZDevTools.ServiceConsole.ViewModels
     {
         public bool Immediately { get; set; }
 
-        public List<Tuple<string, string>> scheduleConfigs { get; set; }
+        public List<ScheduleConfig> scheduleConfigs { get; set; }
+    }
+
+
+    public class ScheduleConfig
+    {
+        public string Type { get; set; }
+
+        public string JsonString { get; set; }
     }
 }

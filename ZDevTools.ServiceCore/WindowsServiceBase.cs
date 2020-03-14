@@ -5,16 +5,22 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using ServiceStack.Redis;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection;
+using System.Text.Json;
 
 namespace ZDevTools.ServiceCore
 {
+
+
     /// <summary>
     /// Windows服务基类
     /// </summary>
     public abstract class WindowsServiceBase : System.ServiceProcess.ServiceBase, IHostedService
     {
+        readonly IOptions<ServiceOptions> Options;
+
         /// <summary>
         /// Windows服务日志文件夹
         /// </summary>
@@ -23,9 +29,11 @@ namespace ZDevTools.ServiceCore
         /// <summary>
         /// 初始化一个服务
         /// </summary>
-        public WindowsServiceBase()
+        public WindowsServiceBase(IServiceProvider serviceProvider)
         {
+            this.Options = serviceProvider.GetRequiredService<IOptions<ServiceOptions>>();
             this.ServiceName = this.GetType().Name; //设置服务名称
+            this.RedisManagerPool = serviceProvider.GetService<RedisManagerPool>();
         }
 
         /// <summary>
@@ -33,7 +41,7 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         void logError(string message)
         {
-            if (Properties.Settings.Default.WindowsServiceLogLevel <= WindowsServiceLogLevel.Error)
+            if (Options.Value.WindowsServiceLogLevel <= WindowsServiceLogLevel.Error)
                 writeLog(message, "ERROR", null);
         }
 
@@ -42,7 +50,7 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         void logError(string message, Exception exception)
         {
-            if (Properties.Settings.Default.WindowsServiceLogLevel <= WindowsServiceLogLevel.Error)
+            if (Options.Value.WindowsServiceLogLevel <= WindowsServiceLogLevel.Error)
                 writeLog(message, "ERROR", exception);
         }
 
@@ -172,7 +180,7 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         public void LogInfo(string message)
         {
-            if (Properties.Settings.Default.WindowsServiceLogLevel <= WindowsServiceLogLevel.Info)
+            if (Options.Value.WindowsServiceLogLevel <= WindowsServiceLogLevel.Info)
                 writeLog(message, "INFO", null);
         }
 
@@ -181,7 +189,7 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         public void LogWarn(string message)
         {
-            if (Properties.Settings.Default.WindowsServiceLogLevel <= WindowsServiceLogLevel.Warn)
+            if (Options.Value.WindowsServiceLogLevel <= WindowsServiceLogLevel.Warn)
                 writeLog(message, "WARN", null);
         }
 
@@ -190,7 +198,7 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         public void LogWarn(string message, Exception exception)
         {
-            if (Properties.Settings.Default.WindowsServiceLogLevel <= WindowsServiceLogLevel.Warn)
+            if (Options.Value.WindowsServiceLogLevel <= WindowsServiceLogLevel.Warn)
                 writeLog(message, "WARN", exception);
         }
 
@@ -288,7 +296,7 @@ namespace ZDevTools.ServiceCore
         /// <summary>
         /// RedisManagerPool
         /// </summary>
-        public static RedisManagerPool RedisManagerPool { get { return ServiceBase.RedisManagerPool; } }
+        public RedisManagerPool RedisManagerPool { get; }
 
         /// <summary>
         /// 提供格式化日期时间的统一方案
@@ -364,7 +372,7 @@ namespace ZDevTools.ServiceCore
                 if (RedisManagerPool != null)
                     using (var client = RedisManagerPool.GetClient())
                     {
-                        client.SetEntryInHash(RedisKeys.ServiceReports, ServiceName, JsonConvert.SerializeObject(serviceReport));
+                        client.SetEntryInHash(RedisKeys.ServiceReports, ServiceName, JsonSerializer.Serialize(serviceReport));
                         client.PublishMessage(RedisKeys.ServiceReports, ServiceName);
                     }
             }

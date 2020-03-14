@@ -1,0 +1,74 @@
+﻿<reactiveui:ReactiveWindow x:Class="ZDevTools.ServiceConsole.MainWindow"
+                           x:ClassModifier="internal"
+                           x:TypeArguments="local:MainViewModel"
+                           xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                           xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                           xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                           xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                           xmlns:local="clr-namespace:ZDevTools.ServiceConsole"
+                           xmlns:reactiveui="http://reactiveui.net"
+                           mc:Ignorable="d"
+                           Height="471.869"
+                           Width="921.639"
+                           Closing="Window_Closing"
+                           Loaded="Window_Loaded"
+                           Closed="ReactiveWindow_Closed"
+                           Icon="server.ico"
+                           WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition></RowDefinition>
+            <RowDefinition Height="28"></RowDefinition>
+            <RowDefinition  MaxHeight="400"
+                            Height="2*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <ListBox x:Name="logListBox"
+                 CommandManager.Executed="logListBox_Executed">
+            <ListBox.InputBindings>
+                <KeyBinding x:Name="copyKeyBinding"
+                            Key="C"
+                            Modifiers="Ctrl"></KeyBinding>
+            </ListBox.InputBindings>
+        </ListBox>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250"></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="全部服务"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"></TextBlock>
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+                <StackPanel.Resources>
+                    <Style TargetType="Button">
+                        <Setter Property="Width"
+                                Value="70"></Setter>
+                        <Setter Property="Height"
+                                Value="23"></Setter>
+                        <Setter Property="Margin"
+                                Value="3,0"></Setter>
+                    </Style>
+                </StackPanel.Resources>
+                <Button x:Name="versionButton">版本信息</Button>
+                <Button x:Name="refreshButton">刷新状态</Button>
+                <Button x:Name="installButton"></Button>
+                <Button x:Name="settingButton">设置</Button>
+                <Button x:Name="oneKeyStartButton">一键启动</Button>
+                <Button x:Name="stopAllButton">全部停用</Button>
+            </StackPanel>
+        </Grid>
+        <ScrollViewer Grid.Row="2"
+                      VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="servicesItemsControl">
+                <ItemsControl.ItemContainerStyle>
+                    <Style TargetType="ContentPresenter">
+                        <Setter Property="Margin"
+                                Value="0,5"></Setter>
+                    </Style>
+                </ItemsControl.ItemContainerStyle>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</reactiveui:ReactiveWindow>

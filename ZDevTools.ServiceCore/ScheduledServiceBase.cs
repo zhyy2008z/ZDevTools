@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using ServiceStack.Redis;
 
 namespace ZDevTools.ServiceCore
 {
@@ -11,8 +14,9 @@ namespace ZDevTools.ServiceCore
     /// </summary>
     public abstract class ScheduledServiceBase : ServiceBase, IScheduledService
     {
-        static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(ScheduledServiceBase));
-        void logError(string message, Exception exception) => log.Error($"【{DisplayName}】{message}", exception);
+        protected ScheduledServiceBase(ILogger logger, IServiceProvider serviceProvider) : base(logger, serviceProvider) { }
+
+        void logError(Exception exception, string message) => Logger.LogError(exception, $"【{DisplayName}】{message}");
 
         /// <summary>
         /// 执行额外信息
@@ -39,8 +43,8 @@ namespace ZDevTools.ServiceCore
 #if !DEBUG
             catch (Exception ex)
             {
-                logError($"执行出错，错误：{ex.Message}", ex);
-                ReportError("执行出错", ex);
+                logError(ex, $"执行出错，错误：{ex.Message}");
+                ReportError(ex, "执行出错");
                 return false;
             }
 #endif

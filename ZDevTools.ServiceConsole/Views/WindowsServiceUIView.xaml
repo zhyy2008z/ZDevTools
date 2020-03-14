@@ -1,0 +1,42 @@
+﻿<reactiveui:ReactiveUserControl x:Class="ZDevTools.ServiceConsole.Views.WindowsServiceUIView"
+                                x:TypeArguments="local:WindowsServiceUIViewModel"
+                                x:ClassModifier="internal"
+                                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                                xmlns:local="clr-namespace:ZDevTools.ServiceConsole.ViewModels"
+                                xmlns:reactiveui="http://reactiveui.net"
+                                mc:Ignorable="d"
+                                d:DesignHeight="39"
+                                d:DesignWidth="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition Width="245"></ColumnDefinition>
+            <ColumnDefinition Width="70"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <TextBlock x:Name="displayNameTextBlock"
+                   VerticalAlignment="Center"
+                   Margin="10,0"></TextBlock>
+        <TextBlock x:Name="statusTextTextBlock"
+                   VerticalAlignment="Center"
+                   Grid.Column="1"></TextBlock>
+        <StackPanel Orientation="Horizontal"
+                    Grid.Column="2"
+                    VerticalAlignment="Center">
+            <TextBlock VerticalAlignment="Center">启动类型：</TextBlock>
+            <ComboBox x:Name="startupTypeIndexComboBox"
+                      Width="120">
+                <ComboBoxItem>自动（延迟启动）</ComboBoxItem>
+                <ComboBoxItem>自动</ComboBoxItem>
+                <ComboBoxItem>手动</ComboBoxItem>
+                <ComboBoxItem>禁用</ComboBoxItem>
+            </ComboBox>
+            <Button x:Name="applyButton">应用</Button>
+        </StackPanel>
+        <Button x:Name="operateButton"
+                Grid.Column="3"></Button>
+    </Grid>
+</reactiveui:ReactiveUserControl>

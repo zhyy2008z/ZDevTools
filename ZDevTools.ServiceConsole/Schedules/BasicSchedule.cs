@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using ZDevTools.ServiceCore;
 using System.Windows.Forms;
 using Newtonsoft.Json;
+using ZDevTools.ServiceCore;
 
 namespace ZDevTools.ServiceConsole.Schedules
 {
@@ -26,14 +22,12 @@ namespace ZDevTools.ServiceConsole.Schedules
 
         protected virtual void OnDoWork(EventArgs e)
         {
-            if (DoWork != null)
-                DoWork(this, e);
+            DoWork?.Invoke(this, e);
         }
 
         protected virtual void OnFinished(EventArgs e)
         {
-            if (Finished != null)
-                Finished(this, e);
+            Finished?.Invoke(this, e);
         }
 
         [NonSerialized]

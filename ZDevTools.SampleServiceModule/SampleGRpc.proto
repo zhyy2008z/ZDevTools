@@ -1,0 +1,25 @@
+﻿// 版权信息
+
+syntax = "proto3";
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace="ZDevTools.SampleServiceModule";
+
+package zdevtools.sampleservicemodule;
+
+//通讯服务
+service SampleService {
+
+    //通信测试
+    rpc CommunicationTest(CommunicationTestEcho) returns (CommunicationTestEcho);
+
+}
+
+message CommunicationTestEcho{
+    string message=1;
+}

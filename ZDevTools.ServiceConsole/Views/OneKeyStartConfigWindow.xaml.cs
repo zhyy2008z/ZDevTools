@@ -11,28 +11,34 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using ZDevTools.ServiceConsole.ViewModels;
+using ReactiveUI;
+using System.Reactive.Linq;
+using System.Reactive.Disposables;
 
 namespace ZDevTools.ServiceConsole.Views
 {
-    using ViewModels;
-
     /// <summary>
     /// Interaction logic for OneKeyStartConfigWindow.xaml
     /// </summary>
-    public partial class OneKeyStartConfigWindow : Window
+    partial class OneKeyStartConfigWindow
     {
-        public OneKeyStartConfigWindow()
+        public OneKeyStartConfigWindow(OneKeyStartConfigViewModel viewModel)
         {
-            DataContextChanged += (sender, e) =>
-            {
-                ViewModel = DataContext as OneKeyStartConfigWindowViewModel;
-                ViewModel.Synchronizer = new Synchronizer(Dispatcher);
-                ViewModel.Window = this;
-            };
+            this.ViewModel = viewModel;
 
             InitializeComponent();
+
+            this.WhenActivated(disposables =>
+            {
+                this.OneWayBind(ViewModel, vm => vm.Configs, v => v.configsListBox.ItemsSource).DisposeWith(disposables);
+            });
         }
 
-        public OneKeyStartConfigWindowViewModel ViewModel { get; set; }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            this.DialogResult = true;
+        }
     }
 }

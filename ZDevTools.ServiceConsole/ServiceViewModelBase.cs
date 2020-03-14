@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Prism.Mvvm;
 using System.Windows.Media;
+using ReactiveUI;
+using ReactiveUI.Fody.Helpers;
+using ZDevTools.ServiceCore;
 
 namespace ZDevTools.ServiceConsole
 {
-    using ServiceCore;
-
-    public abstract class ServiceViewModelBase : BindableBase
+    public abstract class ServiceViewModelBase : ReactiveObject
     {
         public ServiceViewModelBase()
         {
@@ -20,51 +20,46 @@ namespace ZDevTools.ServiceConsole
         }
 
         /// <summary>
-        /// 同步器
-        /// </summary>
-        public Synchronizer Synchronizer { get; set; }
-
-
-        /// <summary>
         /// 绑定的服务
         /// </summary>
         public abstract IServiceBase BindedService { get; set; }
 
-        string _displayName;
         /// <summary>
         /// 服务名称
         /// </summary>
-        public string DisplayName { get { return _displayName; } set { SetProperty(ref _displayName, value); } }
+        [Reactive]
+        public string DisplayName { get; set; }
 
-        string _statusText;
+
         /// <summary>
         /// 状态文本
         /// </summary>
-        public string StatusText { get { return _statusText; } set { SetProperty(ref _statusText, value); } }
+        [Reactive]
+        public string StatusText { get; set; }
 
-        string _buttonText;
         /// <summary>
         /// 按钮文本
         /// </summary>
-        public string ButtonText { get { return _buttonText; } set { SetProperty(ref _buttonText, value); } }
+        [Reactive]
+        public string ButtonText { get; set; }
 
-        Brush _statusColor;
         /// <summary>
         /// 状态颜色
         /// </summary>
-        public Brush StatusColor { get { return _statusColor; } set { SetProperty(ref _statusColor, value); } }
+        [Reactive]
+        public Brush StatusColor { get; set; }
 
-        bool _buttonEnabled;
         /// <summary>
         /// 按钮启用状态
         /// </summary>
-        public bool ButtonEnabled { get { return _buttonEnabled; } set { SetProperty(ref _buttonEnabled, value); } }
+        [Reactive]
+        public bool ButtonEnabled { get; set; }
 
-        string _statusTooltip;
         /// <summary>
         /// 状态提示
         /// </summary>
-        public string StatusToolTip { get { return _statusTooltip; } set { SetProperty(ref _statusTooltip, value); } }
+        [Reactive]
+        public string StatusToolTip { get; set; }
 
         /// <summary>
         /// 停止当前服务

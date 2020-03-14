@@ -15,31 +15,44 @@ using Xceed.Wpf.Toolkit;
 using Xceed.Wpf.Toolkit.Primitives;
 using System.Collections.ObjectModel;
 using System.Collections;
+using ZDevTools.ServiceConsole.ViewModels;
+using ZDevTools.ServiceConsole.Models;
+using ReactiveUI;
+using System.Reactive.Disposables;
 
 namespace ZDevTools.ServiceConsole.Views
 {
-    using ViewModels;
-    using Models;
-
-
     /// <summary>
     /// Interaction logic for ScheduleWindow.xaml
     /// </summary>
-    public partial class ScheduleWindow : Window
+    partial class ScheduleWindow
     {
-        public ScheduleWindow()
+        public ScheduleWindow(ScheduleViewModel viewModel)
         {
-            DataContextChanged += (sender, e) =>
-            {
-                ViewModel = DataContext as ScheduleWindowViewModel;
-                ViewModel.Synchronizer = new Synchronizer(Dispatcher);
-                ViewModel.Window = this;
-            };
+            this.ViewModel = viewModel;
 
             InitializeComponent();
-        }
 
-        public ScheduleWindowViewModel ViewModel { get; set; }
+            this.WhenActivated(disposables =>
+            {
+                this.Bind(ViewModel, vm => vm.IsOnce, v => v.onceButton.IsChecked).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.IsEveryDay, v => v.everyDayButton.IsChecked).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.IsEveryWeek, v => v.everyWeekButton.IsChecked).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.IsEveryMonth, v => v.everyMonthButton.IsChecked).DisposeWith(disposables);
+
+                this.Bind(ViewModel, vm => vm.StartAtDate, v => v.startAtDateDateTimePicker.Value).DisposeWith(disposables);
+
+                this.advancedOptionsGroupBox.DataContext = ViewModel;
+
+                this.Bind(ViewModel, vm => vm.RepeatSchedule, v => v.repeatScheduleCheckBox.IsChecked).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.RepeatPeriod, v => v.repeatPeriodTimeSpanUpDown.Value).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.RepeatUntil, v => v.repeatUntilCheckBox.IsChecked).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.RepeatUntilTime, v => v.repeatUntilTimeTimeSpanUpDown.Value).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.HasEndTime, v => v.hasEndTimeCheckBox.IsChecked).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.EndTime, v => v.endTimeDateTimePicker.Value).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.IsEnabled, v => v.isEnabledCheckBox.IsChecked).DisposeWith(disposables);
+            });
+        }
 
 
         private void allCheckMenuItem_Click(object sender, RoutedEventArgs e)
@@ -58,15 +71,21 @@ namespace ZDevTools.ServiceConsole.Views
             ccb.SelectedItemsOverride.Clear();
         }
 
-        private void onceButton_Checked(object sender, RoutedEventArgs e) => AdvancedOptionsGroupBox.Content = null;
+        private void onceButton_Checked(object sender, RoutedEventArgs e) => advancedOptionsGroupBox.Content = null;
 
 
-        private void everyDayButton_Checked(object sender, RoutedEventArgs e) => AdvancedOptionsGroupBox.Content = AdvancedOptionsGroupBox.FindResource("EveryDayOption");
+        private void everyDayButton_Checked(object sender, RoutedEventArgs e) => advancedOptionsGroupBox.Content = advancedOptionsGroupBox.FindResource("EveryDayOption");
 
 
-        private void everyWeekButton_Checked(object sender, RoutedEventArgs e) => AdvancedOptionsGroupBox.Content = AdvancedOptionsGroupBox.FindResource("EveryWeekOption");
+        private void everyWeekButton_Checked(object sender, RoutedEventArgs e) => advancedOptionsGroupBox.Content = advancedOptionsGroupBox.FindResource("EveryWeekOption");
 
 
-        private void everyMonthButton_Checked(object sender, RoutedEventArgs e) => AdvancedOptionsGroupBox.Content = AdvancedOptionsGroupBox.FindResource("EveryMonthOption");
+        private void everyMonthButton_Checked(object sender, RoutedEventArgs e) => advancedOptionsGroupBox.Content = advancedOptionsGroupBox.FindResource("EveryMonthOption");
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (ViewModel.CheckOk())
+                DialogResult = true;
+        }
     }
 }

@@ -1,23 +1,23 @@
-﻿<Window x:Class="ZDevTools.ServiceConsole.Views.OneKeyStartConfigWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ZDevTools.ServiceConsole.Views"
-        xmlns:prism="http://prismlibrary.com/"
-        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
-        prism:ViewModelLocator.AutoWireViewModel="True"
-        mc:Ignorable="d"
-        Title="配置一键启动服务"
-        Height="308.674"
-        Width="591.893"
-        WindowStartupLocation="CenterOwner">
+﻿<reactiveui:ReactiveWindow x:Class="ZDevTools.ServiceConsole.Views.OneKeyStartConfigWindow"
+                           x:TypeArguments="local:OneKeyStartConfigViewModel"
+                           x:ClassModifier="internal"
+                           xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                           xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                           xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                           xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                           xmlns:local="clr-namespace:ZDevTools.ServiceConsole.ViewModels"
+                           xmlns:reactiveui="http://reactiveui.net"
+                           mc:Ignorable="d"
+                           Title="配置一键启动服务"
+                           Height="308.674"
+                           Width="591.893"
+                           WindowStartupLocation="CenterOwner">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition></RowDefinition>
             <RowDefinition Height="40"></RowDefinition>
         </Grid.RowDefinitions>
-        <ListBox ItemsSource="{Binding Configs}">
+        <ListBox x:Name="configsListBox">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <CheckBox Content="{Binding ServiceName}"
@@ -29,8 +29,8 @@
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
             <Button IsDefault="True"
-                    Command="{Binding OKCommand}">确定</Button>
+                    Click="Button_Click">确定</Button>
             <Button IsCancel="True">取消</Button>
         </StackPanel>
     </Grid>
-</Window>
+</reactiveui:ReactiveWindow>

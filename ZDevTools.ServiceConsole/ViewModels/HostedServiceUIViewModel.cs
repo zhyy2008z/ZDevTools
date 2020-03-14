@@ -1,29 +1,24 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Prism.Mvvm;
-using System.Windows.Controls;
-using System.Windows;
-using System.Windows.Threading;
 using System.Windows.Media;
-using Prism.Commands;
-
+using ReactiveUI;
+using ZDevTools.ServiceCore;
+using Microsoft.Extensions.Logging;
+using ReactiveUI.Fody.Helpers;
+using System.Reactive.Linq;
+using System.Reactive;
 
 namespace ZDevTools.ServiceConsole.ViewModels
 {
-    using ServiceCore;
-
     public class HostedServiceUIViewModel : ServiceViewModelBase
     {
-        static readonly log4net.ILog Log = log4net.LogManager.GetLogger(typeof(HostedServiceUIViewModel));
-        void logInfo(string message) => Log.Info($"【{DisplayName}】{message}");
-        void logError(string message, Exception exception) => Log.Error($"【{DisplayName}】{message}", exception);
+        readonly ILogger<HostedServiceUIViewModel> Logger;
+        void logInfo(string message) => Logger.LogInformation($"【{DisplayName}】{message}");
+        void logError(Exception exception, string message) => Logger.LogError(exception, $"【{DisplayName}】{message}");
 
-        public HostedServiceUIViewModel()
+        public HostedServiceUIViewModel(ILogger<HostedServiceUIViewModel> logger)
         {
-            OperateServiceCommand = new DelegateCommand(operateServiceAsync);
+            Logger = logger;
+            OperateServiceCommand = ReactiveCommand.Create(operateServiceAsync);
             ButtonText = "启动";
         }
 
@@ -141,7 +136,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
             }
         }
 
-        public DelegateCommand OperateServiceCommand { get; }
+        public ReactiveCommand<Unit, Unit> OperateServiceCommand { get; }
 
         private async void operateServiceAsync()
         {
@@ -159,7 +154,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
                     }
                     catch (Exception ex)
                     {
-                        logError("停止服务时出错：" + ex.Message, ex);
+                        logError(ex, "停止服务时出错：" + ex.Message);
                         UpdateServiceStatus(HostedServiceStatus.Running, true, ex.Message);
                         break;
                     }
@@ -173,7 +168,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
                     }
                     catch (Exception ex)
                     {
-                        logError("启动服务时出错：" + ex.Message, ex);
+                        logError(ex, "启动服务时出错：" + ex.Message);
                         UpdateServiceStatus(HostedServiceStatus.Stopped, true, ex.Message);
                         break;
                     }

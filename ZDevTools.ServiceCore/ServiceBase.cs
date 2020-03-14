@@ -5,8 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using ServiceStack.Redis;
 using System.Diagnostics;
-using Newtonsoft.Json;
 using System.IO;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection;
+using System.Text.Json;
 
 namespace ZDevTools.ServiceCore
 {
@@ -15,19 +18,19 @@ namespace ZDevTools.ServiceCore
     /// </summary>
     public abstract class ServiceBase : IServiceBase
     {
+        protected readonly ILogger Logger;
+        protected readonly IOptions<ServiceOptions> Options;
+
         /// <summary>
         /// 服务基类构造函数
         /// </summary>
-        public ServiceBase()
+        protected ServiceBase(ILogger logger, IServiceProvider serviceProvider)
         {
             this.ServiceName = this.GetType().Name; //设置服务名称
+            this.Logger = logger;
+            this.Options = serviceProvider.GetRequiredService<IOptions<ServiceOptions>>();
+            this.RedisManagerPool = serviceProvider.GetService<RedisManagerPool>();
         }
-
-        static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(ServiceBase));
-
-        void logInfo(string message) => log.Info($"【{DisplayName}】{message}");
-
-        void logWarn(string message, Exception exception) => log.Error($"【{DisplayName}】{message}", exception);
 
         /// <summary>
         /// 服务报告文件夹
@@ -42,7 +45,7 @@ namespace ZDevTools.ServiceCore
         /// <summary>
         /// RedisManagerPool
         /// </summary>
-        public static RedisManagerPool RedisManagerPool { get; } = string.IsNullOrEmpty(Properties.Settings.Default.RedisServer) ? null : new RedisManagerPool(Properties.Settings.Default.RedisServer);
+        public RedisManagerPool RedisManagerPool { get; }
 
         /// <summary>
         /// 服务显示名称
@@ -62,17 +65,12 @@ namespace ZDevTools.ServiceCore
         public static string FormatDateTime(DateTime dateTime) => $"{dateTime:yyyy-MM-dd HH:mm:ss}";
 
         /// <summary>
-        /// 日志对象，必须被重写，由用户定义使用哪个日志对象
-        /// </summary>
-        protected abstract log4net.ILog Log { get; }
-
-        /// <summary>
         /// 记录提示性信息
         /// </summary>
         /// <param name="message"></param>
         public void LogInfo(string message)
         {
-            Log.Info($"【{DisplayName}】{message}");
+            Logger.LogInformation($"【{DisplayName}】{message}");
         }
 
         /// <summary>
@@ -81,7 +79,7 @@ namespace ZDevTools.ServiceCore
         /// <param name="message"></param>
         public void LogDebug(string message)
         {
-            Log.Debug($"【{DisplayName}】{message}");
+            Logger.LogDebug($"【{DisplayName}】{message}");
         }
 
         /// <summary>
@@ -89,9 +87,9 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         /// <param name="message"></param>
         /// <param name="exception"></param>
-        public void LogDebug(string message, Exception exception)
+        public void LogDebug(Exception exception, string message)
         {
-            Log.Debug($"【{DisplayName}】{message}", exception);
+            Logger.LogDebug(exception, $"【{DisplayName}】{message}");
         }
 
         /// <summary>
@@ -100,7 +98,7 @@ namespace ZDevTools.ServiceCore
         /// <param name="message"></param>
         public void LogWarn(string message)
         {
-            Log.Warn($"【{DisplayName}】{message}");
+            Logger.LogWarning($"【{DisplayName}】{message}");
         }
 
         /// <summary>
@@ -108,9 +106,9 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         /// <param name="message"></param>
         /// <param name="exception"></param>
-        public void LogWarn(string message, Exception exception)
+        public void LogWarn(Exception exception, string message)
         {
-            Log.Warn($"【{DisplayName}】{message}", exception);
+            Logger.LogWarning(exception, $"【{DisplayName}】{message}");
         }
 
         /// <summary>
@@ -129,7 +127,7 @@ namespace ZDevTools.ServiceCore
         /// <param name="message">错误消息</param>
         /// <param name="innerException">內部异常</param>
         [DebuggerNonUserCode]
-        public void ThrowError(string message, Exception innerException)
+        public void ThrowError(Exception innerException, string message)
         {
             throw new ServiceErrorException(message, innerException);
         }
@@ -180,7 +178,7 @@ namespace ZDevTools.ServiceCore
                 }
             }
 
-            logInfo($"生成条目{dic.Count}条，已保存到hashid为{hashId}的哈希集合中");
+            LogInfo($"生成条目{dic.Count}条，已保存到hashid为{hashId}的哈希集合中");
         }
 
         /// <summary>
@@ -196,7 +194,7 @@ namespace ZDevTools.ServiceCore
                 client.SetValue(key, value);
             }
 
-            logInfo($"生成条目{key}");
+            LogInfo($"生成条目{key}");
         }
 
         void reportStatus(ServiceReport serviceReport)
@@ -211,11 +209,11 @@ namespace ZDevTools.ServiceCore
                 if (RedisManagerPool != null)
                     using (var client = RedisManagerPool.GetClient())
                     {
-                        client.SetEntryInHash(RedisKeys.ServiceReports, ServiceName, JsonConvert.SerializeObject(serviceReport));
+                        client.SetEntryInHash(RedisKeys.ServiceReports, ServiceName, JsonSerializer.Serialize(serviceReport));
                         client.PublishMessage(RedisKeys.ServiceReports, ServiceName);
                     }
             }
-            catch (Exception ex) { logWarn("状态汇报出错，错误：" + ex.Message, ex); }
+            catch (Exception ex) { LogWarn(ex, "状态汇报出错，错误：" + ex.Message); }
         }
 
         FileStream _reportStream;
@@ -299,7 +297,7 @@ namespace ZDevTools.ServiceCore
         /// </summary>
         /// <param name="message"></param>
         /// <param name="exception"></param>
-        public void ReportError(string message, Exception exception)
+        public void ReportError(Exception exception, string message)
         {
             ServiceReport report = new ServiceReport();
 

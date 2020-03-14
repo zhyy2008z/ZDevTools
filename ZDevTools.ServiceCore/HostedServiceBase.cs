@@ -4,6 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using ServiceStack.Redis;
 
 namespace ZDevTools.ServiceCore
 {
@@ -12,8 +15,8 @@ namespace ZDevTools.ServiceCore
     /// </summary>
     public abstract class HostedServiceBase : ServiceBase, IHostedService
     {
-        static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(HostedServiceBase));
-        void logError(string message, Exception exception) => log.Error($"【{DisplayName}】{message}", exception);
+        protected HostedServiceBase(ILogger logger, IServiceProvider serviceProvider) : base(logger, serviceProvider) { }
+        void logError(Exception exception, string message) => Logger.LogError(exception, $"【{DisplayName}】{message}");
 
         Task jobTask;
         CancellationTokenSource source;
@@ -75,8 +78,8 @@ namespace ZDevTools.ServiceCore
 #if !DEBUG
                 catch (Exception ex)
                 {
-                    logError($"承载服务失败：{ex.Message}", ex);
-                    ReportError("状态：已停止，承载服务失败", ex);
+                    logError(ex, $"承载服务失败：{ex.Message}");
+                    ReportError(ex, "状态：已停止，承载服务失败");
                     Faulted?.Invoke(this, new ErrorEventArgs(ex));
                 }
 #endif

@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
+    <Authors>穿越中的逍遥</Authors>
+    <Company>穿越中的逍遥</Company>
+    <Product>程序开发工具库(WindowsForms)</Product>
+    <Description>开发工具库，目前包含一个支持自动完成的文本框控件（修改自其它项目）</Description>
+    <Copyright>Copyright © 穿越中的逍遥 2020</Copyright>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
+    <PackageReleaseNotes>升级包管理器依赖，分离WindowsForms</PackageReleaseNotes>
+    <usewindowsforms>true</usewindowsforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="UI\WinForm\CustomCompleteTextBox.bmp" />
+    <None Remove="UI\WinForm\ImageButton.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="UI\WinForm\CustomCompleteTextBox.bmp" />
+    <EmbeddedResource Include="UI\WinForm\ImageButton.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="UI\WPF\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="UI\WinForm\CustomCompleteTextBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Update="UI\WinForm\ImageButton.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Update="UI\WinForm\ImageButtonBase.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Update="UI\WinForm\ImageButtonBase.Designer.cs">
+      <DependentUpon>ImageButtonBase.cs</DependentUpon>
+    </Compile>
+    <Compile Update="UI\WinForm\ToolStripDropDownExt.cs">
+      <SubType>Component</SubType>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="UI\WinForm\ImageButtonBase.resx">
+      <DependentUpon>ImageButtonBase.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

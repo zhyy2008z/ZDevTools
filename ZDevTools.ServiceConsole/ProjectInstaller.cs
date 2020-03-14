@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.ComponentModel.Composition.Hosting;
 using System.Configuration.Install;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,7 +20,7 @@ namespace ZDevTools.ServiceConsole
             InitializeComponent();
 
             //引入服务
-            IServiceBase[] services = ViewModels.MainWindowViewModel.GetServicesFromMef();
+            IServiceBase[] services = ViewModels.MainWindowViewModel.GetServices();
 
             foreach (var service in services)
             {

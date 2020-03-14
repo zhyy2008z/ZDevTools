@@ -11,14 +11,11 @@ namespace ZDevTools.ServiceConsole
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
-    public partial class App : Application
+    partial class App
     {
-        protected override void OnStartup(StartupEventArgs e)
+        public App()
         {
-            base.OnStartup(e);
-
-            var bootstrapper = new Bootstrapper();
-            bootstrapper.Run();
+            LoadComponent(this, new Uri("/ZDevTools.ServiceConsole;component/app.xaml", UriKind.Relative));
         }
     }
 }

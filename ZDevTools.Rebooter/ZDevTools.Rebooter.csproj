@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
+    <ApplicationIcon />
+    <StartupObject />
+    <Authors>穿越中的逍遥</Authors>
+    <Company>穿越中的逍遥</Company>
+    <Product>软件自动重启器</Product>
+    <Description>软件自动重启器</Description>
+  </PropertyGroup>
+
+</Project>

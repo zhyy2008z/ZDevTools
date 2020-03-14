@@ -11,30 +11,28 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using ZDevTools.ServiceConsole.ViewModels;
+using ReactiveUI;
+using System.Reactive.Disposables;
 
 namespace ZDevTools.ServiceConsole.Views
 {
-    using ViewModels;
-
     /// <summary>
     /// Interaction logic for VersionWindow.xaml
     /// </summary>
-    public partial class VersionWindow : Window
+    partial class VersionWindow
     {
-        public VersionWindow()
+        public VersionWindow(VersionViewModel viewModel)
         {
-            DataContextChanged += (sender, e) =>
-            {
-                ViewModel = DataContext as VersionWindowViewModel;
-                ViewModel.Synchronizer = new Synchronizer(Dispatcher);
-                ViewModel.Window = this;
-            };
+            this.ViewModel = viewModel;
 
             InitializeComponent();
+
+            this.WhenActivated(disposables =>
+            {
+                this.OneWayBind(ViewModel, vm => vm.Modules, v => v.modulesListView.ItemsSource).DisposeWith(disposables);
+            });
         }
-
-
-        public VersionWindowViewModel ViewModel { get; set; }
 
     }
 }

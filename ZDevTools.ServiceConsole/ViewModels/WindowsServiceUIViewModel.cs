@@ -4,22 +4,55 @@ using System.Linq;
 using System.ServiceProcess;
 using System.Text;
 using System.Threading.Tasks;
-using Prism.Commands;
+using ZDevTools.ServiceCore;
+using Microsoft.Extensions.Logging;
+using ReactiveUI;
+using System.Reactive;
+using ReactiveUI.Fody.Helpers;
 
 namespace ZDevTools.ServiceConsole.ViewModels
 {
-    using ServiceCore;
-
     public class WindowsServiceUIViewModel : HostedServiceUIViewModel
     {
+        readonly ILogger<WindowsServiceUIViewModel> Logger;
 
-        static readonly log4net.ILog Log = log4net.LogManager.GetLogger(typeof(WindowsServiceUIViewModel));
-        void logInfo(string message) => Log.Info($"【{DisplayName}】{message}");
-        void logError(string message, Exception exception) => Log.Error($"【{DisplayName}】{message}", exception);
+        void logInfo(string message) => Logger.LogInformation($"【{DisplayName}】{message}");
+        void logError(Exception exception, string message) => Logger.LogError($"【{DisplayName}】{message}", exception);
 
-        public WindowsServiceUIViewModel()
+        public WindowsServiceUIViewModel(ILogger<WindowsServiceUIViewModel> logger, ILogger<HostedServiceUIViewModel> logger2)
+            : base(logger2)
         {
-            ApplyCommand = new DelegateCommand(raiseApply);
+            this.Logger = logger;
+
+
+            ApplyCommand = ReactiveCommand.Create(() =>
+           {
+               try
+               {
+                   switch (StartupTypeIndex)
+                   {
+                       case 0:
+                           ServiceHelper.ChangeStartMode(_serviceController.ServiceName, ServiceStartMode.Automatic, true);
+                           break;
+                       case 1:
+                           ServiceHelper.ChangeStartMode(_serviceController.ServiceName, ServiceStartMode.Automatic, false);
+                           break;
+                       case 2:
+                           ServiceHelper.ChangeStartMode(_serviceController.ServiceName, ServiceStartMode.Manual, false);
+                           break;
+                       case 3:
+                           ServiceHelper.ChangeStartMode(_serviceController.ServiceName, ServiceStartMode.Disabled, false);
+                           break;
+                       default:
+                           throw new IndexOutOfRangeException("未选择启动模式");
+                   }
+                   logInfo("应用服务启动模式成功");
+               }
+               catch (Exception ex)
+               {
+                   logError(ex, "应用服务启动模式出错：" + ex.Message);
+               }
+           });
         }
 
         ServiceController _serviceController;
@@ -36,8 +69,8 @@ namespace ZDevTools.ServiceConsole.ViewModels
             }
         }
 
-        int _startupTypeIndex;
-        public int StartupTypeIndex { get { return _startupTypeIndex; } set { SetProperty(ref _startupTypeIndex, value); } }
+        [Reactive]
+        public int StartupTypeIndex { get; set; }
 
         public override void RefreshStatus()
         {
@@ -62,39 +95,10 @@ namespace ZDevTools.ServiceConsole.ViewModels
             }
             catch (Exception ex)
             {
-                logError("刷新服务状态出错：" + ex.Message, ex);
+                logError(ex, "刷新服务状态出错：" + ex.Message);
             }
         }
 
-        public DelegateCommand ApplyCommand { get; }
-
-        private void raiseApply()
-        {
-            try
-            {
-                switch (StartupTypeIndex)
-                {
-                    case 0:
-                        ServiceHelper.ChangeStartMode(_serviceController.ServiceName, ServiceStartMode.Automatic, true);
-                        break;
-                    case 1:
-                        ServiceHelper.ChangeStartMode(_serviceController.ServiceName, ServiceStartMode.Automatic, false);
-                        break;
-                    case 2:
-                        ServiceHelper.ChangeStartMode(_serviceController.ServiceName, ServiceStartMode.Manual, false);
-                        break;
-                    case 3:
-                        ServiceHelper.ChangeStartMode(_serviceController.ServiceName, ServiceStartMode.Disabled, false);
-                        break;
-                    default:
-                        throw new IndexOutOfRangeException("未选择启动模式");
-                }
-                logInfo("应用服务启动模式成功");
-            }
-            catch (Exception ex)
-            {
-                logError("应用服务启动模式出错：" + ex.Message, ex);
-            }
-        }
+        public ReactiveCommand<Unit, Unit> ApplyCommand { get; }
     }
 }
