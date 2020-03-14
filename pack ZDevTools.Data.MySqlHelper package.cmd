@@ -1,0 +1,1 @@
+dotnet pack -c Release ZDevTools.Data.MySqlHelper -o .
