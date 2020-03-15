@@ -12,7 +12,6 @@ namespace ZDevTools.NetCore
     {
         public static IServiceCollection AddZDevTools(this IServiceCollection serviceCollection)
         {
-            //serviceCollection.AddSingleton<IMessageBus, Services.MessageBus>();
             serviceCollection.AddSingleton<IEncdecProvider, Services.EncdecProvider>();
             return serviceCollection;
         }
