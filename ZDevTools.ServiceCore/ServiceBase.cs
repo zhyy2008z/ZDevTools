@@ -20,12 +20,14 @@ namespace ZDevTools.ServiceCore
     {
         protected readonly ILogger Logger;
         protected readonly IOptions<ServiceOptions> Options;
+        protected readonly IServiceProvider ServiceProvider;
 
         /// <summary>
         /// 服务基类构造函数
         /// </summary>
         protected ServiceBase(ILogger logger, IServiceProvider serviceProvider)
         {
+            this.ServiceProvider = serviceProvider;
             this.ServiceName = this.GetType().Name; //设置服务名称
             this.Logger = logger;
             this.Options = serviceProvider.GetRequiredService<IOptions<ServiceOptions>>();
@@ -56,60 +58,6 @@ namespace ZDevTools.ServiceCore
         /// 服务內部名称（其实就是类名）
         /// </summary>
         public string ServiceName { get; }
-
-        /// <summary>
-        /// 提供一个标准的时间格式化方法
-        /// </summary>
-        /// <param name="dateTime">要被格式化的日期时间实例</param>
-        /// <returns></returns>
-        public static string FormatDateTime(DateTime dateTime) => $"{dateTime:yyyy-MM-dd HH:mm:ss}";
-
-        /// <summary>
-        /// 记录提示性信息
-        /// </summary>
-        /// <param name="message"></param>
-        public void LogInfo(string message)
-        {
-            Logger.LogInformation($"【{DisplayName}】{message}");
-        }
-
-        /// <summary>
-        /// 记录调试信息
-        /// </summary>
-        /// <param name="message"></param>
-        public void LogDebug(string message)
-        {
-            Logger.LogDebug($"【{DisplayName}】{message}");
-        }
-
-        /// <summary>
-        /// 记录调试信息
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="exception"></param>
-        public void LogDebug(Exception exception, string message)
-        {
-            Logger.LogDebug(exception, $"【{DisplayName}】{message}");
-        }
-
-        /// <summary>
-        /// 记录一般性警告错误
-        /// </summary>
-        /// <param name="message"></param>
-        public void LogWarn(string message)
-        {
-            Logger.LogWarning($"【{DisplayName}】{message}");
-        }
-
-        /// <summary>
-        /// 记录一般性警告错误
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="exception"></param>
-        public void LogWarn(Exception exception, string message)
-        {
-            Logger.LogWarning(exception, $"【{DisplayName}】{message}");
-        }
 
         /// <summary>
         /// 扔出较为严重的错误，该错误发生后任务彻底终止
@@ -178,7 +126,7 @@ namespace ZDevTools.ServiceCore
                 }
             }
 
-            LogInfo($"生成条目{dic.Count}条，已保存到hashid为{hashId}的哈希集合中");
+            Logger.LogInformation($"生成条目{dic.Count}条，已保存到hashid为{hashId}的哈希集合中");
         }
 
         /// <summary>
@@ -194,7 +142,7 @@ namespace ZDevTools.ServiceCore
                 client.SetValue(key, value);
             }
 
-            LogInfo($"生成条目{key}");
+            Logger.LogInformation($"生成条目{key}");
         }
 
         void reportStatus(ServiceReport serviceReport)
@@ -213,7 +161,7 @@ namespace ZDevTools.ServiceCore
                         client.PublishMessage(RedisKeys.ServiceReports, ServiceName);
                     }
             }
-            catch (Exception ex) { LogWarn(ex, "状态汇报出错，错误：" + ex.Message); }
+            catch (Exception ex) { Logger.LogWarning(ex, "状态汇报出错，错误：" + ex.Message); }
         }
 
         FileStream _reportStream;
@@ -242,7 +190,7 @@ namespace ZDevTools.ServiceCore
                         _reportStreamWriter.WriteLine("时间\t\t\t错误\t消息\t\t\t消息组");
                 }
 
-                _reportStreamWriter.WriteLine($"{FormatDateTime(serviceReport.UpdateTime)}\t{(serviceReport.HasError ? "[有]" : "[无]")}\t{serviceReport.Message}\t{(serviceReport.MessageArray == null ? null : string.Join("、", serviceReport.MessageArray))}");
+                _reportStreamWriter.WriteLine($"{serviceReport.UpdateTime}\t{(serviceReport.HasError ? "[有]" : "[无]")}\t{serviceReport.Message}\t{(serviceReport.MessageArray == null ? null : string.Join("、", serviceReport.MessageArray))}");
 
                 _reportStreamWriter.Flush();
             }

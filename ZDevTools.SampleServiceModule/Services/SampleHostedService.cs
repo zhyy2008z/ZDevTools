@@ -22,7 +22,7 @@ namespace ZDevTools.SampleServiceModule.Services
 
         protected override int ServiceCore(CancellationToken cancelationToken)
         {
-            LogInfo("我在运行");
+            Logger.LogInformation("我在运行");
 
             return 3000;
         }

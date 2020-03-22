@@ -87,6 +87,11 @@ namespace ZDevTools.Net
         public Socket Socket { get => _socket; }
 
         /// <summary>
+        /// 设置心跳探测功能参数
+        /// </summary>
+        public TcpKeepAlive TcpKeepAlive { get; set; }
+
+        /// <summary>
         /// Create an uninitialized server instance.  
         /// To start the server listening for connection requests
         /// call the Init method followed by Start method.
@@ -134,6 +139,9 @@ namespace ZDevTools.Net
                 this._socket.SendBufferSize = this.BufferSize;
                 this._socket.ReceiveTimeout = ReceiveTimeout;
                 this._socket.SendTimeout = SendTimeout;
+                //设置心跳包
+                if (TcpKeepAlive.IsOn != default)
+                    if (_socket.IOControl(IOControlCode.KeepAliveValues, TcpKeepAlive.GetBytes(), null) > 0) throw new InvalidOperationException("无法设置KeepAliveValues");
 
                 // Get endpoint for the listener.
                 IPEndPoint localEndPoint = new IPEndPoint(bindedIPAddress, port);
@@ -223,6 +231,10 @@ namespace ZDevTools.Net
         private void processAccept(SocketAsyncEventArgs e)
         {
             Socket socket = e.AcceptSocket;
+
+            // 在这里设置心跳包参数也是可以的，但没有直接在server的Socket中设置效率高，因此，不在这里进行设置。
+            //if (TcpKeepAlive.IsOn != default)
+            //    if (socket.IOControl(IOControlCode.KeepAliveValues, TcpKeepAlive.GetBytes(), null) > 0) throw new InvalidOperationException("无法设置KeepAliveValues");
 
             if (socket.Connected)
             {

@@ -89,7 +89,7 @@ namespace ZDevTools.ServiceCore
                         _logStreamWriter.WriteLine("时间\t\t\t线程\t级别\t消息");
                 }
 
-                _logStreamWriter.WriteLine($"{FormatDateTime(DateTime.Now)}\t[{System.Threading.Thread.CurrentThread.ManagedThreadId}]\t{level} - 【{DisplayName}】{message}");
+                _logStreamWriter.WriteLine($"{DateTime.Now}\t[{System.Threading.Thread.CurrentThread.ManagedThreadId}]\t{level} - 【{DisplayName}】{message}");
 
                 if (exception != null)
                     _logStreamWriter.WriteLine(exception);
@@ -299,16 +299,6 @@ namespace ZDevTools.ServiceCore
         public RedisManagerPool RedisManagerPool { get; }
 
         /// <summary>
-        /// 提供格式化日期时间的统一方案
-        /// </summary>
-        /// <param name="dateTime"></param>
-        /// <returns></returns>
-        public static string FormatDateTime(DateTime dateTime)
-        {
-            return ServiceBase.FormatDateTime(dateTime);
-        }
-
-        /// <summary>
         /// 获取日志文件夹路径（确保日志文件夹存在）
         /// </summary>
         /// <returns></returns>
@@ -410,7 +400,7 @@ namespace ZDevTools.ServiceCore
                         _reportStreamWriter.WriteLine("时间\t\t\t错误\t消息\t\t\t消息组");
                 }
 
-                _reportStreamWriter.WriteLine($"{FormatDateTime(serviceReport.UpdateTime)}\t{(serviceReport.HasError ? "[有]" : "[无]")}\t{serviceReport.Message}\t{(serviceReport.MessageArray == null ? null : string.Join("、", serviceReport.MessageArray))}");
+                _reportStreamWriter.WriteLine($"{serviceReport.UpdateTime}\t{(serviceReport.HasError ? "[有]" : "[无]")}\t{serviceReport.Message}\t{(serviceReport.MessageArray == null ? null : string.Join("、", serviceReport.MessageArray))}");
 
                 _reportStreamWriter.Flush();
             }

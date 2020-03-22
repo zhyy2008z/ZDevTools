@@ -16,7 +16,7 @@ namespace ZDevTools.SampleServiceModule.Services
     public class SampleGRpcService : GRpcServiceBase
     {
         public SampleGRpcService(ILogger<SampleGRpcService> logger, IServiceProvider serviceProvider, SampleGRpcCommunication sampleGRpcCommunication)
-            : base(SampleService.BindService(sampleGRpcCommunication), 8886, logger, serviceProvider)
+            : base(()=>SampleService.BindService(sampleGRpcCommunication), 8886, logger, serviceProvider)
         {
 
         }

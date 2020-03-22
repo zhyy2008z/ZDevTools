@@ -89,7 +89,7 @@ namespace ZDevTools.ServiceConsole.Schedules
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("在" + ServiceBase.FormatDateTime(BeginTime) + "开始执行");
+            sb.Append("在" + BeginTime + "开始执行");
 
             if (RepeatPeriod != null)
                 sb.Append("，每隔" + RepeatPeriod.Value.ToString("h'小时'm'分's'秒'") + "执行一次");
@@ -98,7 +98,7 @@ namespace ZDevTools.ServiceConsole.Schedules
                 sb.Append("，持续" + RepeatUntil.Value.ToString("h'小时'm'分钟's'秒后'") + "不再重复执行");
 
             if (EndTime != null)
-                sb.Append(",计划于" + ServiceBase.FormatDateTime(EndTime.Value) + "到期");
+                sb.Append(",计划于" + EndTime.Value + "到期");
 
             return sb.ToString();
         }

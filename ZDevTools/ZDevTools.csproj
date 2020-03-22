@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
-    <Version>3.0.0</Version>
+    <Version>3.1.0</Version>
     <Description>开发工具库，目前包含一个SqlHelper库，TreeNode树结构类型及算法，RSA算法加密解密实用工具类，SymbolicLink与SocketListener</Description>
     <Authors>穿越中的逍遥</Authors>
     <Copyright>Copyright © 穿越中的逍遥 2020</Copyright>
@@ -10,7 +10,9 @@
     <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageReleaseNotes>升级包管理器依赖，分离WindowsForms</PackageReleaseNotes>
+    <PackageReleaseNotes>SocketListener新增支持探测失联客户端（Socket心跳）</PackageReleaseNotes>
+    <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
+    <PackageTags>SqlHelper TreeNode RSAHelper SocketListener SymbolicLink</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

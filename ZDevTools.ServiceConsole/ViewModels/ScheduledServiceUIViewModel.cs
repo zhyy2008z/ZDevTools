@@ -223,7 +223,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
                     buttonText = "停用";
                     operationEnabled = true;
                     _manageScheduleEnabled = false;
-                    statusToolTip = "下次执行时间：" + ServiceBase.FormatDateTime((from schedule in _enabledSchedules select schedule.ArrangedTime).Min());
+                    statusToolTip = "下次执行时间：" + (from schedule in _enabledSchedules select schedule.ArrangedTime).Min();
                     break;
                 case ScheduledServiceStatus.Running:
                     statusName = "正在运行";

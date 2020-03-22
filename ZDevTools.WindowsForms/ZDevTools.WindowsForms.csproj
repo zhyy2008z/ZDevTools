@@ -11,6 +11,8 @@
     <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
     <PackageReleaseNotes>升级包管理器依赖，分离WindowsForms</PackageReleaseNotes>
     <usewindowsforms>true</usewindowsforms>
+    <PackageTags>AutoComplete</PackageTags>
+    <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>

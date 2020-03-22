@@ -16,12 +16,12 @@ namespace ZDevTools.ServiceCore
     /// </summary>
     public abstract class GRpcServiceBase : ServiceBase, IHostedService
     {
-        readonly ServerServiceDefinition ServerServiceDefinition;
+        readonly GRpcServiceDefinitionFactory GRpcServiceDefinitionProvider;
         readonly int ServicePort;
 
-        protected GRpcServiceBase(ServerServiceDefinition serverServiceDefinition, int servicePort, ILogger logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        protected GRpcServiceBase(GRpcServiceDefinitionFactory gRpcServiceDefinitionProvider, int servicePort, ILogger logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
         {
-            this.ServerServiceDefinition = serverServiceDefinition;
+            this.GRpcServiceDefinitionProvider = gRpcServiceDefinitionProvider;
             this.ServicePort = servicePort;
         }
 
@@ -41,7 +41,7 @@ namespace ZDevTools.ServiceCore
         {
             _server = new Server
             {
-                Services = { ServerServiceDefinition },
+                Services = { GRpcServiceDefinitionProvider() },
                 Ports = { new ServerPort("0.0.0.0", ServicePort, ServerCredentials.Insecure) }
             };
             _server.Start();

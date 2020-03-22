@@ -65,7 +65,7 @@ namespace ZDevTools.ServiceConsole
                     //正常启动软件界面
 #if !DEBUG
                     //处理所有异常
-                    AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+                    AppDomain.CurrentDomain.UnhandledException += currentDomain_UnhandledException;
 #endif
 
                     await host.RunAsync();
@@ -101,30 +101,28 @@ namespace ZDevTools.ServiceConsole
             .ConfigureServices(configureAppServices)
             .UseSerilog();
 
-
         static LoggerConfiguration configLogger(LoggerConfiguration config, out string env, out string formalEnv)
         {
             env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
 
             if (string.IsNullOrEmpty(env)) env = Environments.Production;
 
+            config.MinimumLevel.Verbose();
+
             if (env.Equals(Environments.Production, StringComparison.InvariantCultureIgnoreCase))
             {
                 formalEnv = Environments.Production;
-                return config.MinimumLevel.Information()
-                            .MinimumLevel.Override("Microsoft", LogEventLevel.Error);
+                return config.MinimumLevel.Override("Microsoft", LogEventLevel.Error);
             }
             else if (env.Equals(Environments.Staging, StringComparison.InvariantCultureIgnoreCase))
             {
                 formalEnv = Environments.Staging;
-                return config.MinimumLevel.Verbose()
-                            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning);
+                return config.MinimumLevel.Override("Microsoft", LogEventLevel.Warning);
             }
             else
             {
                 formalEnv = Environments.Development;
-                return config.MinimumLevel.Verbose()
-                            .MinimumLevel.Override("Microsoft", LogEventLevel.Information);
+                return config.MinimumLevel.Override("Microsoft", LogEventLevel.Information);
             }
         }
 
@@ -144,17 +142,15 @@ namespace ZDevTools.ServiceConsole
             serviceCollection.AddSingleton<IDialogs, Services.Dialogs>();
             serviceCollection.AddSingleton<IUtility, Services.Utility>();
 
-
             //加载模块
             var moduleType = typeof(IServiceModule);
-            foreach (var fileInfo in hostBuilderContext.HostingEnvironment.ContentRootFileProvider.GetDirectoryContents("modules").Where(fi => !fi.IsDirectory && fi.Name.EndsWith("ServiceModule.dll", StringComparison.OrdinalIgnoreCase)))
-            {
-                foreach (var type in AssemblyLoadContext.Default.LoadFromAssemblyPath(fileInfo.PhysicalPath).GetTypes().Where(type => moduleType.IsAssignableFrom(type)))
+
+            foreach (var fileInfo in hostBuilderContext.HostingEnvironment.ContentRootFileProvider.GetDirectoryContents(string.Empty).Where(fi => fi.Name.EndsWith("ServiceModule.dll", StringComparison.OrdinalIgnoreCase)))
+                foreach (var type in AssemblyLoadContext.Default.LoadFromAssemblyPath(fileInfo.PhysicalPath).GetTypes().Where(type => moduleType.IsAssignableFrom(type) && !type.IsAbstract))
                     ((IServiceModule)Activator.CreateInstance(type)).ConfigureServices(hostBuilderContext, serviceCollection);
-            }
         }
 
-        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        private static void currentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             handleException(e.ExceptionObject); //未预料到的任何错误，记录日志即可，程序会因异常未处理而退出
         }

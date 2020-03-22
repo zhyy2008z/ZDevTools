@@ -32,17 +32,17 @@ namespace ZDevTools.SampleServiceModule.Services
             cancelled = false;
             for (int i = 0; i < 3; i++)
             {
-                LogInfo("我在执行！");
+                Logger.LogInformation("我在执行！");
                 Thread.Sleep(1000);
                 if (cancelled)
                 {
-                    LogInfo("我被取消执行了！");
+                    Logger.LogInformation("我被取消执行了！");
                     return;
                 }
             }
-            LogInfo("我执行完成了！");
-            LogDebug("****调试信息****");
-            LogWarn("*****警告信息*****");
+            Logger.LogInformation("我执行完成了！");
+            Logger.LogDebug("****调试信息****");
+            Logger.LogWarning("*****警告信息*****");
         }
     }
 }
