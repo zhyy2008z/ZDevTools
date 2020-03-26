@@ -37,6 +37,7 @@ namespace ZDevTools.ServiceConsole
                            .Enrich.FromLogContext()
                            .WriteTo.Console()
                            .WriteTo.Sink(_eventSink)
+                           .WriteTo.File("logs\\log.log", LogEventLevel.Information, rollingInterval: RollingInterval.Day)
                            .CreateLogger();
 
             Log.Verbose($"DOTNET_ENVIRONMENT:{env}");
