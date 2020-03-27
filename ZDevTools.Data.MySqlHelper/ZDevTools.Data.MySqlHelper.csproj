@@ -2,15 +2,16 @@
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
-    <PackageReleaseNotes>更新Nuget引用及所用框架版本，框架改为支持.net core3.1及.net 472版本</PackageReleaseNotes>
+    <PackageReleaseNotes>添加文档</PackageReleaseNotes>
     <Copyright>Copyright © 穿越中的逍遥 2020</Copyright>
     <PackageTags>MySqlHelper</PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
-    <Version>2.0.0</Version>
+    <Version>2.0.1</Version>
     <Description>针对MySql.Data实现的MySqlHelper</Description>
     <Company>穿越中的逍遥</Company>
     <Authors>穿越中的逍遥</Authors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

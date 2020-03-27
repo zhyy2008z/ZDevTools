@@ -12,16 +12,24 @@
     <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoMapper" Version="9.0.0" />
-    <PackageReference Include="Google.Protobuf" Version="3.11.4" />
-    <PackageReference Include="Grpc.Core" Version="2.27.0" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="3.1.2" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="ServiceStack.Redis" Version="5.8.0" />
-    <PackageReference Include="System.ServiceProcess.ServiceController" Version="4.7.0" />
+    <PackageReference Include="AutoMapper"
+                      Version="9.0.0" />
+    <PackageReference Include="Google.Protobuf"
+                      Version="3.11.4" />
+    <PackageReference Include="Grpc.Core"
+                      Version="2.27.0" />
+    <PackageReference Include="Microsoft.Extensions.Options"
+                      Version="3.1.2" />
+    <PackageReference Include="Newtonsoft.Json"
+                      Version="12.0.3" />
+    <PackageReference Include="ServiceStack.Redis"
+                      Version="5.8.0" />
+    <PackageReference Include="System.ServiceProcess.ServiceController"
+                      Version="4.7.0" />
   </ItemGroup>
 
   <ItemGroup>

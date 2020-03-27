@@ -9,6 +9,20 @@
     <Company>穿越中的逍遥</Company>
     <Product>软件自动重启器</Product>
     <Description>软件自动重启器</Description>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageReleaseNotes>添加文档</PackageReleaseNotes>
+    <Version>1.0.1</Version>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
+    <PackageTags>Rebooter</PackageTags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
 
 </Project>

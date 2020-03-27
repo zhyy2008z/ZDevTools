@@ -9,10 +9,12 @@
     <Copyright>Copyright © 穿越中的逍遥 2020</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
-    <PackageReleaseNotes>升级包管理器依赖，分离WindowsForms</PackageReleaseNotes>
+    <PackageReleaseNotes>添加文档</PackageReleaseNotes>
     <usewindowsforms>true</usewindowsforms>
     <PackageTags>AutoComplete</PackageTags>
     <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
