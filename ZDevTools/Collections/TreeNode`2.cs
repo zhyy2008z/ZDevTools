@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ZDevTools.Collections
 {
@@ -50,8 +47,6 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 该节点所属树引用
         /// </summary>
-        [JsonIgnore]
-        [NotMapped]
         public Tree<TTreeNode, TKey> Tree { get; internal set; }
         #endregion
 

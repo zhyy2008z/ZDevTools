@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
-    <Version>3.2.0</Version>
+    <Version>3.2.1</Version>
     <Description>开发工具库，目前包含一个SqlHelper库，TreeNode树结构类型及算法，RSA算法加密解密实用工具类，SymbolicLink与SocketListener</Description>
     <Authors>穿越中的逍遥</Authors>
     <Copyright>Copyright © 穿越中的逍遥 2020</Copyright>
@@ -10,7 +10,7 @@
     <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageReleaseNotes>MathTools增加两个与窗口滤波有关的函数</PackageReleaseNotes>
+    <PackageReleaseNotes>消除对不必要库的依赖</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
     <PackageTags>SqlHelper TreeNode RSAHelper SocketListener SymbolicLink</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -24,17 +24,9 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="System.Management" Version="4.7.0" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-    <PackageReference Include="System.ComponentModel.Annotations" Version="4.7.0" />
-  </ItemGroup>
-
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-    <PackageReference Include="System.Data.SqlClient" Version="4.8.1" />
+    <PackageReference Include="System.Data.SqlClient"
+                      Version="4.8.1" />
   </ItemGroup>
 
 </Project>

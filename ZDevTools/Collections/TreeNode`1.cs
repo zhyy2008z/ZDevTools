@@ -1,9 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
 
 namespace ZDevTools.Collections
 {
@@ -18,21 +14,16 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 孩子节点
         /// </summary>
-        [NotMapped]
         public IReadOnlyList<T> Children { get; internal set; } = new List<T>();
 
         /// <summary>
         /// 父节点
         /// </summary>
-        [JsonIgnore]
-        [NotMapped]
         public T Parent { get; internal set; }
 
         /// <summary>
         /// 获取当前节点在父节点中的位置，-1代表没有父节点
         /// </summary>
-        [JsonIgnore]
-        [NotMapped]
         public int Index
         {
             get
