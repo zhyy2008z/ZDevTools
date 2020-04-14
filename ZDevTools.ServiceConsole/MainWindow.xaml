@@ -17,12 +17,24 @@
                            WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="28"></RowDefinition>
             <RowDefinition></RowDefinition>
             <RowDefinition Height="28"></RowDefinition>
             <RowDefinition  MaxHeight="400"
                             Height="2*"></RowDefinition>
         </Grid.RowDefinitions>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="50"></ColumnDefinition>
+                <ColumnDefinition></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <TextBlock VerticalAlignment="Center">条件：</TextBlock>
+            <TextBox Grid.Column="1"
+                     VerticalAlignment="Center"
+                     x:Name="conditionTextBox"></TextBox>
+        </Grid>
         <ListBox x:Name="logListBox"
+                 Grid.Row="1"
                  CommandManager.Executed="logListBox_Executed">
             <ListBox.InputBindings>
                 <KeyBinding x:Name="copyKeyBinding"
@@ -30,7 +42,7 @@
                             Modifiers="Ctrl"></KeyBinding>
             </ListBox.InputBindings>
         </ListBox>
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="250"></ColumnDefinition>
                 <ColumnDefinition></ColumnDefinition>
@@ -59,7 +71,7 @@
                 <Button x:Name="stopAllButton">全部停用</Button>
             </StackPanel>
         </Grid>
-        <ScrollViewer Grid.Row="2"
+        <ScrollViewer Grid.Row="3"
                       VerticalScrollBarVisibility="Auto">
             <ItemsControl x:Name="servicesItemsControl">
                 <ItemsControl.ItemContainerStyle>

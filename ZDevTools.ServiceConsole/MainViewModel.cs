@@ -81,8 +81,6 @@ namespace ZDevTools.ServiceConsole
                 dialogs.ShowVersionsDialog();
             });
 
-            IServiceBase[] services = GetServices();
-
             //加载/初始化配置
             if (File.Exists(ConfigFile))
             {
@@ -100,6 +98,8 @@ namespace ZDevTools.ServiceConsole
 
 
             List<ServiceViewModelBase> serviceViewModels = new List<ServiceViewModelBase>();
+
+            IServiceBase[] services = GetServices();
 
             foreach (var service in services)
             {

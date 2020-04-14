@@ -288,9 +288,5 @@ namespace ZDevTools.Collections
             }
             return true;
         }
-
-
-
-
     }
 }

@@ -32,6 +32,8 @@ namespace ZDevTools.ServiceConsole
             CultureInfo.DefaultThreadCurrentCulture = culture;
             CultureInfo.DefaultThreadCurrentUICulture = culture;
 
+            Serilog.Debugging.SelfLog.Enable(TextWriter.Synchronized(File.CreateText("logs\\serilog_self.log")));
+
             _eventSink = new EventSink();
             Log.Logger = configLogger(new LoggerConfiguration(), out var env, out var formalEnv)
                            .Enrich.FromLogContext()
@@ -108,23 +110,29 @@ namespace ZDevTools.ServiceConsole
 
             if (string.IsNullOrEmpty(env)) env = Environments.Production;
 
-            config.MinimumLevel.Verbose();
+            var minimumLevel = config.MinimumLevel;
+            minimumLevel.Verbose();
 
             if (env.Equals(Environments.Production, StringComparison.InvariantCultureIgnoreCase))
             {
                 formalEnv = Environments.Production;
-                return config.MinimumLevel.Override("Microsoft", LogEventLevel.Error);
+                minimumLevel.Override("Microsoft", LogEventLevel.Error);
+                minimumLevel.Override("System", LogEventLevel.Error);
             }
             else if (env.Equals(Environments.Staging, StringComparison.InvariantCultureIgnoreCase))
             {
                 formalEnv = Environments.Staging;
-                return config.MinimumLevel.Override("Microsoft", LogEventLevel.Warning);
+                minimumLevel.Override("Microsoft", LogEventLevel.Warning);
+                minimumLevel.Override("System", LogEventLevel.Warning);
             }
             else
             {
                 formalEnv = Environments.Development;
-                return config.MinimumLevel.Override("Microsoft", LogEventLevel.Information);
+                minimumLevel.Override("Microsoft", LogEventLevel.Information);
+                minimumLevel.Override("System", LogEventLevel.Information);
             }
+
+            return config;
         }
 
         private static void configureAppServices(HostBuilderContext hostBuilderContext, IServiceCollection serviceCollection)

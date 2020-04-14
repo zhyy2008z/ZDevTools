@@ -21,6 +21,6 @@ namespace ZDevTools.SampleServiceModule.Services
 
         }
 
-        public override string DisplayName => "WCF服务样例服务";
+        public override string DisplayName => "GRPC服务样例服务";
     }
 }

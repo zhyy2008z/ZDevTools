@@ -3,10 +3,13 @@ using System.Reactive.Disposables;
 using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using FSLib.App.SimpleUpdater;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Reactive.Linq;
+using System.Linq;
 
 using ReactiveUI;
 
@@ -22,6 +25,7 @@ namespace ZDevTools.ServiceConsole
         readonly ILogger<MainWindow> Logger;
         readonly IOptions<ConsoleOptions> Options;
 
+        string _condition;
         public MainWindow(MainViewModel viewModel, EventSink eventSink, ILogger<MainWindow> logger, IOptions<ConsoleOptions> options)
         {
             this.ViewModel = viewModel;
@@ -40,6 +44,7 @@ namespace ZDevTools.ServiceConsole
                 this.BindCommand(ViewModel, vm => vm.StopAllCommand, v => v.stopAllButton).DisposeWith(disposables);
                 this.OneWayBind(ViewModel, vm => vm.InstallButtonText, v => v.installButton.Content).DisposeWith(disposables);
                 this.OneWayBind(ViewModel, vm => vm.ServiceViewModels, v => v.servicesItemsControl.ItemsSource).DisposeWith(disposables);
+                conditionTextBox.Events().TextChanged.Select(e => conditionTextBox.Text).Subscribe(str => _condition = str).DisposeWith(disposables);
 
                 eventSink.DisposeWith(disposables);
                 //disposables.Add(Disposable.Create(() => eventSink.Log -= eventSink_Log));
@@ -104,28 +109,77 @@ namespace ZDevTools.ServiceConsole
         const int RemoveItemsCount = 300;
         private void eventSink_Log(LogEventLevel level, string message)
         {
-            Dispatcher.BeginInvoke(new Action(() =>
+            //是否可以显示
+            bool needDisplay = true;
+            var condition = _condition;
+            if (!string.IsNullOrEmpty(condition)) //条件不为空时可以进行判断
             {
-                if (logListBox.Items.Count > MaxMessageCount)
-                {
+                //可以显示条件命中
+                bool canDisplay = false;
+                //不可以显示条件命中
+                bool dontDisplay = false;
+                //是否包含可以显示条件
+                bool hasCanDisplay = false;
 
-                    for (int i = MaxMessageCount; i >= MaxMessageCount - RemoveItemsCount; i--)
-                        logListBox.Items.RemoveAt(i);
+                var subConditions = condition.Split(';');
+
+                foreach (var subCondition in subConditions)
+                {
+                    if (subCondition.StartsWith("!")) //不得包含条件
+                    {
+                        if (!dontDisplay)
+                        {
+                            var dontCondition = subCondition.Substring(1);
+
+                            if (string.IsNullOrEmpty(dontCondition)) continue; //跳过空白条件
+
+                            if (message.Contains(subCondition.Substring(1), StringComparison.OrdinalIgnoreCase))
+                            {
+                                dontDisplay = true;
+                            }
+                        }
+                    }
+                    else //可以包含
+                    {
+                        hasCanDisplay = true;
+                        if (!canDisplay)
+                        {
+                            if (string.IsNullOrEmpty(subCondition)) continue; //跳过空白条件
+
+                            if (message.Contains(subCondition, StringComparison.OrdinalIgnoreCase))
+                            {
+                                canDisplay = true;
+                            }
+                        }
+                    }
                 }
 
-                Brush brush = level switch
-                {
-                    LogEventLevel.Verbose => Brushes.LightGray,
-                    LogEventLevel.Debug => Brushes.Gray,
-                    LogEventLevel.Information => Brushes.Black,
-                    LogEventLevel.Warning => Brushes.Orange,
-                    LogEventLevel.Error => Brushes.Red,
-                    LogEventLevel.Fatal => Brushes.DarkRed,
-                    _ => throw new ArgumentOutOfRangeException(nameof(level)),
-                };
+                needDisplay = (!hasCanDisplay || canDisplay) && !dontDisplay;
+            }
 
-                logListBox.Items.Insert(0, new ListBoxItem() { Content = message.Replace(Environment.NewLine, "|"), Foreground = brush });
-            }));
+            if (needDisplay)
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (logListBox.Items.Count > MaxMessageCount)
+                    {
+
+                        for (int i = MaxMessageCount; i >= MaxMessageCount - RemoveItemsCount; i--)
+                            logListBox.Items.RemoveAt(i);
+                    }
+
+                    Brush brush = level switch
+                    {
+                        LogEventLevel.Verbose => Brushes.LightGray,
+                        LogEventLevel.Debug => Brushes.Gray,
+                        LogEventLevel.Information => Brushes.Black,
+                        LogEventLevel.Warning => Brushes.Orange,
+                        LogEventLevel.Error => Brushes.Red,
+                        LogEventLevel.Fatal => Brushes.DarkRed,
+                        _ => throw new ArgumentOutOfRangeException(nameof(level)),
+                    };
+
+                    logListBox.Items.Insert(0, new ListBoxItem() { Content = message.Replace(Environment.NewLine, "|"), Foreground = brush });
+                }));
         }
 
         private void logListBox_Executed(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
