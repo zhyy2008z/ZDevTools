@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
+    <TargetFramework>net472</TargetFramework>
     <Authors>穿越中的逍遥</Authors>
     <Company>穿越中的逍遥</Company>
     <Product>程序开发工具库(WindowsForms)</Product>
-    <Description>开发工具库，目前包含一个支持自动完成的文本框控件（修改自其它项目）</Description>
+    <Description>在.Net Framework平台上支持模块化开发WinForms程序，内部使用Autofac作为依赖注入容器并集成ReactiveUI响应式编程框架，并包含一些自定义控件。</Description>
     <Copyright>Copyright © 穿越中的逍遥 2020</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
@@ -13,7 +13,7 @@
     <usewindowsforms>true</usewindowsforms>
     <PackageTags>AutoComplete ReactiveUI Autofac</PackageTags>
     <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
-    <Version>2.0.0</Version>
+    <Version>2.0.1</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
