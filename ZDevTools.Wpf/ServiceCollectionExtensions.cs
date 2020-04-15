@@ -18,7 +18,7 @@ namespace ZDevTools.Wpf
             {
                 if (type.IsAbstract) continue;
 
-                if (typeof(IScreen).IsAssignableFrom(type))  //Screen
+                if (typeof(IScreen).IsAssignableFrom(type))  //Screen(Singleton)
                 {
                     var realType = type.AsType();
                     serviceCollection.AddSingleton(realType);

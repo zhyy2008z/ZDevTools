@@ -22,7 +22,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-namespace ZDevTools.ExtLibrary
+namespace ZDevTools.WindowsForms.ExtLibrary
 {
 	public static class WindowsAPI
 	{

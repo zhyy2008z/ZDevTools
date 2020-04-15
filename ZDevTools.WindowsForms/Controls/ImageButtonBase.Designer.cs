@@ -1,4 +1,4 @@
-﻿namespace ZDevTools.UI.WinForm
+﻿namespace ZDevTools.WindowsForms.Controls
 {
     partial class ImageButtonBase
     {

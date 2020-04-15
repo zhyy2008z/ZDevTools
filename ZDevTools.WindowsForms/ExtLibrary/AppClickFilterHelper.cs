@@ -22,7 +22,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-namespace ZDevTools.ExtLibrary
+namespace ZDevTools.WindowsForms.ExtLibrary
 {
     /// <summary>
     /// 在当前程序界面内点击鼠标左,中,右键时过滤

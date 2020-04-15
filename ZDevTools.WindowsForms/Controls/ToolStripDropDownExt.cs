@@ -20,7 +20,7 @@ using System;
 using System.ComponentModel;
 using System.Windows.Forms;
 
-namespace ZDevTools.UI.WinForm
+namespace ZDevTools.WindowsForms.Controls
 {
     /// <summary>
     /// 继承自 ToolStripDropDown 的类

@@ -24,14 +24,14 @@ namespace ZDevTools.Wpf
             {
                 serviceCollection.UseMicrosoftDependencyResolver();
                 Locator.CurrentMutable.Initialize();
-                //²»ÒªÊ¹ÓÃÒÔÏÂ·½Ê½£¬Õâ½«µ¼ÖÂSplat£¨ÒÔÉÏ´úÂëµ¼ÖÂSplatÄÚ²¿´´½¨Ò»¸öĞÂµÄServiceProvider£© Óë Microsoft.Extensions.Logging ËùÓÃµÄ ILoggerFactory£¬²»ÊÇÍ¬Ò»¸ö¶ÔÏó£¬´Ó¶øµ¼ÖÂÈÕÖ¾¼ÇÂ¼Ë³Ğò»ìÂÒ£¬Ôì³ÉÎ´ÖªÎÊÌâ£¬×îºÃµÄ·½Ê½¾ÍÊÇ²»ÊÇÓÃSplatÄÚ½¨µÄÈÕÖ¾ÏµÍ³¡£
-                //´Ó Splat Ïò Microsoft.Extensions.Logging Ğ´ÈëÈÕÖ¾
+                //ä¸è¦ä½¿ç”¨ä»¥ä¸‹æ–¹å¼ï¼Œè¿™å°†å¯¼è‡´Splatï¼ˆä»¥ä¸Šä»£ç å¯¼è‡´Splatå†…éƒ¨åˆ›å»ºä¸€ä¸ªæ–°çš„ServiceProviderï¼‰ ä¸ Microsoft.Extensions.Logging æ‰€ç”¨çš„ ILoggerFactoryï¼Œä¸æ˜¯åŒä¸€ä¸ªå¯¹è±¡ï¼Œä»è€Œå¯¼è‡´æ—¥å¿—è®°å½•é¡ºåºæ··ä¹±ï¼Œé€ æˆæœªçŸ¥é—®é¢˜ï¼Œæœ€å¥½çš„æ–¹å¼å°±æ˜¯ä¸æ˜¯ç”¨Splatå†…å»ºçš„æ—¥å¿—ç³»ç»Ÿã€‚
+                //ä» Splat å‘ Microsoft.Extensions.Logging å†™å…¥æ—¥å¿—
                 //Locator.CurrentMutable.UseMicrosoftExtensionsLoggingWithWrappingFullLogger(Locator.Current.GetService<ILoggerFactory>());
             })
-            // ²»ĞèÒª½«ÈÕÖ¾Ğ´»ØSplat£¬ÒòÎªÓÃ»§»áÊ¹ÓÃ×Ô¼ºµÄÈÕÖ¾ÏµÍ³
+            // ä¸éœ€è¦å°†æ—¥å¿—å†™å›Splatï¼Œå› ä¸ºç”¨æˆ·ä¼šä½¿ç”¨è‡ªå·±çš„æ—¥å¿—ç³»ç»Ÿ
             //.ConfigureLogging(loggingBuilder =>
             //{
-            //    //´Ó Microsoft.Extensions.Logging Ïò Splat Ğ´ÈëÈÕÖ¾
+            //    //ä» Microsoft.Extensions.Logging å‘ Splat å†™å…¥æ—¥å¿—
             //    loggingBuilder.AddSplat();
             //})
             ;

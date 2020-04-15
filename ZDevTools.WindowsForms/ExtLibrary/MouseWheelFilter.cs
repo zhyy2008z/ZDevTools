@@ -22,7 +22,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-namespace ZDevTools.ExtLibrary
+namespace ZDevTools.WindowsForms.ExtLibrary
 {
     /// <summary>
     /// 过滤鼠标滚轮消息

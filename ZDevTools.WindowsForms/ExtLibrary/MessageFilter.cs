@@ -20,7 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
 
-namespace ZDevTools.ExtLibrary
+namespace ZDevTools.WindowsForms.ExtLibrary
 {
 	/// <summary>
 	/// 消息过滤事件数据

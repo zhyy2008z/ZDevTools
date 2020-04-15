@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Drawing.Design;
 using System.Windows.Forms;
 
-namespace ZDevTools.UI.WinForm
+namespace ZDevTools.WindowsForms.Controls
 {
     /// <summary>
     /// <para>自定义图像按钮类，用来创建拥有释放、悬浮、按下动作的按钮。</para>

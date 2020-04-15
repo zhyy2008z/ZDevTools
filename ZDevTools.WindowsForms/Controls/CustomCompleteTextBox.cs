@@ -21,9 +21,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
-using ZDevTools.ExtLibrary;
+using ZDevTools.WindowsForms.ExtLibrary;
 
-namespace ZDevTools.UI.WinForm
+namespace ZDevTools.WindowsForms.Controls
 {
     /// <summary>
     /// 带下拉列表的自定义搜索文本框

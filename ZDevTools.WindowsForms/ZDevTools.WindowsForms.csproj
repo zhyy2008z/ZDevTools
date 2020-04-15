@@ -9,23 +9,19 @@
     <Copyright>Copyright © 穿越中的逍遥 2020</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
-    <PackageReleaseNotes>添加文档</PackageReleaseNotes>
+    <PackageReleaseNotes>引入ReactiveUI与Autofac，成为类似ZDevTools.Wpf那样的项目</PackageReleaseNotes>
     <usewindowsforms>true</usewindowsforms>
-    <PackageTags>AutoComplete</PackageTags>
+    <PackageTags>AutoComplete ReactiveUI Autofac</PackageTags>
     <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
-    <Version>1.0.1</Version>
+    <Version>2.0.0</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
+  
 
   <ItemGroup>
-    <None Remove="UI\WinForm\CustomCompleteTextBox.bmp" />
-    <None Remove="UI\WinForm\ImageButton.ico" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="UI\WinForm\CustomCompleteTextBox.bmp" />
-    <EmbeddedResource Include="UI\WinForm\ImageButton.ico" />
+    <EmbeddedResource Include="Controls\CustomCompleteTextBox.bmp" />
+    <EmbeddedResource Include="Controls\ImageButton.ico" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,31 +32,32 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="UI\WPF\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="UI\WinForm\CustomCompleteTextBox.cs">
+    <Compile Update="Controls\CustomCompleteTextBox.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Update="UI\WinForm\ImageButton.cs">
+    <Compile Update="Controls\ImageButton.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Update="UI\WinForm\ImageButtonBase.cs">
+    <Compile Update="Controls\ImageButtonBase.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Update="UI\WinForm\ImageButtonBase.Designer.cs">
+    <Compile Update="Controls\ImageButtonBase.Designer.cs">
       <DependentUpon>ImageButtonBase.cs</DependentUpon>
     </Compile>
-    <Compile Update="UI\WinForm\ToolStripDropDownExt.cs">
+    <Compile Update="Controls\ToolStripDropDownExt.cs">
       <SubType>Component</SubType>
     </Compile>
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="UI\WinForm\ImageButtonBase.resx">
+    <EmbeddedResource Update="Controls\ImageButtonBase.resx">
       <DependentUpon>ImageButtonBase.cs</DependentUpon>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Autofac" Version="5.1.2" />
+    <PackageReference Include="ReactiveUI" Version="11.3.1" />
   </ItemGroup>
 
 </Project>
