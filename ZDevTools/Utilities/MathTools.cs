@@ -12,11 +12,11 @@ namespace ZDevTools.Utilities
     public static class MathTools
     {
         /// <summary>
-        /// 自编写寻峰函数（by 穿越中的逍遥）
+        /// 寻峰函数（一阶微分法）
         /// </summary>
-        /// <param name="values"></param>
-        /// <param name="valueLimit"></param>
-        /// <param name="widthLimit"></param>
+        /// <param name="values">用来寻峰的数据</param>
+        /// <param name="valueLimit">峰值限制</param>
+        /// <param name="widthLimit">峰宽限制</param>
         /// <returns></returns>
         public static PeakInfo[] FindPeaks(double[] values, double valueLimit, int widthLimit)
         {
@@ -78,6 +78,105 @@ namespace ZDevTools.Utilities
                 }
             }
             return result.Where(pi => pi.Width > widthLimit).ToArray();
+        }
+
+        /// <summary>
+        /// 寻峰函数（使用窗口内峰值法，不支持计算峰宽）      
+        /// </summary>
+        /// <param name="values">用来寻峰的数据</param>
+        /// <param name="peakValueLimit">峰值限制</param>
+        /// <param name="windowSize">寻峰窗口大小</param>
+        public static PeakInfo[] FindPeaksByWindow(double[] values, double peakValueLimit, int windowSize)
+        {
+            List<PeakInfo> result = new List<PeakInfo>();
+            var end = values.Length - windowSize;
+            int middleIndex = windowSize / 2;
+            for (int i = 0; i < end; i++)
+            {
+                //找出本次窗口中的最大值与在窗口中的峰位
+                double max = double.MinValue;
+                int peakIndex = -1;
+
+                for (int j = 0; j < windowSize; j++)
+                {
+                    var value = values[i + j];
+                    if (max < value)
+                    {
+                        peakIndex = j;
+                        max = value;
+                    }
+                }
+
+                //如果峰位在窗口正中间且峰值大于限制值，那么判定为一个峰
+                if (peakIndex == middleIndex && max > peakValueLimit)
+                {
+                    result.Add(new PeakInfo(i + middleIndex, 0, values[i + middleIndex]));
+                }
+            }
+            return result.ToArray();
+        }
+
+        /// <summary>
+        /// 寻峰函数（使用砍低值法，不支持计算峰宽）
+        /// </summary>
+        /// <param name="values">用来寻峰的数据</param>
+        /// <param name="peakValueLimit">峰值限制</param>
+        /// <param name="peakWidthLimit">峰宽限制</param>
+        /// <param name="lowPass">低于此值的视为本底信号</param>
+        /// <remarks>基础性能最好的算法</remarks>
+        public static PeakInfo[] FindPeaksByCutLowValue(double[] values, double peakValueLimit, int peakWidthLimit, double lowPass)
+        {
+            List<PeakInfo> result = new List<PeakInfo>();
+
+            bool lastHasValue = false;
+            int startIndex = default;
+            double max = default;
+            int maxIndex = default;
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                bool hasValue = values[i] > lowPass;
+
+                if (lastHasValue)
+                {
+                    if (hasValue) //上一次有值，本次也有值，连续，求最值
+                    {
+                        if (max < values[i])
+                        {
+                            max = values[i];
+                            maxIndex = i;
+                        }
+                    }
+                    else //上一次有值，本次没有值，发现一个可能的峰
+                    {
+                        int width = i - startIndex;
+
+                        //寻到一个峰值
+                        if (width >= peakWidthLimit && max > peakValueLimit)
+                        {
+                            result.Add(new PeakInfo(maxIndex, 0, max));
+                        }
+                    }
+                }
+                else
+                {
+                    if (hasValue) //上一次无值，本次有值，开始一个峰
+                    {
+                        startIndex = i;
+
+                        max = values[i];
+                        maxIndex = i;
+                    }
+                    else  //上一次无值，本次无值，不管它
+                    {
+
+                    }
+                }
+
+                lastHasValue = hasValue;
+            }
+
+            return result.ToArray();
         }
 
         /// <summary>
