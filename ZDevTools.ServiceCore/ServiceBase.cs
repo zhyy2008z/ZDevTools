@@ -18,8 +18,13 @@ namespace ZDevTools.ServiceCore
     /// </summary>
     public abstract class ServiceBase : IServiceBase
     {
+        /// <summary>
+        /// 日志对象
+        /// </summary>
         protected readonly ILogger Logger;
-        protected readonly IOptions<ServiceOptions> Options;
+        /// <summary>
+        /// 服务提供者
+        /// </summary>
         protected readonly IServiceProvider ServiceProvider;
 
         /// <summary>
@@ -30,7 +35,6 @@ namespace ZDevTools.ServiceCore
             this.ServiceProvider = serviceProvider;
             this.ServiceName = this.GetType().Name; //设置服务名称
             this.Logger = logger;
-            this.Options = serviceProvider.GetRequiredService<IOptions<ServiceOptions>>();
             this.RedisManagerPool = serviceProvider.GetService<RedisManagerPool>();
         }
 
@@ -108,43 +112,6 @@ namespace ZDevTools.ServiceCore
         }
 
         #region 已导出
-        /// <summary>
-        /// 保存Hash对象
-        /// </summary>
-        public void SaveHash(string hashId, Dictionary<string, string> dic)
-        {
-            if (RedisManagerPool == null)
-                return;
-
-            using (var client = RedisManagerPool.GetClient())
-            {
-                using (var trans = client.CreateTransaction())
-                {
-                    trans.QueueCommand(rc => rc.Remove(hashId));
-                    trans.QueueCommand(rc => rc.SetRangeInHash(hashId, dic));
-                    trans.Commit();
-                }
-            }
-
-            Logger.LogInformation($"生成条目{dic.Count}条，已保存到hashid为{hashId}的哈希集合中");
-        }
-
-        /// <summary>
-        /// 保存单值字符串
-        /// </summary>
-        public void SaveValue(string key, string value)
-        {
-            if (RedisManagerPool == null)
-                return;
-
-            using (var client = RedisManagerPool.GetClient())
-            {
-                client.SetValue(key, value);
-            }
-
-            Logger.LogInformation($"生成条目{key}");
-        }
-
         void reportStatus(ServiceReport serviceReport)
         {
             try

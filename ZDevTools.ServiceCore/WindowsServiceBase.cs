@@ -313,43 +313,6 @@ namespace ZDevTools.ServiceCore
         #endregion
 
         #region 导入ServiceBase实例方法
-        /// <summary>
-        /// 保存Hash对象
-        /// </summary>
-        public void SaveHash(string hashId, Dictionary<string, string> dic)
-        {
-            if (RedisManagerPool == null)
-                return;
-
-            using (var client = RedisManagerPool.GetClient())
-            {
-                using (var trans = client.CreateTransaction())
-                {
-                    trans.QueueCommand(rc => rc.Remove(hashId));
-                    trans.QueueCommand(rc => rc.SetRangeInHash(hashId, dic));
-                    trans.Commit();
-                }
-            }
-
-            LogInfo($"生成条目{dic.Count}条，已保存到hashid为{hashId}的哈希集合中");
-        }
-
-        /// <summary>
-        /// 保存单值字符串
-        /// </summary>
-        public void SaveValue(string key, string value)
-        {
-            if (RedisManagerPool == null)
-                return;
-
-            using (var client = RedisManagerPool.GetClient())
-            {
-                client.SetValue(key, value);
-            }
-
-            LogInfo($"生成条目{key}");
-        }
-
         void reportStatus(ServiceReport serviceReport)
         {
             try
@@ -368,8 +331,6 @@ namespace ZDevTools.ServiceCore
             }
             catch (Exception ex) { LogWarn("状态汇报出错，错误：" + ex.Message, ex); }
         }
-
-
 
         FileStream _reportStream;
         StreamWriter _reportStreamWriter;
