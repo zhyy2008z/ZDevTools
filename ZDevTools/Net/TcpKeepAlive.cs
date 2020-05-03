@@ -6,9 +6,15 @@ using System.Linq;
 
 namespace ZDevTools.Net
 {
+    /// <summary>
+    /// TCP心跳设置
+    /// </summary>
     public struct TcpKeepAlive
     {
 
+        /// <summary>
+        /// 初始化一个心跳设置
+        /// </summary>
         public TcpKeepAlive(bool isOn, uint idleTime, uint retryInterval)
         {
             this.IsOn = Convert.ToUInt32(isOn);
@@ -39,7 +45,10 @@ namespace ZDevTools.Net
         public uint KeepAliveInterval;
 
 
-        public byte[] GetBytes()
+        /// <summary>
+        /// 将设置转化为Byte数组
+        /// </summary>
+        public byte[] ToBytes()
         {
             return BitConverter.GetBytes(IsOn)
             .Concat(BitConverter.GetBytes(KeepAliveTime))

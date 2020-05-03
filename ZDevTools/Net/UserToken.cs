@@ -5,6 +5,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using ZDevTools.Collections;
+using System.Runtime.CompilerServices;
 
 namespace ZDevTools.Net
 {
@@ -18,15 +20,54 @@ namespace ZDevTools.Net
         /// </summary>
         public Socket Socket { get; internal set; }
 
+        internal BufferQueue<byte> ByteQueue { get; private set; }
+
         /// <summary>
-        /// 数据流
+        /// 接收缓存
         /// </summary>
-        internal MemoryStream Stream { get; } = new MemoryStream();
+#if NETCOREAPP
+        internal Memory<byte> ReceivingBuffer { get; set; }
+#else
+        internal byte[] ReceivingBuffer { get; set; }
+#endif
 
         /// <summary>
         /// 是否需要关闭与客户通讯的套接字
         /// </summary>
         public bool IsClosingSocket { get; set; }
+
+        /// <summary>
+        /// 内部字节列队是否为空
+        /// </summary>
+        public bool IsByteQueueEmpty
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => ByteQueue == null || ByteQueue.Length == 0;
+        }
+
+#if NETCOREAPP
+        /// <summary>
+        /// 从网络流获取缓冲队列
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public BufferQueue<byte> GetByteQueue(Memory<byte> data)
+        {
+            if (ByteQueue == null) ByteQueue = new BufferQueue<byte>(ReceivingBuffer.Length);
+            ByteQueue.Enqueue(data.Span);
+            return ByteQueue;
+        }
+#else
+        /// <summary>
+        /// 从网络流获取缓冲队列
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public BufferQueue<byte> GetByteQueue(ArraySegment<byte> data)
+        {
+            if (ByteQueue == null) ByteQueue = new BufferQueue<byte>(ReceivingBuffer.Length);
+            ByteQueue.Enqueue(data);
+            return ByteQueue;
+        }
+#endif
 
         /// <summary>
         /// 重写该方法以释放你自己的资源
@@ -44,7 +85,6 @@ namespace ZDevTools.Net
                 finally
                 {
                     this.Socket.Close();
-                    this.Stream.Close();
                 }
             }
         }

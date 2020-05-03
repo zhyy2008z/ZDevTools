@@ -7,28 +7,39 @@ using System.Threading.Tasks;
 
 namespace ZDevTools.Utilities
 {
+    /// <summary>
+    /// 哈希工具
+    /// </summary>
     public static class HashTools
     {
-        public static string ComputeSha384(string clearText)
-        {
-            return ComputeSha384(Encoding.UTF8.GetBytes(clearText));
-        }
+        /// <summary>
+        /// 使用UTF8编码计算明文的Sha384编码字符串
+        /// </summary>
+        /// <param name="clearText"></param>
+        /// <returns></returns>
+        public static string ComputeSha384(string clearText) => ComputeSha384(Encoding.UTF8.GetBytes(clearText));
 
+        /// <summary>
+        /// 计算明文字节数组的Sha384编码字符串
+        /// </summary>
         public static string ComputeSha384(byte[] clearBytes)
         {
             using (var sha384 = SHA384.Create())
-                return string.Concat(Array.ConvertAll(sha384.ComputeHash(clearBytes), b => b.ToString("x2")));
+                return StringTools.HexStringFromBytes(sha384.ComputeHash(clearBytes));
         }
 
-        public static string ComputeMd5(string clearText)
-        {
-            return ComputeMd5(Encoding.UTF8.GetBytes(clearText));
-        }
+        /// <summary>
+        /// 使用UTF8编码计算明文的Md5编码字符串
+        /// </summary>
+        public static string ComputeMd5(string clearText) => ComputeMd5(Encoding.UTF8.GetBytes(clearText));
 
+        /// <summary>
+        /// 计算明文字节数组的Md5编码字符串
+        /// </summary>
         public static string ComputeMd5(byte[] clearBytes)
         {
             using (var md5 = MD5.Create())
-                return string.Concat(Array.ConvertAll(md5.ComputeHash(clearBytes), b => b.ToString("x2")));
+                return StringTools.HexStringFromBytes(md5.ComputeHash(clearBytes));
         }
     }
 }

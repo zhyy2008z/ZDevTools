@@ -6,14 +6,15 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ZDevTools.Data
 {
     /// <summary>
     /// <para>数据库通用访问辅助类</para>
     /// <para>开发者：穿越中的逍遥</para>
-    /// <para>版本：4.3</para>
-    /// <para>日期：2019年12月29日</para>
+    /// <para>版本：5.0</para>
+    /// <para>日期：2020年4月29日</para>
     /// <para>简介：</para>
     /// <para>虽然是个辅助类，但是支持事务管理（仅单事务管理）。您可以通过继承或填充泛型参数直接操作其他类型的数据库，如Oracle、MySql等。</para>
     /// <para>本辅助类支持占位符，使用方法如下： //v3.1 增加占位符功能的描述</para>
@@ -100,8 +101,14 @@ namespace ZDevTools.Data
     /// 1.修正<see cref="ConvertParameter(TParameter[], out string[])"/>函数行为不正确问题
     /// 2.修正<see cref="ConvertParameter(TParameter[], DbHelper{TConnection, TTransaction, TCommand, TDataReader, TParameter, TDataAdapter, TCommandBuilder}.InParameters, out string[])"/>函数行为不正确问题
     /// </para>
+    /// 
+    /// 2020年4月29日 v5.0
+    /// 1.全面支持Async Api
     /// </summary>
     public class DbHelper<TConnection, TTransaction, TCommand, TDataReader, TParameter, TDataAdapter, TCommandBuilder> : IDisposable
+#if NETCOREAPP
+        , IAsyncDisposable
+#endif
         where TConnection : DbConnection, new()
         where TTransaction : DbTransaction
         where TCommand : DbCommand
@@ -349,12 +356,26 @@ namespace ZDevTools.Data
             conn.Open();
         }
 
+        /// <summary>
+        /// 直接返回了Task，因此没有用ValueTask
+        /// </summary>
+        /// <returns></returns>
+        Task configAndOpenAsync()
+        {
+            if (conn == null)
+            {
+                conn = new TConnection();
+                conn.ConnectionString = ConnectionString; //v3.5 连接字符串参数不变时不再重复赋值，优化性能
+            }
+            return conn.OpenAsync();
+        }
+
         void prepareConnectionForTransaction()
         {
             if (Transaction != null)
                 throw new InvalidOperationException("已开启事务，不能重复开启事务");
 
-            bool isClosed = getConnectionIsClosed();
+            bool isClosed = isConnectionClosed();
             if (isClosed)
             {
                 configAndOpen();
@@ -362,10 +383,20 @@ namespace ZDevTools.Data
             }
         }
 
-        bool getConnectionIsClosed()
+        async ValueTask prepareConnectionForTransactionAsync()
         {
-            return conn == null || conn.State == ConnectionState.Closed;
+            if (Transaction != null)
+                throw new InvalidOperationException("已开启事务，不能重复开启事务");
+
+            bool isClosed = isConnectionClosed();
+            if (isClosed)
+            {
+                await configAndOpenAsync();
+                manualOpen = true;
+            }
         }
+
+        bool isConnectionClosed() => conn == null || conn.State == ConnectionState.Closed;
 
         #endregion
 
@@ -408,6 +439,21 @@ namespace ZDevTools.Data
             return this; //v3.4 为Open方法添加返回值
         }
 
+
+        /// <summary>
+        /// 手动打开连接并一直保持开启状态
+        /// </summary>
+        /// <returns>返回DBHelper对象本身，使用<see cref="IDisposable"/>接口</returns>
+        public async ValueTask<IDisposable> OpenAsync() //v3.3 新的Open方法，不再自动开启事务
+        {
+            if (manualOpen) //v1.2 不允许连续两次打开连接，连续打开将导致连接失去控制，从而加速资源流失
+                throw new InvalidOperationException("不能连续手动打开连接两次，请先Close当前连接！");
+            await configAndOpenAsync();
+            manualOpen = true;
+            return this; //v3.4 为Open方法添加返回值
+        }
+
+
         /// <summary>
         /// 开启一个事务，提交事务请显式调用<see cref="Commit()"/>，否则事务无法提交。
         /// </summary>
@@ -416,6 +462,21 @@ namespace ZDevTools.Data
         {
             prepareConnectionForTransaction();
             Transaction = (TTransaction)conn.BeginTransaction();
+            return this;
+        }
+
+        /// <summary>
+        /// 开启一个事务，提交事务请显式调用<see cref="Commit()"/>，否则事务无法提交。
+        /// </summary>
+        /// <returns>返回DBHelper对象本身，使用<see cref="IDisposable"/>接口</returns>
+        public async ValueTask<IDisposable> BeginTransactionAsync() //v3.3 原Open方法重命名为BeginTransaction方法
+        {
+            await prepareConnectionForTransactionAsync();
+#if NETCOREAPP
+            Transaction = (TTransaction)await conn.BeginTransactionAsync();
+#else
+            Transaction = (TTransaction)conn.BeginTransaction();
+#endif
             return this;
         }
 
@@ -432,6 +493,22 @@ namespace ZDevTools.Data
         }
 
         /// <summary>
+        /// 开启一个事务，提交事务请显式调用<see cref="Commit()"/>，否则事务无法提交。
+        /// </summary>
+        /// <param name="isolationLevel">显式指定一个隔离级别</param>
+        /// <returns>返回DBHelper对象本身，使用<see cref="IDisposable"/>接口</returns>
+        public async ValueTask<IDisposable> BeginTransactionAsync(IsolationLevel isolationLevel) //v3.7 新增支持设定隔离级别的BeginTransaction方法
+        {
+            await prepareConnectionForTransactionAsync();
+#if NETCOREAPP
+            Transaction = (TTransaction)await conn.BeginTransactionAsync(isolationLevel);
+#else
+            Transaction = (TTransaction)conn.BeginTransaction(isolationLevel);
+#endif
+            return this;
+        }
+
+        /// <summary>
         /// 提交事务，事务彻底关闭
         /// </summary>
         public void Commit()
@@ -443,6 +520,21 @@ namespace ZDevTools.Data
             Transaction.Dispose();
             Transaction = null;
         }
+
+#if NETCOREAPP
+        /// <summary>
+        /// 提交事务，事务彻底关闭
+        /// </summary>
+        public async ValueTask CommitAsync()
+        {
+            if (Transaction == null)
+                throw new InvalidOperationException("没有开启事务，无法提交！");
+
+            await Transaction.CommitAsync();
+            Transaction.Dispose();
+            Transaction = null;
+        }
+#endif
 
         /// <summary>
         /// 回滚事务，事务彻底关闭
@@ -457,6 +549,20 @@ namespace ZDevTools.Data
             Transaction = null;
         }
 
+#if NETCOREAPP
+        /// <summary>
+        /// 回滚事务，事务彻底关闭
+        /// </summary>
+        public async ValueTask RollBackAsync() //v4.0 事务处理新增RollBack方法，允许用户在一个数据库DBHelper中途开启/提交/回滚事务，您不应当在各个方法的委托中调用BeginTransaction方法，因为事务由DBHelper隐式管理，可能造成DBCommand引发未绑定事务异常。
+        {
+            if (Transaction == null)
+                throw new InvalidOperationException("没有开启事务，无法回滚！");
+
+            await Transaction.RollbackAsync();
+            Transaction.Dispose();
+            Transaction = null;
+        }
+#endif
 
         /// <summary>
         /// 如果您调用了<see cref="Open()"/>或<see cref="BeginTransaction()"/>方法，则必须调用此方法以释放连接
@@ -473,6 +579,23 @@ namespace ZDevTools.Data
             manualOpen = false;
         }
 
+#if NETCOREAPP
+        /// <summary>
+        /// 如果您调用了<see cref="Open()"/>或<see cref="BeginTransaction()"/>方法，则必须调用此方法以释放连接
+        /// </summary>
+        public async ValueTask CloseAsync()
+        {
+            //处理事务，隐式回滚
+            if (Transaction != null)
+                await RollBackAsync();
+
+            //处理基础连接
+            if (conn != null)
+                await conn.CloseAsync();
+            manualOpen = false;
+        }
+#endif
+
         /// <summary>
         /// 本方法的內部直接调用Close方法。
         /// </summary>
@@ -481,6 +604,12 @@ namespace ZDevTools.Data
             Close();
         }
 
+#if NETCOREAPP
+        /// <summary>
+        /// 本方法的內部直接调用CloseAsync方法。
+        /// </summary>
+        public ValueTask DisposeAsync() => CloseAsync();
+#endif
         #endregion
 
         #region 查询与执行
@@ -522,6 +651,35 @@ namespace ZDevTools.Data
         /// <param name="sql">sql语句</param>
         /// <param name="commandType">命令类型</param>
         /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        public async ValueTask<T> GetScalarAsync<T>(string sql, CommandType commandType, InParameters inParameters, params TParameter[] parameters)//v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            T r = default(T);
+            await ExecuteAsync(async (TCommand cmd) =>
+             {
+                 string[] paramNames;
+                 cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                 try
+                 {
+                     cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                     cmd.CommandType = commandType;
+                     r = (T)await cmd.ExecuteScalarAsync();
+                 }
+                 finally
+                 {
+                     cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                 }
+             });
+            return r;
+        }
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <typeparam name="T">类型参数</typeparam>
+        /// <param name="sql">sql语句</param>
+        /// <param name="commandType">命令类型</param>
+        /// <param name="parameters">参数</param>
         public T GetScalar<T>(string sql, CommandType commandType, params TParameter[] parameters)
         {
             T r = default(T);
@@ -548,6 +706,34 @@ namespace ZDevTools.Data
         /// </summary>
         /// <typeparam name="T">类型参数</typeparam>
         /// <param name="sql">sql语句</param>
+        /// <param name="commandType">命令类型</param>
+        /// <param name="parameters">参数</param>
+        public async ValueTask<T> GetScalarAsync<T>(string sql, CommandType commandType, params TParameter[] parameters)
+        {
+            T r = default(T);
+            await ExecuteAsync(async (TCommand cmd) =>
+           {
+               string[] paramNames;
+               cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+               try
+               {
+                   cmd.CommandText = buildSql(sql, paramNames, null);
+                   cmd.CommandType = commandType;
+                   r = (T)await cmd.ExecuteScalarAsync();
+               }
+               finally
+               {
+                   cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+               }
+           });
+            return r;
+        }
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <typeparam name="T">类型参数</typeparam>
+        /// <param name="sql">sql语句</param>
         /// <param name="parameters">参数</param>
         public T GetScalar<T>(string sql, params TParameter[] parameters) //v2.3 添加一个重载方法
         {
@@ -560,6 +746,32 @@ namespace ZDevTools.Data
                 {
                     cmd.CommandText = buildSql(sql, paramNames, null);
                     r = (T)cmd.ExecuteScalar();
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return r;
+        }
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <typeparam name="T">类型参数</typeparam>
+        /// <param name="sql">sql语句</param>
+        /// <param name="parameters">参数</param>
+        public async ValueTask<T> GetScalarAsync<T>(string sql, params TParameter[] parameters) //v2.3 添加一个重载方法
+        {
+            T r = default(T);
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+                string[] paramNames;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    r = (T)await cmd.ExecuteScalarAsync();
                 }
                 finally
                 {
@@ -603,11 +815,40 @@ namespace ZDevTools.Data
         /// </summary>
         /// <typeparam name="T">类型参数</typeparam>
         /// <param name="sql">sql语句</param>
+        /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        public async ValueTask<T> GetScalarAsync<T>(string sql, InParameters inParameters, params TParameter[] parameters)
+        //v2.3 添加一个重载方法
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            T r = default(T);
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+                string[] paramNames;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                    r = (T)await cmd.ExecuteScalarAsync();
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return r;
+        }
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <typeparam name="T">类型参数</typeparam>
+        /// <param name="sql">sql语句</param>
         /// <param name="parameters">参数，sql语句对应索引位置名称为@p0,@p1,@p2...</param>
         public T GetScalar<T>(string sql, params object[] parameters)
         //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
         {
-            T r = default(T);
+            T r = default;
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
@@ -615,6 +856,27 @@ namespace ZDevTools.Data
                 cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames, out inParameters));
                 cmd.CommandText = buildSql(sql, paramNames, inParameters);
                 r = (T)cmd.ExecuteScalar();
+            });
+            return r;
+        }
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <typeparam name="T">类型参数</typeparam>
+        /// <param name="sql">sql语句</param>
+        /// <param name="parameters">参数，sql语句对应索引位置名称为@p0,@p1,@p2...</param>
+        public async ValueTask<T> GetScalarAsync<T>(string sql, params object[] parameters)
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            T r = default;
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+                string[] paramNames;
+                InParameters inParameters;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames, out inParameters));
+                cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                r = (T)await cmd.ExecuteScalarAsync();
             });
             return r;
         }
@@ -632,6 +894,24 @@ namespace ZDevTools.Data
             {
                 cmd.CommandText = sql;
                 r = (T)cmd.ExecuteScalar();
+            });
+            return r;
+        }
+
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <typeparam name="T">泛型参数</typeparam>
+        /// <param name="sql">查询字符串</param>
+        /// <returns></returns>
+        public async ValueTask<T> GetScalarAsync<T>(string sql)
+        {
+            T r = default(T);
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+                cmd.CommandText = sql;
+                r = (T)await cmd.ExecuteScalarAsync();
             });
             return r;
         }
@@ -657,6 +937,34 @@ namespace ZDevTools.Data
                     cmd.CommandText = buildSql(sql, paramNames, null);
                     cmd.CommandType = commandType;
                     affectedRowCount = cmd.ExecuteNonQuery();
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return affectedRowCount;
+        }
+
+        /// <summary>
+        /// 执行查询
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
+        /// <param name="commandType">命令类型</param>
+        /// <param name="parameters">参数</param>
+        /// <returns></returns>
+        public async ValueTask<int> ExecuteAsync(string sql, CommandType commandType, params TParameter[] parameters)
+        {
+            int affectedRowCount = 0;
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+                string[] paramNames;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandType = commandType;
+                    affectedRowCount = await cmd.ExecuteNonQueryAsync();
                 }
                 finally
                 {
@@ -699,6 +1007,35 @@ namespace ZDevTools.Data
         /// 执行查询
         /// </summary>
         /// <param name="sql">查询字符串</param>
+        /// <param name="commandType">命令类型</param>
+        /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        /// <returns></returns>
+        public async ValueTask<int> ExecuteAsync(string sql, CommandType commandType, InParameters inParameters, params TParameter[] parameters)//v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            int affectedRowCount = 0;
+            await ExecuteAsync(async (TCommand cmd) =>
+           {
+               string[] paramNames;
+               cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+               try
+               {
+                   cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                   cmd.CommandType = commandType;
+                   affectedRowCount = await cmd.ExecuteNonQueryAsync();
+               }
+               finally
+               {
+                   cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+               }
+           });
+            return affectedRowCount;
+        }
+
+        /// <summary>
+        /// 执行查询
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
         /// <param name="parameters">参数</param>
         /// <returns></returns>
         public int Execute(string sql, params TParameter[] parameters) //v2.3 添加一个重载方法
@@ -718,6 +1055,33 @@ namespace ZDevTools.Data
                     cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
                 }
             });
+            return affectedRowCount;
+        }
+
+
+        /// <summary>
+        /// 执行查询
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
+        /// <param name="parameters">参数</param>
+        /// <returns></returns>
+        public async ValueTask<int> ExecuteAsync(string sql, params TParameter[] parameters) //v2.3 添加一个重载方法
+        {
+            int affectedRowCount = 0;
+            await ExecuteAsync(async (TCommand cmd) =>
+           {
+               string[] paramNames;
+               cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+               try
+               {
+                   cmd.CommandText = buildSql(sql, paramNames, null);
+                   affectedRowCount = await cmd.ExecuteNonQueryAsync();
+               }
+               finally
+               {
+                   cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+               }
+           });
             return affectedRowCount;
         }
 
@@ -754,6 +1118,35 @@ namespace ZDevTools.Data
         /// 执行查询
         /// </summary>
         /// <param name="sql">查询字符串</param>
+        /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        /// <returns></returns>
+        public async ValueTask<int> ExecuteAsync(string sql, InParameters inParameters, params TParameter[] parameters)
+        //v2.3 添加一个重载方法
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            int affectedRowCount = 0;
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+                string[] paramNames;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                    affectedRowCount = await cmd.ExecuteNonQueryAsync();
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return affectedRowCount;
+        }
+
+        /// <summary>
+        /// 执行查询
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
         /// <param name="parameters">参数，sql语句对应索引位置名称为@p0,@p1,@p2...</param>
         /// <returns></returns>
         public int Execute(string sql, params object[] parameters)
@@ -775,6 +1168,27 @@ namespace ZDevTools.Data
         /// 执行查询
         /// </summary>
         /// <param name="sql">查询字符串</param>
+        /// <param name="parameters">参数，sql语句对应索引位置名称为@p0,@p1,@p2...</param>
+        /// <returns></returns>
+        public async ValueTask<int> ExecuteAsync(string sql, params object[] parameters)
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            int affectedRowCount = 0;
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+                string[] paramNames;
+                InParameters inParameters;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames, out inParameters));
+                cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                affectedRowCount = await cmd.ExecuteNonQueryAsync();
+            });
+            return affectedRowCount;
+        }
+
+        /// <summary>
+        /// 执行查询
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
         /// <returns></returns>
         public int Execute(string sql)
         {
@@ -784,6 +1198,22 @@ namespace ZDevTools.Data
                 cmd.CommandText = sql;
                 affectedRowCount = cmd.ExecuteNonQuery();
             });
+            return affectedRowCount;
+        }
+
+        /// <summary>
+        /// 执行查询
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
+        /// <returns></returns>
+        public async ValueTask<int> ExecuteAsync(string sql)
+        {
+            int affectedRowCount = 0;
+            await ExecuteAsync(async (TCommand cmd) =>
+             {
+                 cmd.CommandText = sql;
+                 affectedRowCount = await cmd.ExecuteNonQueryAsync();
+             });
             return affectedRowCount;
         }
 
@@ -805,6 +1235,33 @@ namespace ZDevTools.Data
                     cmd.CommandText = buildSql(sql, paramNames, null);
                     cmd.CommandType = commandType;
                     using (var reader = (TDataReader)cmd.ExecuteReader())
+                        job(reader);
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+        }
+
+        /// <summary>
+        /// 执行一个数据库操作，允许访问DataReader对象，reader对象自动销毁，不需要手动释放资源
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
+        /// <param name="job">对Reader操作的委托</param>
+        /// <param name="commandType">命令类型</param>
+        /// <param name="parameters">参数</param>
+        public async ValueTask ExecuteAsync(string sql, CommandType commandType, Action<TDataReader> job, params TParameter[] parameters)
+        {
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+                string[] paramNames;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandType = commandType;
+                    using (var reader = (TDataReader)await cmd.ExecuteReaderAsync())
                         job(reader);
                 }
                 finally
@@ -847,6 +1304,38 @@ namespace ZDevTools.Data
         /// 执行一个数据库操作，允许访问DataReader对象，reader对象自动销毁，不需要手动释放资源
         /// </summary>
         /// <param name="sql">查询字符串</param>
+        /// <param name="jobAsync">对Reader操作的委托</param>
+        /// <param name="commandType">命令类型</param>
+        /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        public async ValueTask ExecuteAsync(string sql, CommandType commandType, Func<TDataReader, ValueTask> jobAsync, InParameters inParameters, params TParameter[] parameters)
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+                string[] paramNames;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                    cmd.CommandType = commandType;
+#if NETCOREAPP
+                    await
+#endif
+                    using (var reader = (TDataReader)await cmd.ExecuteReaderAsync())
+                        await jobAsync(reader);
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+        }
+
+        /// <summary>
+        /// 执行一个数据库操作，允许访问DataReader对象，reader对象自动销毁，不需要手动释放资源
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
         /// <param name="job">对Reader操作的委托</param>
         /// <param name="parameters">参数</param>
         public void Execute(string sql, Action<TDataReader> job, params TParameter[] parameters) //v2.3 添加一个重载方法
@@ -860,6 +1349,34 @@ namespace ZDevTools.Data
                     cmd.CommandText = buildSql(sql, paramNames, null);
                     using (var reader = (TDataReader)cmd.ExecuteReader())
                         job(reader);
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+        }
+
+        /// <summary>
+        /// 执行一个数据库操作，允许访问DataReader对象，reader对象自动销毁，不需要手动释放资源
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
+        /// <param name="jobAsync">对Reader操作的委托</param>
+        /// <param name="parameters">参数</param>
+        public async ValueTask ExecuteAsync(string sql, Func<TDataReader, ValueTask> jobAsync, params TParameter[] parameters) //v2.3 添加一个重载方法
+        {
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+                string[] paramNames;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, paramNames, null);
+#if NETCOREAPP
+                    await
+#endif
+                    using (var reader = (TDataReader)await cmd.ExecuteReaderAsync())
+                        await jobAsync(reader);
                 }
                 finally
                 {
@@ -900,6 +1417,37 @@ namespace ZDevTools.Data
         /// 执行一个数据库操作，允许访问DataReader对象，reader对象自动销毁，不需要手动释放资源
         /// </summary>
         /// <param name="sql">查询字符串</param>
+        /// <param name="jobAsync">对Reader操作的委托</param>
+        /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        public async ValueTask ExecuteAsync(string sql, Func<TDataReader, ValueTask> jobAsync, InParameters inParameters, params TParameter[] parameters)
+        //v2.3 添加一个重载方法
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+                string[] paramNames;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
+#if NETCOREAPP
+                    await
+#endif
+                    using (var reader = (TDataReader)await cmd.ExecuteReaderAsync())
+                        await jobAsync(reader);
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+        }
+
+        /// <summary>
+        /// 执行一个数据库操作，允许访问DataReader对象，reader对象自动销毁，不需要手动释放资源
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
         /// <param name="job">对Reader操作的委托</param>
         /// <param name="parameters">参数，sql语句对应索引位置名称为@p0,@p1,@p2...</param>
         public void Execute(string sql, Action<TDataReader> job, params object[] parameters)
@@ -920,6 +1468,29 @@ namespace ZDevTools.Data
         /// 执行一个数据库操作，允许访问DataReader对象，reader对象自动销毁，不需要手动释放资源
         /// </summary>
         /// <param name="sql">查询字符串</param>
+        /// <param name="jobAsync">对Reader操作的委托</param>
+        /// <param name="parameters">参数，sql语句对应索引位置名称为@p0,@p1,@p2...</param>
+        public async ValueTask ExecuteAsync(string sql, Func<TDataReader, ValueTask> jobAsync, params object[] parameters)
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+                string[] paramNames;
+                InParameters inParameters;
+                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames, out inParameters));
+                cmd.CommandText = buildSql(sql, paramNames, inParameters);
+#if NETCOREAPP
+                await
+#endif
+                using (var reader = (TDataReader)await cmd.ExecuteReaderAsync())
+                    await jobAsync(reader);
+            });
+        }
+
+        /// <summary>
+        /// 执行一个数据库操作，允许访问DataReader对象，reader对象自动销毁，不需要手动释放资源
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
         /// <param name="job">对Reader操作的委托</param>
         public void Execute(string sql, Action<TDataReader> job)
         {
@@ -932,12 +1503,30 @@ namespace ZDevTools.Data
         }
 
         /// <summary>
+        /// 执行一个数据库操作，允许访问DataReader对象，reader对象自动销毁，不需要手动释放资源
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
+        /// <param name="jobAsync">对Reader操作的委托</param>
+        public async ValueTask ExecuteAsync(string sql, Func<TDataReader, ValueTask> jobAsync)
+        {
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+                cmd.CommandText = sql;
+#if NETCOREAPP
+                await
+#endif
+                using (var reader = (TDataReader)await cmd.ExecuteReaderAsync())
+                    await jobAsync(reader);
+            });
+        }
+
+        /// <summary>
         /// 执行一个数据库操作，允许访问Command对象，cmd对象自动销毁，不需要手动释放资源
         /// </summary>
         /// <param name="job">对Command操作的委托</param>
         public void Execute(Action<TCommand> job)//将需要做之事全部委托于此方法，此方法为job提供调用前及调用后做好维护服务
         {
-            bool isClosed = getConnectionIsClosed(); //v2.2 修正：不能嵌套调用查询方法的bug
+            bool isClosed = isConnectionClosed(); //v2.2 修正：不能嵌套调用查询方法的bug
             try
             {
                 if (isClosed)//根据当前连接状态自动配置和打开连接
@@ -957,6 +1546,38 @@ namespace ZDevTools.Data
         }
 
         /// <summary>
+        /// 执行一个数据库操作，允许访问Command对象，cmd对象自动销毁，不需要手动释放资源
+        /// </summary>
+        /// <param name="jobAsync">对Command操作的委托</param>
+        public async ValueTask ExecuteAsync(Func<TCommand, ValueTask> jobAsync)//将需要做之事全部委托于此方法，此方法为job提供调用前及调用后做好维护服务
+        {
+            bool isClosed = isConnectionClosed(); //v2.2 修正：不能嵌套调用查询方法的bug
+            try
+            {
+                if (isClosed)//根据当前连接状态自动配置和打开连接
+                    await configAndOpenAsync();
+#if NETCOREAPP
+                await
+#endif
+                using (var cmd = (TCommand)conn.CreateCommand())
+                {
+                    if (Transaction != null)
+                        cmd.Transaction = Transaction;
+                    await jobAsync(cmd);
+                }
+            }
+            finally
+            {
+                if (isClosed) //保持连接的原始状态
+#if NETCOREAPP
+                    await conn.CloseAsync();
+#else
+                    conn.Close();
+#endif
+            }
+        }
+
+        /// <summary>
         /// 执行一个数据库操作，允许访问Connection对象，Connection对象维持上一次操作状态，不需要手动关闭连接
         /// </summary>
         /// <param name="job">对Connection操作的委托</param>
@@ -965,7 +1586,7 @@ namespace ZDevTools.Data
         //将需要做之事全部委托于此方法，此方法为job提供调用前及调用后做好维护服务
         //v3.6 新增保护方法Execute(Action<TConnection> job)，用于继承类实现特殊功能
         {
-            bool isClosed = getConnectionIsClosed(); //v2.2 修正：不能嵌套调用查询方法的bug
+            bool isClosed = isConnectionClosed(); //v2.2 修正：不能嵌套调用查询方法的bug
             try
             {
                 if (isClosed)//根据当前连接状态自动配置和打开连接
@@ -977,6 +1598,34 @@ namespace ZDevTools.Data
             {
                 if (isClosed) //保持连接的原始状态
                     conn.Close();
+            }
+        }
+
+        /// <summary>
+        /// 执行一个数据库操作，允许访问Connection对象，Connection对象维持上一次操作状态，不需要手动关闭连接
+        /// </summary>
+        /// <param name="jobAsync">对Connection操作的委托</param>
+        /// <remarks>此方法主要用于继承类实现自己的特殊功能所用</remarks>
+        protected async ValueTask ExecuteAsync(Func<TConnection, ValueTask> jobAsync)
+        //将需要做之事全部委托于此方法，此方法为job提供调用前及调用后做好维护服务
+        //v3.6 新增保护方法Execute(Action<TConnection> job)，用于继承类实现特殊功能
+        {
+            bool isClosed = isConnectionClosed(); //v2.2 修正：不能嵌套调用查询方法的bug
+            try
+            {
+                if (isClosed)//根据当前连接状态自动配置和打开连接
+                    await configAndOpenAsync();
+
+                await jobAsync(conn);
+            }
+            finally
+            {
+                if (isClosed) //保持连接的原始状态
+#if NETCOREAPP
+                    await conn.CloseAsync();
+#else
+                    conn.Close();
+#endif
             }
         }
 

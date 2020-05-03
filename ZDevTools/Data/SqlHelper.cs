@@ -4,6 +4,7 @@ using System.Data;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ZDevTools.Data
 {
@@ -58,7 +59,7 @@ namespace ZDevTools.Data
         /// <param name="name">参数名称</param>
         /// <param name="values">参数值</param>
         /// <param name="sqlDbType">参数类型</param>
-        public InParameter CreateInParameter(string name, SqlDbType sqlDbType,params object[] values)
+        public InParameter CreateInParameter(string name, SqlDbType sqlDbType, params object[] values)
         {
             SqlParameter[] parameters = new SqlParameter[values.Length];
             for (int i = 0; i < values.Length; i++)
@@ -148,6 +149,35 @@ namespace ZDevTools.Data
         }
 
         /// <summary>
+        /// SqlBulkCopy方式复制dataTable到数据库中
+        /// </summary>
+        /// <param name="dataTable">要复制的数据表，请保证数据表名称与数据库中表名一致</param>
+        /// <param name="destinationTableName">目标表名，如果为null或<see cref="string.Empty"/>则使用<see cref="DataTable.TableName"/></param>
+        /// <param name="mappingColumnName">是否使用<see cref="DataTable"/>中每列的列名【<see cref="DataTable.TableName"/>与数据库表字段匹配是大小写敏感的】进行映射，默认为true；如果<see cref="DataTable"/>中每列的位置均与目的数据表一致，那么此处可以为false，稍微提高一些性能</param>
+        public async ValueTask BulkCopyAsync(DataTable dataTable, string destinationTableName = null, bool mappingColumnName = true)
+        {
+            await ExecuteAsync(async (SqlConnection conn) =>
+            {
+                SqlBulkCopy sqlBulkCopy;
+                if (Transaction != null)
+                    sqlBulkCopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, Transaction);
+                else
+                    sqlBulkCopy = new SqlBulkCopy(conn);
+
+                using (sqlBulkCopy)
+                {
+                    sqlBulkCopy.DestinationTableName = string.IsNullOrEmpty(destinationTableName) ? dataTable.TableName : destinationTableName;
+
+                    if (mappingColumnName)
+                        foreach (DataColumn column in dataTable.Columns)
+                            sqlBulkCopy.ColumnMappings.Add(column.ColumnName, column.ColumnName);//此处Add方法第二个参数destinationColumn要求与数据库表字段名称大小写也要一致
+
+                    await sqlBulkCopy.WriteToServerAsync(dataTable);
+                }
+            });
+        }
+
+        /// <summary>
         /// 使用SqlBulkCopy在默认参数下复制数据到数据库
         /// </summary>
         /// <param name="job">以SqlBulkCopy对象为参数的委托</param>
@@ -167,6 +197,25 @@ namespace ZDevTools.Data
         }
 
         /// <summary>
+        /// 使用SqlBulkCopy在默认参数下复制数据到数据库
+        /// </summary>
+        /// <param name="jobAsync">以SqlBulkCopy对象为参数的委托</param>
+        public async ValueTask BulkCopyAsync(Func<SqlBulkCopy, ValueTask> jobAsync)
+        {
+            await ExecuteAsync(async (SqlConnection conn) =>
+           {
+               SqlBulkCopy sqlBulkCopy;
+               if (Transaction != null)
+                   sqlBulkCopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, Transaction);
+               else
+                   sqlBulkCopy = new SqlBulkCopy(conn);
+
+               using (sqlBulkCopy)
+                   await jobAsync(sqlBulkCopy);
+           });
+        }
+
+        /// <summary>
         /// 使用SqlBulkCopy在用户给定参数下复制数据到数据库
         /// </summary>
         /// <param name="job">以SqlBulkCopy对象为参数的委托</param>
@@ -177,6 +226,20 @@ namespace ZDevTools.Data
             {
                 using (SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(conn, copyOptions, Transaction))
                     job(sqlBulkCopy);
+            });
+        }
+
+        /// <summary>
+        /// 使用SqlBulkCopy在用户给定参数下复制数据到数据库
+        /// </summary>
+        /// <param name="jobAsync">以SqlBulkCopy对象为参数的委托</param>
+        /// <param name="copyOptions">创建SqlBulkCopy所用的复制选项【注意：在<see cref="SqlHelper"/>开启事务时，不能使用<see cref="SqlBulkCopyOptions.UseInternalTransaction"/>选项】</param>
+        public async ValueTask BulkCopyAsync(SqlBulkCopyOptions copyOptions, Func<SqlBulkCopy, ValueTask> jobAsync)
+        {
+            await ExecuteAsync(async (SqlConnection conn) =>
+            {
+                using (SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(conn, copyOptions, Transaction))
+                    await jobAsync(sqlBulkCopy);
             });
         }
 

@@ -62,19 +62,32 @@ namespace ZDevTools.Net
         public bool IsStopping { get { return _isStopping; } }
 
         /// <summary>
-        /// 消息处理函数（返回null如果不需要返回数据，否则返回回应数据，如果需要关闭连接请设置<see cref="UserToken.IsClosingSocket"/>为 true）
+        /// 已成功建立连接处理器，返回值可以确定是否接受该客户端的连接，不接受返回false，监听器会自动关闭该连接
         /// </summary>
-        public Func<TUserToken, byte[], byte[]> MessageHandler { get; set; }
+        public Func<TUserToken, bool> AcceptedHandler { get; set; }
 
-        /// <summary>
-        /// 发送超时设置，默认30000毫秒，该值仅在<see cref="Start(int)"/>时起作用
-        /// </summary>
-        public int SendTimeout { get; set; } = 30000;
 
+#if NETCOREAPP
         /// <summary>
-        /// 接收超时设置，默认30000毫秒，该值仅在<see cref="Start(int)"/>时起作用
+        /// 同步消息处理函数（返回null如果不需要返回数据，否则返回回应数据，如果需要关闭连接请设置<see cref="UserToken.IsClosingSocket"/>为 true）
         /// </summary>
-        public int ReceiveTimeout { get; set; } = 30000;
+        public Func<TUserToken, Memory<byte>, Memory<byte>> MessageHandler { get; set; }
+#else
+        /// <summary>
+        /// 同步消息处理函数（返回null如果不需要返回数据，否则返回回应数据，如果需要关闭连接请设置<see cref="UserToken.IsClosingSocket"/>为 true）
+        /// </summary>
+        public Func<TUserToken, ArraySegment<byte>, ArraySegment<byte>> MessageHandler { get; set; }
+#endif
+
+        ///// <summary>
+        ///// 发送超时设置，默认30000毫秒，该值仅在<see cref="Start(int)"/>时起作用
+        ///// </summary>
+        //public int SendTimeout { get; set; } = 30000;
+
+        ///// <summary>
+        ///// 接收超时设置，默认30000毫秒，该值仅在<see cref="Start(int)"/>时起作用
+        ///// </summary>
+        //public int ReceiveTimeout { get; set; } = 30000;
 
         /// <summary>
         /// 停止客户端连接关闭等待时间，默认30000毫秒，该值仅在<see cref="Stop(bool)"/>时起作用
@@ -92,13 +105,19 @@ namespace ZDevTools.Net
         public TcpKeepAlive TcpKeepAlive { get; set; }
 
         /// <summary>
+        /// 是否为异步处理模式（启动Socket监听器前设置生效）
+        /// </summary>
+        public bool IsAsyncMode { get; }
+
+        /// <summary>
         /// Create an uninitialized server instance.  
         /// To start the server listening for connection requests
         /// call the Init method followed by Start method.
         /// </summary>
         /// <param name="maxConnections">Maximum number of connections to be handled simultaneously.</param>
-        /// <param name="bufferSize">Buffer size to use for each socket I/O operation.一次最多只能发送/接收这么多数据</param>
-        public SocketListener(int maxConnections, int bufferSize)
+        /// <param name="bufferSize">Buffer size to use for each socket I/O operation.内部单次接收所用，发送数据不受限制。</param>
+        /// <param name="isAsyncMode">是否异步模式</param>
+        public SocketListener(int maxConnections, int bufferSize, bool isAsyncMode = false)
         {
             // Create the socket which listens for incoming connections.
             this.MaxConnectionCount = maxConnections;
@@ -107,13 +126,16 @@ namespace ZDevTools.Net
             this.Clients = new ConcurrentDictionary<Socket, Socket>();
             this.Semaphore = new SemaphoreSlim(MaxConnectionCount, MaxConnectionCount);
             this.ManualResetEvent = new ManualResetEvent(true);
+            this.IsAsyncMode = isAsyncMode;
 
             // Preallocate pool of SocketAsyncEventArgs objects.
             for (int i = 0; i < this.MaxConnectionCount; i++)
             {
                 SocketAsyncEventArgs e = new SocketAsyncEventArgs();
-                e.Completed += onCompleted;
-                e.SetBuffer(new byte[this.BufferSize], 0, this.BufferSize);
+                if (IsAsyncMode)
+                    e.Completed += onCompletedAsync;
+                else
+                    e.Completed += onCompleted;
                 // Add SocketAsyncEventArg to the pool.
                 this.EPool.Push(e);
             }
@@ -128,20 +150,24 @@ namespace ZDevTools.Net
             if (_isStopping || _socket != null)
                 return;
 
-            lock (_locker)
+            lock (Locker)
             {
                 if (_isStopping || _socket != null)
                     return;
 
                 var bindedIPAddress = IPAddress.Parse("0.0.0.0");
                 this._socket = new Socket(bindedIPAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                this._socket.ReceiveBufferSize = this.BufferSize;
-                this._socket.SendBufferSize = this.BufferSize;
-                this._socket.ReceiveTimeout = ReceiveTimeout;
-                this._socket.SendTimeout = SendTimeout;
+
+                //默认值就挺好，改的意义不大，不如不改
+                //this._socket.ReceiveBufferSize = this.BufferSize;
+                //this._socket.SendBufferSize = this.BufferSize;
+                //这两个超时时间仅对同步调用起作用，而我们这里是异步调用
+                //this._socket.ReceiveTimeout = ReceiveTimeout;
+                //this._socket.SendTimeout = SendTimeout;
+
                 //设置心跳包
                 if (TcpKeepAlive.IsOn != default)
-                    if (_socket.IOControl(IOControlCode.KeepAliveValues, TcpKeepAlive.GetBytes(), null) > 0) throw new InvalidOperationException("无法设置KeepAliveValues");
+                    if (_socket.IOControl(IOControlCode.KeepAliveValues, TcpKeepAlive.ToBytes(), null) > 0) throw new InvalidOperationException("无法设置KeepAliveValues");
 
                 // Get endpoint for the listener.
                 IPEndPoint localEndPoint = new IPEndPoint(bindedIPAddress, port);
@@ -153,9 +179,15 @@ namespace ZDevTools.Net
 
                 //创建一个接受请求专用的EventArgs
                 SocketAsyncEventArgs e = new SocketAsyncEventArgs();
-                e.Completed += onCompleted;
-                //不要设置Buffer，因为接受连接用不上缓存，除非你真的需要。
-                this.startAccept(e);
+                if (IsAsyncMode)
+                    e.Completed += onCompletedAsync;
+                else
+                    e.Completed += onCompleted;
+
+                if (IsAsyncMode)
+                    _ = this.startAcceptAsync(e);
+                else
+                    this.startAccept(e);
             }
         }
 
@@ -164,6 +196,23 @@ namespace ZDevTools.Net
         /// </summary>
         public Action<string, Exception> CriticalErrorHandler { get; set; }
 
+        /// <summary>
+        /// 客户端已关闭处理器
+        /// </summary>
+        public Action<TUserToken> ClientClosedHandler { get; set; }
+
+        /// <summary>
+        /// 一般错误处理
+        /// </summary>
+        public Action<string, Exception> GeneralErrorHandler { get; set; }
+
+        /// <summary>
+        /// 内部锁
+        /// </summary>
+        static readonly object Locker = new object();
+
+
+        #region Sync Mode
         /// <summary>
         /// Callback called whenever a receive or send operation is completed on a socket.
         /// </summary>
@@ -220,17 +269,12 @@ namespace ZDevTools.Net
         }
 
         /// <summary>
-        /// 已成功建立连接处理器，返回值可以确定是否接受该客户端的连接，不接受返回false，监听器会自动关闭该连接
-        /// </summary>
-        public Func<TUserToken, bool> AcceptedHandler { get; set; }
-
-        /// <summary>
         /// Process the accept for the socket listener.
         /// </summary>
-        /// <param name="e">SocketAsyncEventArg associated with the completed accept operation.</param>
-        private void processAccept(SocketAsyncEventArgs e)
+        /// <param name="eAccept">SocketAsyncEventArg associated with the completed accept operation.</param>
+        private void processAccept(SocketAsyncEventArgs eAccept)
         {
-            Socket socket = e.AcceptSocket;
+            Socket socket = eAccept.AcceptSocket;
 
             // 在这里设置心跳包参数也是可以的，但没有直接在server的Socket中设置效率高，因此，不在这里进行设置。
             //if (TcpKeepAlive.IsOn != default)
@@ -240,27 +284,28 @@ namespace ZDevTools.Net
             {
                 Clients.TryAdd(socket, socket);//客户端已连接
 
-                EPool.TryPop(out var args);
+                EPool.TryPop(out var e);
 
                 ManualResetEvent.Reset();
 
-                args.UserToken = new TUserToken() { Socket = socket /* 关联Socket */ }; //每个新连接都重新分配一个UserToken上下文
-
+                TUserToken token;
+                e.UserToken = token = new TUserToken() { Socket = socket /* 关联Socket */, ReceivingBuffer = new byte[BufferSize] }; //每个新连接都重新分配一个UserToken上下文
                 var acceptedHandler = AcceptedHandler;
-                if (acceptedHandler != null && !acceptedHandler((TUserToken)args.UserToken))
+                if (acceptedHandler != null && !acceptedHandler(token))
                 {
-                    closeClientSocket(args);
+                    closeClientSocket(e);
                 }
                 else
                 {
-                    if (!socket.ReceiveAsync(args))
+                    setBuffer(e, token);
+                    if (!socket.ReceiveAsync(e))
                     {
-                        this.processReceive(args);
+                        this.processReceive(e);
                     }
                 }
 
                 // Accept the next connection request.
-                this.startAccept(e);
+                this.startAccept(eAccept);
             }
             else
             {
@@ -282,64 +327,55 @@ namespace ZDevTools.Net
             {
                 if (e.SocketError == SocketError.Success)
                 {
-                    UserToken token = (UserToken)e.UserToken;
-
-                    token.Stream.Write(e.Buffer, e.Offset, e.BytesTransferred);
-
+                    var token = (TUserToken)e.UserToken;
                     Socket socket = token.Socket;
 
-                    if (socket.Available == 0)
+#if NETCOREAPP
+                    Memory<byte> memory;
+                    try
                     {
-                        // Set return buffer.
-                        byte[] bytes;
+                        memory = MessageHandler(token, e.MemoryBuffer.Slice(e.Offset, e.BytesTransferred));
+                    }
+#else
+                    ArraySegment<byte> segment;
+                    try
+                    {
+                        segment = MessageHandler(token, new ArraySegment<byte>(e.Buffer, e.Offset, e.BytesTransferred));
+                    }
 
-                        try
+#endif
+                    catch (Exception ex)
+                    {
+                        reportError($"用户消息处理函数发生错误，本次通讯连接将被关闭", ex);
+                        closeClientSocket(e);
+                        return;
+                    }
+#if NETCOREAPP
+                    if (!memory.IsEmpty) //返回的结果不为Empty，需要进行发送操作
+                    {
+                        e.SetBuffer(memory);
+#else
+                    if (segment.Array != null && segment.Count > 0) //返回的结果不为空，需要进行发送操作
+                    {
+                        e.SetBuffer(segment.Array, segment.Offset, segment.Count);
+#endif
+                        if (!socket.SendAsync(e)) //向客户端发送数据
                         {
-                            bytes = MessageHandler((TUserToken)token, token.Stream.ToArray());
+                            this.processSend(e);
                         }
-                        catch (Exception ex)
+                    }
+                    else //不需要进行发送操作
+                    {
+                        if (token.IsClosingSocket) //如果消息处理器要求关闭连接，那么关闭连接
                         {
-                            reportError($"用户消息处理函数发生错误，本次通讯连接将被关闭", ex);
                             closeClientSocket(e);
                             return;
                         }
-
-                        if (bytes != null) //返回的结果不为null，需要进行发送操作
+                        if (!socket.ReceiveAsync(e)) //接收下一次数据
                         {
-                            if (bytes.Length >= e.Count) //要发送的信息大于等于缓冲大小
-                            {
-                                e.SetBuffer(bytes, 0, bytes.Length);
-                            }
-                            else //小于缓冲大小（将数据进行复制，而不是替换，这样可以保证缓存大小一定是大于等于 BufferSize 的）
-                            {
-                                Array.Copy(bytes, e.Buffer, bytes.Length);
-                                e.SetBuffer(0, bytes.Length);
-                            }
-                            token.Stream.SetLength(0);
-                            if (!socket.SendAsync(e))
-                            {
-                                this.processSend(e);
-                            }
+                            // Read the next block of data sent by client.
+                            this.processReceive(e);
                         }
-                        else //不需要进行发送操作，但要将缓存数据清零，以备再次接收数据
-                        {
-                            if (token.IsClosingSocket) //如果消息处理器要求关闭连接，那么关闭连接
-                            {
-                                closeClientSocket(e);
-                                return;
-                            }
-                            token.Stream.SetLength(0);
-                            if (!socket.ReceiveAsync(e)) //接收下一次数据
-                            {
-                                // Read the next block of data sent by client.
-                                this.processReceive(e);
-                            }
-                        }
-                    }
-                    else if (!socket.ReceiveAsync(e))
-                    {
-                        // Read the next block of data sent by client.
-                        this.processReceive(e);
                     }
                 }
                 else
@@ -363,13 +399,13 @@ namespace ZDevTools.Net
         {
             if (e.SocketError == SocketError.Success)
             {
-                UserToken token = (UserToken)e.UserToken;
+                var token = (TUserToken)e.UserToken;
                 if (token.IsClosingSocket) //如果用户处理器要求发送完毕后关闭连接，那么关闭连接
                 {
                     closeClientSocket(e);
                     return;
                 }
-                e.SetBuffer(0, BufferSize);
+                setBuffer(e, token);
                 if (!token.Socket.ReceiveAsync(e))
                 {
                     // Read the next block of data send from the client.
@@ -381,8 +417,239 @@ namespace ZDevTools.Net
                 this.processError(e, "发送");
             }
         }
+        #endregion
 
-        static readonly object _locker = new object();
+        #region Async Mode
+        /// <summary>
+        /// 已成功建立连接处理器，返回值可以确定是否接受该客户端的连接，不接受返回false，监听器会自动关闭该连接(异步版本)
+        /// </summary>
+        public Func<TUserToken, ValueTask<bool>> AcceptedHandlerAsync { get; set; }
+
+
+#if NETCOREAPP
+        /// <summary>
+        /// 异步消息处理函数
+        /// </summary>
+        public Func<TUserToken, Memory<byte>, ValueTask<Memory<byte>>> MessageHandlerAsync { get; set; }
+#else
+        /// <summary>
+        /// 异步消息处理函数
+        /// </summary>
+        public Func<TUserToken, ArraySegment<byte>, ValueTask<ArraySegment<byte>>> MessageHandlerAsync { get; set; }
+#endif
+
+        /// <summary>
+        /// Callback called whenever a receive or send operation is completed on a socket.
+        /// </summary>
+        /// <param name="sender">Object who raised the event.</param>
+        /// <param name="e">SocketAsyncEventArg associated with the completed send/receive operation.</param>
+        private async void onCompletedAsync(object sender, SocketAsyncEventArgs e)
+        { //在该函数内调用ShutDown/Close可能导致Socket未处理，下次再启动同一端口时会继续处理未Accept的请求
+            try
+            {
+                switch (e.LastOperation)
+                {
+                    case SocketAsyncOperation.Receive:
+                        await this.processReceiveAsync(e);
+                        break;
+                    case SocketAsyncOperation.Send:
+                        await this.processSendAsync(e);
+                        break;
+                    case SocketAsyncOperation.Accept:
+                        await this.processAcceptAsync(e);
+                        break;
+                    default:
+                        throw new Exception($"无法根据上次{e.LastOperation}操作做出对应动作");
+                }
+            }
+            catch (Exception ex)
+            {
+                var message = $"未能继续处理{e.LastOperation}操作，{nameof(SocketListener<TUserToken>)}内部错误";
+                if (CriticalErrorHandler != null)
+                    CriticalErrorHandler(message, ex);
+                else
+                {
+                    reportError(message, ex);
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        /// This method is invoked when an asynchronous receive operation completes. 
+        /// If the remote host closed the connection, then the socket is closed.  
+        /// If data was received then the data is echoed back to the client.
+        /// </summary>
+        /// <param name="e">SocketAsyncEventArg associated with the completed receive operation.</param>
+        private async ValueTask processReceiveAsync(SocketAsyncEventArgs e)
+        {
+            // Check if the remote host closed the connection.
+            if (e.BytesTransferred > 0)
+            {
+                if (e.SocketError == SocketError.Success)
+                {
+                    var token = (TUserToken)e.UserToken;
+                    Socket socket = token.Socket;
+
+#if NETCOREAPP
+                    Memory<byte> memory;
+                    try
+                    {
+                        memory = await MessageHandlerAsync(token, e.MemoryBuffer.Slice(e.Offset, e.BytesTransferred));
+                    }
+#else
+                    ArraySegment<byte> segment;
+                    try
+                    {
+                        segment = await MessageHandlerAsync(token, new ArraySegment<byte>(e.Buffer, e.Offset, e.BytesTransferred));
+                    }
+#endif
+                    catch (Exception ex)
+                    {
+                        reportError($"用户消息处理函数发生错误，本次通讯连接将被关闭", ex);
+                        closeClientSocket(e);
+                        return;
+                    }
+#if NETCOREAPP
+                    if (!memory.IsEmpty) //返回的结果不为Empty，需要进行发送操作
+                    {
+                        e.SetBuffer(memory);
+#else
+                    if (segment.Array != null && segment.Count > 0) //返回的结果不为空，需要进行发送操作
+                    {
+                        e.SetBuffer(segment.Array, segment.Offset, segment.Count);
+#endif
+                        if (!socket.SendAsync(e)) //向客户端发送数据
+                        {
+                            await this.processSendAsync(e);
+                        }
+                    }
+                    else //不需要进行发送操作
+                    {
+                        if (token.IsClosingSocket) //如果消息处理器要求关闭连接，那么关闭连接
+                        {
+                            closeClientSocket(e);
+                            return;
+                        }
+                        if (!socket.ReceiveAsync(e)) //接收下一次数据
+                        {
+                            // Read the next block of data sent by client.
+                            await processReceiveAsync(e);
+                        }
+                    }
+                }
+                else
+                {
+                    this.processError(e, "接收");
+                }
+            }
+            else
+            {   //通讯结束正常执行操作
+                this.closeClientSocket(e);
+            }
+        }
+
+        /// <summary>
+        /// This method is invoked when an asynchronous send operation completes.  
+        /// The method issues another receive on the socket to read any additional 
+        /// data sent from the client.
+        /// </summary>
+        /// <param name="e">SocketAsyncEventArg associated with the completed send operation.</param>
+        private async ValueTask processSendAsync(SocketAsyncEventArgs e)
+        {
+            if (e.SocketError == SocketError.Success)
+            {
+                var token = (TUserToken)e.UserToken;
+                if (token.IsClosingSocket) //如果用户处理器要求发送完毕后关闭连接，那么关闭连接
+                {
+                    closeClientSocket(e);
+                    return;
+                }
+                setBuffer(e, token);
+                if (!token.Socket.ReceiveAsync(e))
+                {
+                    // Read the next block of data send from the client.
+                    await processReceiveAsync(e);
+                }
+            }
+            else
+            {
+                this.processError(e, "发送");
+            }
+        }
+
+        /// <summary>
+        /// Process the accept for the socket listener.
+        /// </summary>
+        /// <param name="eAccept">SocketAsyncEventArg associated with the completed accept operation.</param>
+        private async ValueTask processAcceptAsync(SocketAsyncEventArgs eAccept)
+        {
+            Socket socket = eAccept.AcceptSocket;
+
+            if (socket.Connected)
+            {
+                Clients.TryAdd(socket, socket);//客户端已连接
+
+                EPool.TryPop(out var e);
+
+                ManualResetEvent.Reset();
+
+                TUserToken token;
+                e.UserToken = token = new TUserToken() { Socket = socket /* 关联Socket */, ReceivingBuffer = new byte[BufferSize] }; //每个新连接都重新分配一个UserToken上下文
+                var acceptedHandlerAsync = AcceptedHandlerAsync;
+                if (acceptedHandlerAsync != null && !await acceptedHandlerAsync(token))
+                {
+                    closeClientSocket(e);
+                }
+                else
+                {
+                    setBuffer(e, token);
+                    if (!socket.ReceiveAsync(e))
+                    {
+                        await processReceiveAsync(e);
+                    }
+                }
+                // Accept the next connection request.
+                await this.startAcceptAsync(eAccept);
+            }
+            else
+            {
+                //说明我们把服务器关了，要释放一个接受信号
+                Semaphore.Release();
+            }
+        }
+
+        /// <summary>
+        /// Begins an operation to accept a connection request from the client.
+        /// </summary>
+        /// <param name="e">The context object to use when issuing 
+        /// the accept operation on the server's listening socket.</param>
+        private async ValueTask startAcceptAsync(SocketAsyncEventArgs e)
+        {
+            if (_isStopping) //不再接收新的请求
+                return;
+
+            this.Semaphore.Wait(); //检查信号量是否充足，如果不足，就一直等待
+            e.AcceptSocket = null;
+            if (!this._socket.AcceptAsync(e))
+            {
+                await this.processAcceptAsync(e);
+            }
+        }
+
+        #endregion
+
+        #region Shared
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        private static void setBuffer(SocketAsyncEventArgs e, TUserToken token)
+        {
+#if NETCOREAPP
+            e.SetBuffer(token.ReceivingBuffer);
+#else
+            e.SetBuffer(token.ReceivingBuffer, 0, token.ReceivingBuffer.Length);
+#endif
+        }
 
         /// <summary>
         /// Stop the server.
@@ -392,7 +659,7 @@ namespace ZDevTools.Net
             if (_isStopping || _socket == null)
                 return;
 
-            lock (_locker)
+            lock (Locker)
             {
                 if (_isStopping || _socket == null)
                     return;
@@ -433,15 +700,10 @@ namespace ZDevTools.Net
         /// <param name="e">SocketAsyncEventArg associated with the completed send/receive operation.</param>
         private void closeClientSocket(SocketAsyncEventArgs e)
         {
-            this.closeClientSocket((UserToken)e.UserToken, e);
+            this.closeClientSocket((TUserToken)e.UserToken, e);
         }
 
-        /// <summary>
-        /// 客户端已关闭处理器
-        /// </summary>
-        public Action<TUserToken> ClientClosedHandler { get; set; }
-
-        private void closeClientSocket(UserToken token, SocketAsyncEventArgs e)
+        private void closeClientSocket(TUserToken token, SocketAsyncEventArgs e)
         {
             Clients.TryRemove(token.Socket, out _); //移除客户端
 
@@ -453,17 +715,12 @@ namespace ZDevTools.Net
             if (EPool.Count == MaxConnectionCount)
                 ManualResetEvent.Set();
 
-            ClientClosedHandler?.Invoke((TUserToken)token);
+            ClientClosedHandler?.Invoke(token);
         }
-
-        /// <summary>
-        /// 一般错误处理
-        /// </summary>
-        public Action<string, Exception> GeneralErrorHandler { get; set; }
 
         private void processError(SocketAsyncEventArgs e, string operationName)
         {
-            UserToken token = (UserToken)e.UserToken;
+            var token = (TUserToken)e.UserToken;
             reportError($"与{token.Socket.RemoteEndPoint}进行{operationName}通讯操作出错，连接即将关闭");
             this.closeClientSocket(token, e);
         }
@@ -477,5 +734,6 @@ namespace ZDevTools.Net
         {
             reportError(message, null);
         }
+        #endregion
     }
 }

@@ -7,8 +7,15 @@ using System.Threading.Tasks;
 
 namespace ZDevTools.InteropServices
 {
+    /// <summary>
+    /// 封送相关辅助方法
+    /// </summary>
     public static class MarshalHelper
     {
+
+        /// <summary>
+        /// 结构转为字节数组
+        /// </summary>
         public static byte[] StructureToBytes(object structure)
         {
             var typeSize = Marshal.SizeOf(structure);
@@ -20,6 +27,9 @@ namespace ZDevTools.InteropServices
             return result;
         }
 
+        /// <summary>
+        /// 字节数组转结构
+        /// </summary>
         public static T StructureFromBytes<T>(byte[] bytes)
         {
             var typeSize = Marshal.SizeOf<T>();
@@ -30,6 +40,9 @@ namespace ZDevTools.InteropServices
             return result;
         }
 
+        /// <summary>
+        /// 结构数组转字节数组
+        /// </summary>
         public static byte[] ArrayToBytes<T>(T[] array)
         {
             int size;
@@ -46,6 +59,9 @@ namespace ZDevTools.InteropServices
             return result;
         }
 
+        /// <summary>
+        /// 字节数组转结构数组
+        /// </summary>
         public static T[] ArrayFromBytes<T>(byte[] bytes)
         {
             int size;
