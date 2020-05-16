@@ -81,6 +81,75 @@ namespace ZDevTools.Utilities
         }
 
         /// <summary>
+        /// 寻峰函数（一阶微分法）
+        /// </summary>
+        /// <param name="values">用来寻峰的数据</param>
+        /// <param name="valueLimit">峰值限制</param>
+        /// <param name="widthLimit">峰宽限制</param>
+        /// <returns></returns>
+        public static PeakInfo<T>[] FindPeaks<T>(T[] values, T valueLimit, int widthLimit) where T : IComparable<T>
+        {
+            List<PeakInfo<T>> result = new List<PeakInfo<T>>();
+            int width = 0;
+            bool? lastSign = default;
+            int peakIndex = -1;
+            for (int i = 1; i < values.Length; i++)
+            {
+                bool sign = values[i].CompareTo(values[i - 1]) >= 0;
+                if (lastSign.HasValue)
+                {
+                    width++;
+                    //连续
+                    if (sign == lastSign)
+                    {
+
+                    }
+                    // 顶峰位置
+                    else if (!sign && lastSign.Value)
+                    {
+                        if (values[i - 1].CompareTo(valueLimit) > 0)
+                        {
+                            peakIndex = i - 1;
+                        }
+                    }
+                    //峰结束位置
+                    else
+                    {
+                        if (peakIndex > -1)
+                        {
+                            result.Add(new PeakInfo<T>(peakIndex, width, values[peakIndex]));
+                        }
+
+                        width = 0;
+                        peakIndex = -1;
+                    }
+                }
+                lastSign = sign;
+            }
+            //合并小峰
+            for (int i = 1; i < result.Count; i++)
+            {
+                var last = result[i - 1];
+                var current = result[i];
+                var interval = current.Index - last.Index;
+                if (interval < widthLimit)
+                {
+                    if (current.Value.CompareTo(last.Value) > 0)
+                    {
+                        result[i - 1] = new PeakInfo<T>(current.Index, current.Width + last.Width, current.Value);
+                    }
+                    else
+                    {
+                        result[i - 1] = new PeakInfo<T>(last.Index, current.Width + last.Width, last.Value);
+                    }
+                    result.RemoveAt(i);
+                    i--;
+                }
+            }
+            return result.Where(pi => pi.Width > widthLimit).ToArray();
+        }
+
+        /// <summary>
         /// 寻峰函数（使用窗口内峰值法，不支持计算峰宽）      
         /// </summary>
         /// <param name="values">用来寻峰的数据</param>

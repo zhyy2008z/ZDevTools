@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Text;
 
 namespace ZDevTools.Utilities
 {
@@ -27,6 +28,21 @@ namespace ZDevTools.Utilities
             return string.Concat(bytes.Select(byt => byt.ToString("x2")));
             //return string.Concat(Array.ConvertAll(bytes, b => b.ToString("x2")));
         }
+
+#if NETCOREAPP
+        /// <summary>
+        /// 转换Span为十六进制字符串
+        /// </summary>
+        public static string HexStringFromSpan(ReadOnlySpan<byte> span)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (var byt in span)
+            {
+                sb.Append(byt.ToString("x2"));
+            }
+            return sb.ToString();
+        }
+#endif
 
     }
 }

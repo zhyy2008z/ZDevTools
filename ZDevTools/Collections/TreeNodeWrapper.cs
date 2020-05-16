@@ -83,17 +83,27 @@ namespace ZDevTools.Collections
 
         #region 线性化
         /// <summary>
-        /// 枚举包装中的所有节点（包括子节点）
+        /// 枚举包装中的所有节点（也包含后代节点）
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<TTreeNode> AsEnumerable()
+        public IEnumerable<TTreeNode> AllAsEnumerable()
         {
             if (_longterm)
                 return _flattenNodes.Values;
             else
-            {
                 return _nodes.SelectMany(node => node.AllToList());
-            }
+        }
+
+        /// <summary>
+        /// 枚举包装中的后代节点（不包括直接被包装的节点，仅包含它们的后代节点）
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<TTreeNode> SubAsEnumerable()
+        {
+            if (_longterm)
+                return _flattenNodes.Values.Where(node => !Nodes.Contains(node));
+            else
+                return _nodes.SelectMany(node => node.SubToList());
         }
         #endregion
 
