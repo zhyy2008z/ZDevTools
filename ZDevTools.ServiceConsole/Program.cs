@@ -32,6 +32,9 @@ namespace ZDevTools.ServiceConsole
             CultureInfo.DefaultThreadCurrentCulture = culture;
             CultureInfo.DefaultThreadCurrentUICulture = culture;
 
+            if (!Directory.Exists("logs"))
+                Directory.CreateDirectory("logs");
+
             Serilog.Debugging.SelfLog.Enable(TextWriter.Synchronized(File.CreateText("logs\\serilog_self.log")));
 
             _eventSink = new EventSink();

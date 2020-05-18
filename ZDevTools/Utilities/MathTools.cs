@@ -155,7 +155,7 @@ namespace ZDevTools.Utilities
         /// <param name="values">用来寻峰的数据</param>
         /// <param name="peakValueLimit">峰值限制</param>
         /// <param name="windowSize">寻峰窗口大小</param>
-        public static PeakInfo[] FindPeaksByWindow(double[] values, double peakValueLimit, int windowSize)
+        public static List<PeakInfo> FindPeaksByWindow(double[] values, double peakValueLimit, int windowSize)
         {
             List<PeakInfo> result = new List<PeakInfo>();
             var end = values.Length - windowSize;
@@ -163,7 +163,7 @@ namespace ZDevTools.Utilities
             for (int i = 0; i < end; i++)
             {
                 //找出本次窗口中的最大值与在窗口中的峰位
-                double max = double.MinValue;
+                double max = peakValueLimit;
                 int peakIndex = -1;
 
                 for (int j = 0; j < windowSize; j++)
@@ -182,7 +182,44 @@ namespace ZDevTools.Utilities
                     result.Add(new PeakInfo(i + middleIndex, 0, values[i + middleIndex]));
                 }
             }
-            return result.ToArray();
+            return result;
+        }
+
+        /// <summary>
+        /// 寻峰函数（使用窗口内峰值法，不支持计算峰宽）      
+        /// </summary>
+        /// <param name="values">用来寻峰的数据</param>
+        /// <param name="peakValueLimit">峰值限制</param>
+        /// <param name="windowSize">寻峰窗口大小</param>
+        public static List<PeakInfo<T>> FindPeaksByWindow<T>(T[] values, T peakValueLimit, int windowSize)
+            where T : IComparable<T>
+        {
+            List<PeakInfo<T>> result = new List<PeakInfo<T>>();
+            var end = values.Length - windowSize;
+            int middleIndex = windowSize / 2;
+            for (int i = 0; i < end; i++)
+            {
+                //找出本次窗口中的最大值与在窗口中的峰位
+                T max = peakValueLimit;
+                int peakIndex = -1;
+
+                for (int j = 0; j < windowSize; j++)
+                {
+                    var value = values[i + j];
+                    if (max.CompareTo(value) < 0)
+                    {
+                        peakIndex = j;
+                        max = value;
+                    }
+                }
+
+                //如果峰位在窗口正中间且峰值大于限制值，那么判定为一个峰
+                if (peakIndex == middleIndex && max.CompareTo(peakValueLimit) > 0)
+                {
+                    result.Add(new PeakInfo<T>(i + middleIndex, 0, values[i + middleIndex]));
+                }
+            }
+            return result;
         }
 
         /// <summary>
@@ -193,13 +230,13 @@ namespace ZDevTools.Utilities
         /// <param name="peakWidthLimit">峰宽限制</param>
         /// <param name="lowPass">低于此值的视为本底信号</param>
         /// <remarks>基础性能最好的算法</remarks>
-        public static PeakInfo[] FindPeaksByCutLowValue(double[] values, double peakValueLimit, int peakWidthLimit, double lowPass)
+        public static List<PeakInfo> FindPeaksByCutLowValue(double[] values, double peakValueLimit, int peakWidthLimit, double lowPass)
         {
             List<PeakInfo> result = new List<PeakInfo>();
 
             bool lastHasValue = false;
             int startIndex = default;
-            double max = default;
+            double max = peakValueLimit;
             int maxIndex = default;
 
             for (int i = 0; i < values.Length; i++)
@@ -245,7 +282,71 @@ namespace ZDevTools.Utilities
                 lastHasValue = hasValue;
             }
 
-            return result.ToArray();
+            return result;
+        }
+
+        /// <summary>
+        /// 寻峰函数（使用砍低值法，不支持计算峰宽）
+        /// </summary>
+        /// <param name="values">用来寻峰的数据</param>
+        /// <param name="peakValueLimit">峰值限制</param>
+        /// <param name="peakWidthLimit">峰宽限制</param>
+        /// <param name="lowPass">低于此值的视为本底信号</param>
+        /// <remarks>基础性能最好的算法</remarks>
+        public static List<PeakInfo<T>> FindPeaksByCutLowValue<T>(T[] values, T peakValueLimit, int peakWidthLimit, T lowPass)
+            where T : IComparable<T>
+        {
+            List<PeakInfo<T>> result = new List<PeakInfo<T>>();
+
+            bool lastHasValue = false;
+            int startIndex = default;
+            T max = peakValueLimit;
+            int maxIndex = default;
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                bool hasValue = values[i].CompareTo(lowPass) > 0;
+
+                if (lastHasValue)
+                {
+                    if (hasValue) //上一次有值，本次也有值，连续，求最值
+                    {
+                        if (max.CompareTo(values[i]) < 0)
+                        {
+                            max = values[i];
+                            maxIndex = i;
+                        }
+                    }
+                    else //上一次有值，本次没有值，发现一个可能的峰
+                    {
+                        int width = i - startIndex;
+
+                        //寻到一个峰值
+                        if (width >= peakWidthLimit && max.CompareTo(peakValueLimit) > 0)
+                        {
+                            result.Add(new PeakInfo<T>(maxIndex, 0, max));
+                        }
+                    }
+                }
+                else
+                {
+                    if (hasValue) //上一次无值，本次有值，开始一个峰
+                    {
+                        startIndex = i;
+
+                        max = values[i];
+                        maxIndex = i;
+                    }
+                    else  //上一次无值，本次无值，不管它
+                    {
+
+                    }
+                }
+
+                lastHasValue = hasValue;
+            }
+
+            return result;
         }
 
         /// <summary>
