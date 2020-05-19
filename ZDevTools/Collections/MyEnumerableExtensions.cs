@@ -4,6 +4,9 @@ using System.Linq;
 
 namespace ZDevTools.Collections
 {
+    /// <summary>
+    /// 可枚举类型扩展方法
+    /// </summary>
     public static class MyEnumerableExtensions
     {
         ///<summary>Finds the index of the first item matching an expression in an enumerable.</summary>
@@ -12,34 +15,45 @@ namespace ZDevTools.Collections
         ///<returns>The index of the first matching item, or -1 if no items match.</returns>
         public static int FindIndex<T>(this IEnumerable<T> items, Predicate<T> predicate)
         {
-            if (items == null) throw new ArgumentNullException("items");
-            if (predicate == null) throw new ArgumentNullException("predicate");
+            if (items == null) throw new ArgumentNullException(nameof(items));
+            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
 
-            int retVal = 0;
+            int i = 0;
             foreach (var item in items)
             {
-                if (predicate(item)) return retVal;
-                retVal++;
+                if (predicate(item)) return i;
+                i++;
             }
             return -1;
         }
 
-        public static int FindIndex<T>(this T[] array, Predicate<T> match) => Array.FindIndex(array, match);
+        #region 去掉仅仅作为重定向的方法
+        ///// <summary>
+        ///// 在数组中查找通过断言的元素的索引
+        ///// </summary>
+        //public static int FindIndex<T>(this T[] array, Predicate<T> match) => Array.FindIndex(array, match);
+
+        ///// <summary>
+        ///// 在数组中查找最后一个通过断言的元素的索引
+        ///// </summary>
+        //public static int FindLastIndex<T>(this T[] array, Predicate<T> match) => Array.FindLastIndex(array, match);
+
+        ///// <summary>
+        ///// 查找数组元素索引
+        ///// </summary>
+        //public static int IndexOf<T>(this T[] array, T value) { return Array.IndexOf(array, value); }
+
+        ///// <summary>
+        ///// 从尾部开始查找数组元素索引
+        ///// </summary>
+        //public static int LastIndexOf<T>(this T[] array, T value) { return Array.LastIndexOf(array, value); }
+        #endregion
 
         ///<summary>Finds the index of the first occurrence of an item in an enumerable.</summary>
         ///<param name="items">The enumerable to search.</param>
         ///<param name="item">The item to find.</param>
         ///<returns>The index of the first matching item, or -1 if the item was not found.</returns>
         public static int IndexOf<T>(this IEnumerable<T> items, T item) { return items.FindIndex(i => EqualityComparer<T>.Default.Equals(item, i)); }
-
-        /// <summary>
-        /// 查找数组的扩展方法
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="array"></param>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static int IndexOf<T>(this T[] array, T value) { return Array.IndexOf(array, value); }
 
         /// <summary>
         /// 获取一个序列中最小值的索引及最小值本身

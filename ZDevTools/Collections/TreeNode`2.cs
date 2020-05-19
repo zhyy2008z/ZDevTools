@@ -80,8 +80,7 @@ namespace ZDevTools.Collections
                 if (current.Tree != null)
                     throw new TreeNodeException<TTreeNode, TKey>("同一个节点不能同时被多个树引用！", current);
                 current.Tree = tree;
-                TTreeNode parent;
-                flattenNodes.TryGetValue(current.ParentId, out parent);
+                flattenNodes.TryGetValue(current.ParentId, out TTreeNode parent);
                 if (parent != null && !current.ParentId.Equals(current.Id)) //有父节点且父节点不是自己，这才能判定为根节点，根节点的Parent属性值是null
                 {
                     current.Parent = parent;

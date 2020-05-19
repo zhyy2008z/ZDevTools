@@ -361,7 +361,7 @@ namespace ZDevTools.Utilities
             if (values.Length - r < 0)
                 throw new ArgumentException("数据点数过少", nameof(values));
 
-            double[] result = (double[])values.Clone();
+            double[] result = new double[values.Length];
             var windowSum = window.Sum();
             //从r位置开始到length-r位置，应用以j为中心的高斯滤波
             for (int i = r; i < values.Length - r; i++)

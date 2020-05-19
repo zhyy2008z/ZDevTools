@@ -4,8 +4,14 @@ using System.Reflection;
 
 namespace ZDevTools.Enums
 {
+    /// <summary>
+    /// 枚举扩展函数
+    /// </summary>
     public static class MyEnumExtensions
     {
+        /// <summary>
+        /// 获取描述信息
+        /// </summary>
         public static string GetDescription(this Enum enumValue)
         {
             string objName = enumValue.ToString();
@@ -22,6 +28,9 @@ namespace ZDevTools.Enums
             return arrDesc.Length > 0 ? arrDesc[0].Description : null;
         }
 
+        /// <summary>
+        /// 获取附加描述特性实例
+        /// </summary>
         public static T GetAttachedAttribute<T>(this Enum enumValue)
             where T : DescriptionAttribute
         {

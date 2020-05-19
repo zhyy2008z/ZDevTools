@@ -4,8 +4,12 @@ using System;
 
 namespace ZDevTools.Wpf.ReactiveUI
 {
+    /// <summary>
+    /// 数字转换绑定
+    /// </summary>
     public class NumberBindingTypeConverter : IBindingTypeConverter
     {
+        /// <inheritdoc/>
         public int GetAffinityForObjects(Type fromType, Type toType)
         {
             if (fromType == typeof(double) || fromType == typeof(int) || fromType == typeof(float))
@@ -23,6 +27,7 @@ namespace ZDevTools.Wpf.ReactiveUI
             return -1;
         }
 
+        /// <inheritdoc/>
         public bool TryConvert(object from, Type toType, object conversionHint, out object result)
         {
             if (toType == typeof(decimal))

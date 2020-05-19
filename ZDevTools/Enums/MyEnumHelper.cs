@@ -5,6 +5,9 @@ using System.Reflection;
 
 namespace ZDevTools.Enums
 {
+    /// <summary>
+    /// 枚举辅助类
+    /// </summary>
     public static class MyEnumHelper
     {
         static void checkIsEnum(Type type)

@@ -14,9 +14,9 @@ namespace ZDevTools.Collections
         where TTreeNode : TreeNode<TTreeNode, TKey>
         where TKey : IEquatable<TKey>
     {
-        bool _longterm;
-        List<TTreeNode> _nodes;
-        Dictionary<TKey, TTreeNode> _flattenNodes;
+        readonly bool Longterm;
+        readonly List<TTreeNode> InnerNodes;
+        readonly Dictionary<TKey, TTreeNode> FlattenNodes;
 
         /// <summary>
         /// 根据提供的节点创建节点临时包装(要求所有节点必须来自同一颗树)
@@ -39,26 +39,26 @@ namespace ZDevTools.Collections
         /// <param name="longterm">是否长期包装，如果是长期包装则会采取以空间换时间的算法</param>
         public TreeNodeWrapper(IEnumerable<TTreeNode> nodes, bool distinct, bool longterm)
         {
-            _longterm = longterm;
-            _nodes = nodes.ToList();
+            Longterm = longterm;
+            InnerNodes = nodes.ToList();
 
             if (distinct)
             {
                 //合并节点
-                for (int i = _nodes.Count - 1; i > 0; i--)
+                for (int i = InnerNodes.Count - 1; i > 0; i--)
                 {
-                    var thisNode = _nodes[i];
+                    var thisNode = InnerNodes[i];
                     for (int j = i - 1; j > -1; j--)
                     {
-                        var thatNode = _nodes[j];
+                        var thatNode = InnerNodes[j];
                         if (thatNode.Find(thisNode.Id) != null) //当前节点在其它节点中
                         {
-                            _nodes.RemoveAt(i);
+                            InnerNodes.RemoveAt(i);
                             break;
                         }
                         else if (thisNode.Find(thatNode.Id) != null) //其它节点在当前节点中
                         {
-                            _nodes.RemoveAt(j);
+                            InnerNodes.RemoveAt(j);
                             i--;
                         }
                     }
@@ -67,11 +67,11 @@ namespace ZDevTools.Collections
 
             if (longterm)
             {
-                _flattenNodes = new Dictionary<TKey, TTreeNode>();
-                foreach (var node in _nodes)
+                FlattenNodes = new Dictionary<TKey, TTreeNode>();
+                foreach (var node in InnerNodes)
                 {
                     foreach (var n in node.AllToList())
-                        _flattenNodes[n.Id] = n;
+                        FlattenNodes[n.Id] = n;
                 }
             }
         }
@@ -79,7 +79,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 被包装的节点
         /// </summary>
-        public IReadOnlyList<TTreeNode> Nodes { get { return _nodes; } }
+        public IReadOnlyList<TTreeNode> Nodes => InnerNodes;
 
         #region 线性化
         /// <summary>
@@ -88,10 +88,10 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public IEnumerable<TTreeNode> AllAsEnumerable()
         {
-            if (_longterm)
-                return _flattenNodes.Values;
+            if (Longterm)
+                return FlattenNodes.Values;
             else
-                return _nodes.SelectMany(node => node.AllToList());
+                return InnerNodes.SelectMany(node => node.AllToList());
         }
 
         /// <summary>
@@ -100,10 +100,10 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public IEnumerable<TTreeNode> SubAsEnumerable()
         {
-            if (_longterm)
-                return _flattenNodes.Values.Where(node => !Nodes.Contains(node));
+            if (Longterm)
+                return FlattenNodes.Values.Where(node => !Nodes.Contains(node));
             else
-                return _nodes.SelectMany(node => node.SubToList());
+                return InnerNodes.SelectMany(node => node.SubToList());
         }
         #endregion
 
@@ -113,13 +113,13 @@ namespace ZDevTools.Collections
         /// </summary>
         public bool Contains(TKey id)
         {
-            if (_longterm)
+            if (Longterm)
             {
-                return _flattenNodes.ContainsKey(id);
+                return FlattenNodes.ContainsKey(id);
             }
             else
             {
-                foreach (var node in _nodes)
+                foreach (var node in InnerNodes)
                 {
                     if (node.Contains(id))
                         return true;
@@ -140,13 +140,13 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public bool Contains(Func<TTreeNode, bool> predicate)
         {
-            if (_longterm)
+            if (Longterm)
             {
-                return _flattenNodes.Values.Any(predicate);
+                return FlattenNodes.Values.Any(predicate);
             }
             else
             {
-                foreach (var node in _nodes)
+                foreach (var node in InnerNodes)
                 {
                     if (node.Contains(predicate))
                         return true;
@@ -162,13 +162,13 @@ namespace ZDevTools.Collections
         /// </summary>
         public bool ContainsDescendant(TKey id)
         {
-            if (_longterm)
+            if (Longterm)
             {
-                return !_nodes.Any(node => node.Id.Equals(id)) && _flattenNodes.ContainsKey(id);
+                return !InnerNodes.Any(node => node.Id.Equals(id)) && FlattenNodes.ContainsKey(id);
             }
             else
             {
-                foreach (var node in _nodes)
+                foreach (var node in InnerNodes)
                 {
                     if (node.ContainsDescendant(id))
                         return true;
@@ -190,13 +190,13 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public bool ContainsDescendant(Func<TTreeNode, bool> predicate)
         {
-            if (_longterm)
+            if (Longterm)
             {
-                return _flattenNodes.Values.Any(node => !_nodes.Any(n => n.Id.Equals(node.Id)) && predicate(node));
+                return FlattenNodes.Values.Any(node => !InnerNodes.Any(n => n.Id.Equals(node.Id)) && predicate(node));
             }
             else
             {
-                foreach (var node in _nodes)
+                foreach (var node in InnerNodes)
                 {
                     if (node.ContainsDescendant(predicate))
                         return true;
@@ -214,14 +214,14 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public TTreeNode Find(TKey id)
         {
-            if (this._longterm)
+            if (this.Longterm)
             {
-                _flattenNodes.TryGetValue(id, out var result);
+                FlattenNodes.TryGetValue(id, out var result);
                 return result;
             }
             else
             {
-                foreach (var node in _nodes)
+                foreach (var node in InnerNodes)
                 {
                     var result = node.Find(id);
                     if (result != null) return result;
@@ -237,13 +237,13 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public TTreeNode Find(Func<TTreeNode, bool> predicate)
         {
-            if (_longterm)
+            if (Longterm)
             {
-                return _flattenNodes.Values.FirstOrDefault(predicate);
+                return FlattenNodes.Values.FirstOrDefault(predicate);
             }
             else
             {
-                foreach (var node in _nodes)
+                foreach (var node in InnerNodes)
                 {
                     var result = node.Find(predicate);
                     if (result != null) return result;
@@ -259,14 +259,14 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public List<TTreeNode> FindAll(Func<TTreeNode, bool> predicate)
         {
-            if (this._longterm)
+            if (this.Longterm)
             {
-                return _flattenNodes.Values.Where(predicate).ToList();
+                return FlattenNodes.Values.Where(predicate).ToList();
             }
             else
             {
                 var result = new List<TTreeNode>();
-                foreach (var node in _nodes)
+                foreach (var node in InnerNodes)
                     TreeNode<TTreeNode>.Linear(node, result, predicate);
                 return result;
             }
@@ -281,16 +281,16 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public TTreeNode FindDescendant(TKey id)
         {
-            if (this._longterm)
+            if (this.Longterm)
             {
-                if (!_nodes.Any(node => node.Id.Equals(id)) && _flattenNodes.TryGetValue(id, out var result))
+                if (!InnerNodes.Any(node => node.Id.Equals(id)) && FlattenNodes.TryGetValue(id, out var result))
                     return result;
                 else
                     return null;
             }
             else
             {
-                foreach (var node in _nodes)
+                foreach (var node in InnerNodes)
                 {
                     var result = node.FindDescendant(id);
                     if (result != null) return result;
@@ -306,13 +306,13 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public TTreeNode FindDescendant(Func<TTreeNode, bool> predicate)
         {
-            if (_longterm)
+            if (Longterm)
             {
-                return _flattenNodes.Values.FirstOrDefault(node => !_nodes.Any(n => n.Id.Equals(node.Id)) && predicate(node));
+                return FlattenNodes.Values.FirstOrDefault(node => !InnerNodes.Any(n => n.Id.Equals(node.Id)) && predicate(node));
             }
             else
             {
-                foreach (var node in _nodes)
+                foreach (var node in InnerNodes)
                 {
                     var result = node.FindDescendant(predicate);
                     if (result != null) return result;
@@ -328,14 +328,14 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public List<TTreeNode> FindAllDescendants(Func<TTreeNode, bool> predicate)
         {
-            if (this._longterm)
+            if (this.Longterm)
             {
-                return _flattenNodes.Values.Where(node => !_nodes.Any(n => n.Id.Equals(node.Id)) && predicate(node)).ToList();
+                return FlattenNodes.Values.Where(node => !InnerNodes.Any(n => n.Id.Equals(node.Id)) && predicate(node)).ToList();
             }
             else
             {
                 var result = new List<TTreeNode>();
-                foreach (var node in _nodes)
+                foreach (var node in InnerNodes)
                     foreach (var child in node.Children)
                         TreeNode<TTreeNode>.Linear(child, result, predicate);
                 return result;

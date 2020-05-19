@@ -16,7 +16,7 @@ namespace ZDevTools.Collections
         where TTreeNode : TreeNode<TTreeNode, TKey>
         where TKey : IEquatable<TKey>
     {
-        Dictionary<TKey, TTreeNode> _flattenNodes;
+        readonly Dictionary<TKey, TTreeNode> FlattenNodes;
 
         /// <summary>
         /// 初始化一颗树
@@ -24,7 +24,7 @@ namespace ZDevTools.Collections
         /// <param name="nodes">一组节点</param>
         public Tree(IEnumerable<TTreeNode> nodes)
         {
-            Root = TreeNode<TTreeNode, TKey>.Parse(this, nodes, out _flattenNodes);
+            Root = TreeNode<TTreeNode, TKey>.Parse(this, nodes, out FlattenNodes);
         }
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace ZDevTools.Collections
         /// </summary>
         public bool Contains(TKey id)
         {
-            return _flattenNodes.ContainsKey(id);
+            return FlattenNodes.ContainsKey(id);
         }
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace ZDevTools.Collections
         /// </summary>
         public bool Contains(TTreeNode node)
         {
-            return _flattenNodes.ContainsKey(node.Id);
+            return FlattenNodes.ContainsKey(node.Id);
         }
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace ZDevTools.Collections
         /// </summary>
         public bool Contains(Func<TTreeNode, bool> predicate)
         {
-            return _flattenNodes.Values.Any(predicate);
+            return FlattenNodes.Values.Any(predicate);
         }
         #endregion
 
@@ -70,7 +70,7 @@ namespace ZDevTools.Collections
         /// </summary>
         public bool ContainsDescendant(TKey id)
         {
-            return !Root.Id.Equals(id) && _flattenNodes.ContainsKey(id);
+            return !Root.Id.Equals(id) && FlattenNodes.ContainsKey(id);
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace ZDevTools.Collections
         /// </summary>
         public bool ContainsDescendant(TTreeNode node)
         {
-            return !Root.Id.Equals(node.Id) && _flattenNodes.ContainsKey(node.Id);
+            return !Root.Id.Equals(node.Id) && FlattenNodes.ContainsKey(node.Id);
         }
 
         /// <summary>
@@ -86,7 +86,7 @@ namespace ZDevTools.Collections
         /// </summary>
         public bool ContainsDescendant(Func<TTreeNode, bool> predicate)
         {
-            return _flattenNodes.Values.Any(node => !Root.Id.Equals(node.Id) && predicate(node));
+            return FlattenNodes.Values.Any(node => !Root.Id.Equals(node.Id) && predicate(node));
         }
         #endregion
 
@@ -99,7 +99,7 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public TTreeNode Find(TKey id)
         {
-            _flattenNodes.TryGetValue(id, out var result);
+            FlattenNodes.TryGetValue(id, out var result);
             return result;
         }
 
@@ -110,7 +110,7 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public TTreeNode Find(Func<TTreeNode, bool> predicate)
         {
-            return _flattenNodes.Values.FirstOrDefault(predicate);
+            return FlattenNodes.Values.FirstOrDefault(predicate);
         }
 
 
@@ -121,7 +121,7 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public IEnumerable<TTreeNode> FindAll(Func<TTreeNode, bool> predicate)
         {
-            return _flattenNodes.Values.Where(predicate);
+            return FlattenNodes.Values.Where(predicate);
         }
 
         #endregion
@@ -135,7 +135,7 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public TTreeNode FindDescendant(TKey id)
         {
-            if (!Root.Id.Equals(id) && _flattenNodes.TryGetValue(id, out var result))
+            if (!Root.Id.Equals(id) && FlattenNodes.TryGetValue(id, out var result))
                 return result;
             else
                 return null;
@@ -148,7 +148,7 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public TTreeNode FindDescendant(Func<TTreeNode, bool> predicate)
         {
-            return _flattenNodes.Values.FirstOrDefault(node => !Root.Id.Equals(node.Id) && predicate(node));
+            return FlattenNodes.Values.FirstOrDefault(node => !Root.Id.Equals(node.Id) && predicate(node));
         }
 
 
@@ -159,7 +159,7 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public IEnumerable<TTreeNode> FindAllDescendants(Func<TTreeNode, bool> predicate)
         {
-            return _flattenNodes.Values.Where(node => !Root.Id.Equals(node.Id) && predicate(node));
+            return FlattenNodes.Values.Where(node => !Root.Id.Equals(node.Id) && predicate(node));
         }
 
         #endregion
@@ -197,7 +197,7 @@ namespace ZDevTools.Collections
 
             //检查全部完成，后面的在可管控的范围内理论上不会出现异常
             foreach (var n in flattenNodes)
-                _flattenNodes.Add(n.Id, n);
+                FlattenNodes.Add(n.Id, n);
 
             if (index > -1 && index < ((List<TTreeNode>)parentNode.Children).Count) //在范围之间
                 ((List<TTreeNode>)parentNode.Children).Insert(index, node);
@@ -227,7 +227,7 @@ namespace ZDevTools.Collections
             foreach (var n in node.AllToList())
             {
                 n.Tree = null;
-                _flattenNodes.Remove(n.Id);
+                FlattenNodes.Remove(n.Id);
             }
         }
 
@@ -292,7 +292,7 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public IEnumerable<TTreeNode> AllAsEnumerable()
         {
-            return _flattenNodes.Values;
+            return FlattenNodes.Values;
         }
 
         /// <summary>
@@ -301,7 +301,7 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public IEnumerable<TTreeNode> SubAsEnumerable()
         {
-            return _flattenNodes.Values.Where(node => node != Root);
+            return FlattenNodes.Values.Where(node => node != Root);
         }
         #endregion
     }
