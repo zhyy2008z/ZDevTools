@@ -16,6 +16,7 @@ using System.Runtime.Loader;
 using Microsoft.Extensions.Options;
 using ZDevTools.Wpf;
 using ZDevTools.ServiceCore;
+using System.Diagnostics;
 
 namespace ZDevTools.ServiceConsole
 {
@@ -52,10 +53,9 @@ namespace ZDevTools.ServiceConsole
                 Log.Verbose("start run");
                 var host = CreateHostBuilder(args).Build();
                 host.Services.UseMicrosoftDependencyResolver();
-#if DEBUG
-                //这句话是有作用的，只是有时候Automapper也会提前触发一些验证，感觉好像这句没用似的。
-                host.Services.GetRequiredService<IMapper>().ConfigurationProvider.AssertConfigurationIsValid();
-#endif
+
+                if (Debugger.IsAttached) //这句话是有作用的，只是有时候Automapper也会提前触发一些验证，感觉好像这句没用似的。
+                    host.Services.GetRequiredService<IMapper>().ConfigurationProvider.AssertConfigurationIsValid();
 
                 if (args.Length == 2 && args[0] == "-Daemon") //作为Windows服务运行
                 {
@@ -69,10 +69,9 @@ namespace ZDevTools.ServiceConsole
                 else
                 {
                     //正常启动软件界面
-#if !DEBUG
-                    //处理所有异常
-                    AppDomain.CurrentDomain.UnhandledException += currentDomain_UnhandledException;
-#endif
+
+                    if (!Debugger.IsAttached)  //处理所有异常
+                        AppDomain.CurrentDomain.UnhandledException += currentDomain_UnhandledException;
 
                     await host.RunAsync();
                 }

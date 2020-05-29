@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
-    <Version>4.1.1</Version>
+    <Version>4.1.2</Version>
     <Description>开发工具库，目前包含一个SqlHelper库，TreeNode树结构类型及算法，RSA算法加密解密实用工具类，SymbolicLink与SocketListener</Description>
     <Authors>穿越中的逍遥</Authors>
     <Copyright>Copyright © 穿越中的逍遥 2020</Copyright>
@@ -10,7 +10,8 @@
     <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageReleaseNotes>增加注释、小重构、去除意义不大的API</PackageReleaseNotes>
+    <PackageReleaseNotes>1、修正 FindPeaks 对于某些情况下最后一处峰未输出的问题
+2、解决一处SocketListener可能导致程序崩溃的问题</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
     <PackageTags>SqlHelper TreeNode RSAHelper SocketListener SymbolicLink</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -26,13 +27,11 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-    <PackageReference Include="System.Data.SqlClient"
-                      Version="4.8.1" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.1" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-    <PackageReference Include="System.Threading.Tasks.Extensions"
-                      Version="4.5.4" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
   </ItemGroup>
 
 </Project>

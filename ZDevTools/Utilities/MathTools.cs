@@ -57,6 +57,13 @@ namespace ZDevTools.Utilities
                 }
                 lastSign = sign;
             }
+
+            if (peakIndex > -1)
+            {
+                width++;
+                result.Add(new PeakInfo(peakIndex, width, values[peakIndex]));
+            }
+
             //合并小峰
             for (int i = 1; i < result.Count; i++)
             {
@@ -126,6 +133,13 @@ namespace ZDevTools.Utilities
                 }
                 lastSign = sign;
             }
+
+            if (peakIndex > -1)
+            {
+                width++;
+                result.Add(new PeakInfo<T>(peakIndex, width, values[peakIndex]));
+            }
+
             //合并小峰
             for (int i = 1; i < result.Count; i++)
             {

@@ -167,7 +167,7 @@ namespace ZDevTools.Net
 
                 //设置心跳包
                 if (TcpKeepAlive.IsOn != default)
-                    if (_socket.IOControl(IOControlCode.KeepAliveValues, TcpKeepAlive.ToBytes(), null) > 0) throw new InvalidOperationException("无法设置KeepAliveValues");
+                    _socket.SetTcpKeepAlive(TcpKeepAlive);
 
                 // Get endpoint for the listener.
                 IPEndPoint localEndPoint = new IPEndPoint(bindedIPAddress, port);
@@ -234,17 +234,17 @@ namespace ZDevTools.Net
                         this.processAccept(e);
                         break;
                     default:
-                        throw new Exception($"无法根据上次{e.LastOperation}操作做出对应动作");
+                        throw new Exception($"无法根据上次 {e.LastOperation} 操作做出对应动作");
                 }
             }
             catch (Exception ex)
             {
-                var message = $"未能继续处理{e.LastOperation}操作，{nameof(SocketListener<TUserToken>)}内部错误";
+                var message = $"未能继续处理 {e.LastOperation} 操作，{nameof(SocketListener<TUserToken>)} 内部错误";
                 if (CriticalErrorHandler != null)
                     CriticalErrorHandler(message, ex);
                 else
                 {
-                    reportError(message, ex);
+                    reportGeneralError(message, ex);
                     throw;
                 }
             }
@@ -280,7 +280,13 @@ namespace ZDevTools.Net
             //if (TcpKeepAlive.IsOn != default)
             //    if (socket.IOControl(IOControlCode.KeepAliveValues, TcpKeepAlive.GetBytes(), null) > 0) throw new InvalidOperationException("无法设置KeepAliveValues");
 
-            if (socket.Connected)
+            //hack:  调查socket为null的原因
+            if (socket == null)
+            {
+                reportGeneralError($"AcceptSocket为 null，SocketError为 " + eAccept.SocketError);
+            }
+
+            if (socket != null && socket.Connected)
             {
                 Clients.TryAdd(socket, socket);//客户端已连接
 
@@ -346,7 +352,7 @@ namespace ZDevTools.Net
 #endif
                     catch (Exception ex)
                     {
-                        reportError($"用户消息处理函数发生错误，本次通讯连接将被关闭", ex);
+                        reportGeneralError($"用户消息处理函数发生错误，本次通讯连接将被关闭", ex);
                         closeClientSocket(e);
                         return;
                     }
@@ -380,7 +386,7 @@ namespace ZDevTools.Net
                 }
                 else
                 {
-                    this.processError(e, "接收");
+                    this.reportOperationErrorWithClose(e, "接收");
                 }
             }
             else
@@ -414,7 +420,7 @@ namespace ZDevTools.Net
             }
             else
             {
-                this.processError(e, "发送");
+                this.reportOperationErrorWithClose(e, "发送");
             }
         }
         #endregion
@@ -459,17 +465,17 @@ namespace ZDevTools.Net
                         await this.processAcceptAsync(e);
                         break;
                     default:
-                        throw new Exception($"无法根据上次{e.LastOperation}操作做出对应动作");
+                        throw new Exception($"无法根据上次 {e.LastOperation} 操作做出对应动作");
                 }
             }
             catch (Exception ex)
             {
-                var message = $"未能继续处理{e.LastOperation}操作，{nameof(SocketListener<TUserToken>)}内部错误";
+                var message = $"未能继续处理 {e.LastOperation} 操作，{nameof(SocketListener<TUserToken>)} 内部错误";
                 if (CriticalErrorHandler != null)
                     CriticalErrorHandler(message, ex);
                 else
                 {
-                    reportError(message, ex);
+                    reportGeneralError(message, ex);
                     throw;
                 }
             }
@@ -506,7 +512,7 @@ namespace ZDevTools.Net
 #endif
                     catch (Exception ex)
                     {
-                        reportError($"用户消息处理函数发生错误，本次通讯连接将被关闭", ex);
+                        reportGeneralError($"用户消息处理函数发生错误，本次通讯连接将被关闭", ex);
                         closeClientSocket(e);
                         return;
                     }
@@ -540,7 +546,7 @@ namespace ZDevTools.Net
                 }
                 else
                 {
-                    this.processError(e, "接收");
+                    this.reportOperationErrorWithClose(e, "接收");
                 }
             }
             else
@@ -574,7 +580,7 @@ namespace ZDevTools.Net
             }
             else
             {
-                this.processError(e, "发送");
+                this.reportOperationErrorWithClose(e, "发送");
             }
         }
 
@@ -586,7 +592,13 @@ namespace ZDevTools.Net
         {
             Socket socket = eAccept.AcceptSocket;
 
-            if (socket.Connected)
+            //hack:  调查socket为null的原因
+            if (socket == null)
+            {
+                reportGeneralError($"AcceptSocket为 null，SocketError为 " + eAccept.SocketError);
+            }
+
+            if (socket != null && socket.Connected)
             {
                 Clients.TryAdd(socket, socket);//客户端已连接
 
@@ -718,21 +730,21 @@ namespace ZDevTools.Net
             ClientClosedHandler?.Invoke(token);
         }
 
-        private void processError(SocketAsyncEventArgs e, string operationName)
+        private void reportOperationErrorWithClose(SocketAsyncEventArgs e, string operationName)
         {
             var token = (TUserToken)e.UserToken;
-            reportError($"与{token.Socket.RemoteEndPoint}进行{operationName}通讯操作出错，连接即将关闭");
+            reportGeneralError($"与 {token.Socket.RemoteEndPoint} 进行 {operationName} 通讯操作出错，连接即将关闭");
             this.closeClientSocket(token, e);
         }
 
-        void reportError(string message, Exception exception)
+        void reportGeneralError(string message, Exception exception)
         {
             GeneralErrorHandler?.Invoke(message, exception);
         }
 
-        void reportError(string message)
+        void reportGeneralError(string message)
         {
-            reportError(message, null);
+            reportGeneralError(message, null);
         }
         #endregion
     }
