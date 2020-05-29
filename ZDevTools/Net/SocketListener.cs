@@ -361,7 +361,7 @@ namespace ZDevTools.Net
                     {
                         e.SetBuffer(memory);
 #else
-                    if (segment.Array != null && segment.Count > 0) //返回的结果不为空，需要进行发送操作
+                    if (segment.Count > 0) //返回的结果不为空，需要进行发送操作，大于0，则Array肯定不为null
                     {
                         e.SetBuffer(segment.Array, segment.Offset, segment.Count);
 #endif
@@ -521,7 +521,7 @@ namespace ZDevTools.Net
                     {
                         e.SetBuffer(memory);
 #else
-                    if (segment.Array != null && segment.Count > 0) //返回的结果不为空，需要进行发送操作
+                    if (segment.Count > 0) //返回的结果不为空，需要进行发送操作，大于0，则Array肯定不为null
                     {
                         e.SetBuffer(segment.Array, segment.Offset, segment.Count);
 #endif

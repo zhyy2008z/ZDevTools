@@ -18,42 +18,91 @@ namespace ZDevTools.Collections
             if (items == null) throw new ArgumentNullException(nameof(items));
             if (predicate == null) throw new ArgumentNullException(nameof(predicate));
 
-            int i = 0;
-            foreach (var item in items)
+            switch (items)
             {
-                if (predicate(item)) return i;
-                i++;
+                case T[] arr:
+                    return Array.FindIndex(arr, predicate);
+                case List<T> list:
+                    return list.FindIndex(predicate);
+                default:
+                    int i = 0;
+                    foreach (var item in items)
+                    {
+                        if (predicate(item)) return i;
+                        i++;
+                    }
+                    return -1;
             }
-            return -1;
         }
-
-        #region 去掉仅仅作为重定向的方法
-        ///// <summary>
-        ///// 在数组中查找通过断言的元素的索引
-        ///// </summary>
-        //public static int FindIndex<T>(this T[] array, Predicate<T> match) => Array.FindIndex(array, match);
-
-        ///// <summary>
-        ///// 在数组中查找最后一个通过断言的元素的索引
-        ///// </summary>
-        //public static int FindLastIndex<T>(this T[] array, Predicate<T> match) => Array.FindLastIndex(array, match);
-
-        ///// <summary>
-        ///// 查找数组元素索引
-        ///// </summary>
-        //public static int IndexOf<T>(this T[] array, T value) { return Array.IndexOf(array, value); }
-
-        ///// <summary>
-        ///// 从尾部开始查找数组元素索引
-        ///// </summary>
-        //public static int LastIndexOf<T>(this T[] array, T value) { return Array.LastIndexOf(array, value); }
-        #endregion
 
         ///<summary>Finds the index of the first occurrence of an item in an enumerable.</summary>
         ///<param name="items">The enumerable to search.</param>
         ///<param name="item">The item to find.</param>
         ///<returns>The index of the first matching item, or -1 if the item was not found.</returns>
-        public static int IndexOf<T>(this IEnumerable<T> items, T item) { return items.FindIndex(i => EqualityComparer<T>.Default.Equals(item, i)); }
+        public static int IndexOf<T>(this IEnumerable<T> items, T item)
+        {
+            if (items == null) throw new ArgumentNullException(nameof(items));
+
+            switch (items)
+            {
+                case IList<T> list:
+                    return list.IndexOf(item);
+                default:
+                    return items.FindIndex(i => EqualityComparer<T>.Default.Equals(item, i));
+            }
+        }
+
+        ///<summary>Finds the last index of the first item matching an expression in an enumerable.</summary>
+        ///<param name="items">The enumerable to search.</param>
+        ///<param name="predicate">The expression to test the items against.</param>
+        ///<returns>The index of the first matching item, or -1 if no items match.</returns>
+        ///<remarks>
+        /// 注意：不要将此方法用于无限元素序列
+        /// </remarks>
+        public static int FindLastIndex<T>(this IEnumerable<T> items, Predicate<T> predicate)
+        {
+            if (items == null) throw new ArgumentNullException(nameof(items));
+            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
+
+            switch (items)
+            {
+                case T[] arr:
+                    return Array.FindLastIndex(arr, predicate);
+                case List<T> list:
+                    return list.FindLastIndex(predicate);
+                default:
+                    var count = items.Count();
+                    int i = 0;
+
+                    foreach (var item in items.Reverse())
+                    {
+                        i++;
+                        if (predicate(item)) return count - i;
+                    }
+
+                    return -1;
+            }
+        }
+
+        ///<summary>Finds the last index of the first occurrence of an item in an enumerable.</summary>
+        ///<param name="items">The enumerable to search.</param>
+        ///<param name="item">The item to find.</param>
+        ///<returns>The index of the first matching item, or -1 if the item was not found.</returns>
+        ///<remarks>
+        /// 注意：不要将此方法用于无限元素序列
+        /// </remarks>
+        public static int LastIndexOf<T>(this IEnumerable<T> items, T item)
+        {
+            if (items == null) throw new ArgumentNullException(nameof(items));
+
+            switch (items)
+            {
+                case IList<T> list:
+                    return list.LastIndexOf(item);
+                default:
+                    return items.FindLastIndex(i => EqualityComparer<T>.Default.Equals(item, i));
+            }
+        }
 
         /// <summary>
         /// 获取一个序列中最小值的索引及最小值本身
@@ -66,6 +115,8 @@ namespace ZDevTools.Collections
         public static int MinValueIndex<T>(this IEnumerable<T> items, T initValue, out T minValue)
             where T : IComparable<T>
         {
+            if (items == null) throw new ArgumentNullException(nameof(items));
+
             int result = -1;
             int i = 0;
             minValue = initValue;
@@ -92,6 +143,8 @@ namespace ZDevTools.Collections
         public static int MaxValueIndex<T>(this IEnumerable<T> items, T initValue, out T maxValue)
                         where T : IComparable<T>
         {
+            if (items == null) throw new ArgumentNullException(nameof(items));
+
             int result = -1;
             int i = 0;
             maxValue = initValue;
@@ -104,6 +157,7 @@ namespace ZDevTools.Collections
                 }
                 i++;
             }
+
             return result;
         }
 
@@ -166,6 +220,8 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public static IEnumerable<double> FirstDifference(this IEnumerable<double> items)
         {
+            if (items == null) throw new ArgumentNullException(nameof(items));
+
             bool isFirst = true;
             double lastValue = default;
 
@@ -190,6 +246,7 @@ namespace ZDevTools.Collections
         /// <returns></returns>
         public static IEnumerable<TimeSpan> FirstDifference(this IEnumerable<DateTime> items)
         {
+            if (items == null) throw new ArgumentNullException(nameof(items));
             bool isFirst = true;
             DateTime lastValue = default;
 
@@ -205,102 +262,6 @@ namespace ZDevTools.Collections
                 }
                 lastValue = item;
             }
-        }
-
-
-        /// <summary>
-        /// 不允许重复匹配的搜索方法(从2,2,2,2,2中查找2,2，结果：0,2)
-        /// </summary>
-        /// <param name="items"></param>
-        /// <param name="pattern"></param>
-        /// <returns></returns>
-        public static List<int> SearchAll<T>(this IReadOnlyList<T> items, IReadOnlyList<T> pattern)
-            where T : IEquatable<T>
-        {
-            if (pattern.Count == 0)
-                throw new ArgumentException("模式数组不能为空！");
-
-            List<int> locations = new List<int>();
-            var count = items.Count - pattern.Count + 1;
-            for (int i = 0; i < count;)
-            {
-                if (isMatch(items, i, pattern))
-                {
-                    locations.Add(i);
-                    i += pattern.Count;
-                }
-                else
-                    i++;
-            }
-            return locations;
-        }
-
-
-        /// <summary>
-        /// 允许重复匹配的搜索方法（从2,2,2,2,2中查找2,2，结果：0,1,2,3）
-        /// </summary>
-        /// <param name="items"></param>
-        /// <param name="pattern"></param>
-        /// <returns></returns>
-        public static List<int> SearchAllr<T>(this IReadOnlyList<T> items, IReadOnlyList<T> pattern)
-           where T : IEquatable<T>
-        {
-            List<int> locations = new List<int>();
-            var count = items.Count - pattern.Count + 1;
-            for (int i = 0; i < count; i++)
-            {
-                if (isMatch(items, i, pattern))
-                    locations.Add(i);
-            }
-            return locations;
-        }
-
-        /// <summary>
-        /// 找出第一个匹配项
-        /// </summary>
-        /// <param name="items"></param>
-        /// <param name="pattern"></param>
-        /// <returns></returns>
-        public static int IndexOf<T>(this IReadOnlyList<T> items, IReadOnlyList<T> pattern)
-            where T : IEquatable<T>
-        {
-            var count = items.Count - pattern.Count + 1;
-            for (int i = 0; i < count; i++)
-            {
-                if (isMatch(items, i, pattern))
-                    return i;
-            }
-            return -1;
-        }
-
-
-        /// <summary>
-        /// 从后向前查找第一个匹配项
-        /// </summary>
-        /// <param name="items"></param>
-        /// <param name="pattern"></param>
-        /// <returns></returns>
-        public static int LastIndexOf<T>(this IReadOnlyList<T> items, IReadOnlyList<T> pattern)
-            where T : IEquatable<T>
-        {
-            var count = items.Count - pattern.Count + 1;
-            for (int i = count - 1; i > -1; i--)
-            {
-                if (isMatch(items, i, pattern))
-                    return i;
-            }
-            return -1;
-        }
-
-        static bool isMatch<T>(IReadOnlyList<T> items, int position, IReadOnlyList<T> pattern)
-            where T : IEquatable<T>
-        {
-            for (int i = 0; i < pattern.Count; i++)
-            {
-                if (!pattern[i].Equals(items[position + i]))
-                    return false;
-            }
-            return true;
         }
     }
 }
