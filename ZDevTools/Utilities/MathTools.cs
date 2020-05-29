@@ -24,7 +24,7 @@ namespace ZDevTools.Utilities
             int width = 0;
             bool? lastSign = default;
             int peakIndex = -1;
-            for (int i = 1; i < values.Length; i++)
+            for (int i = 1; i < values.Length - 1; i++)
             {
                 bool sign = values[i] - values[i - 1] >= 0;
                 if (lastSign.HasValue)
@@ -43,7 +43,7 @@ namespace ZDevTools.Utilities
                             peakIndex = i - 1;
                         }
                     }
-                    //峰结束位置
+                    //峰开始/结束位置
                     else
                     {
                         if (peakIndex > -1)
@@ -84,6 +84,7 @@ namespace ZDevTools.Utilities
                     i--;
                 }
             }
+
             return result.Where(pi => pi.Width > widthLimit).ToArray();
         }
 
@@ -100,7 +101,7 @@ namespace ZDevTools.Utilities
             int width = 0;
             bool? lastSign = default;
             int peakIndex = -1;
-            for (int i = 1; i < values.Length; i++)
+            for (int i = 1; i < values.Length - 1; i++)
             {
                 bool sign = values[i].CompareTo(values[i - 1]) >= 0;
                 if (lastSign.HasValue)
@@ -119,7 +120,7 @@ namespace ZDevTools.Utilities
                             peakIndex = i - 1;
                         }
                     }
-                    //峰结束位置
+                    //峰开始/结束位置
                     else
                     {
                         if (peakIndex > -1)
@@ -160,6 +161,7 @@ namespace ZDevTools.Utilities
                     i--;
                 }
             }
+
             return result.Where(pi => pi.Width > widthLimit).ToArray();
         }
 
