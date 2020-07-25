@@ -25,7 +25,7 @@ namespace ZDevTools.Enums
 
             DescriptionAttribute[] arrDesc = (DescriptionAttribute[])fi.GetCustomAttributes(typeof(DescriptionAttribute), false);
 
-            return arrDesc.Length > 0 ? arrDesc[0].Description : null;
+            return arrDesc.Length > 0 ? arrDesc[0].Description : fi.Name;
         }
 
         /// <summary>

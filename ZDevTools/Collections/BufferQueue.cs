@@ -500,6 +500,37 @@ namespace ZDevTools.Collections
 
         #endregion
 
+        #region To
+        /// <summary>
+        /// 将队列中的所有元素作为数组输出
+        /// </summary>
+        public T[] ToArray()
+        {
+            if (_length > 0)
+            {
+                int rightLength = getRightLengthFromHead();
+
+                var array = new T[_length];
+
+                if (rightLength >= _length)
+                {
+                    Array.Copy(_internalBuffer, _head, array, 0, _length);
+                }
+                else
+                {
+                    Array.Copy(_internalBuffer, _head, array, 0, rightLength);
+                    Array.Copy(_internalBuffer, 0, array, rightLength, _length - rightLength);
+                }
+
+                return array;
+            }
+            else
+            {
+                return Array.Empty<T>();
+            }
+        }
+        #endregion
+
         #region Enumerable
         /// <summary>
         /// 枚举T队列

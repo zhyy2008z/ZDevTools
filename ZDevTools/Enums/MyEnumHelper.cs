@@ -21,19 +21,18 @@ namespace ZDevTools.Enums
         /// </summary>
         /// <param name="enumType">枚举类型</param>
         /// <returns></returns>
-        public static Dictionary<int, string> GetDescriptionDictionary(Type enumType)
+        public static Dictionary<Enum, string> GetDescriptionDictionary(Type enumType)
         {
             checkIsEnum(enumType);
 
-            Dictionary<int, string> dic = new Dictionary<int, string>();
+            Dictionary<Enum, string> dic = new Dictionary<Enum, string>();
             FieldInfo[] fieldinfos = enumType.GetFields();
             foreach (FieldInfo field in fieldinfos)
             {
                 if (field.FieldType.IsEnum)
                 {
                     object[] objs = field.GetCustomAttributes(typeof(DescriptionAttribute), false);
-                    if (objs.Length > 0)
-                        dic.Add(((int)field.GetValue(null)), ((DescriptionAttribute)objs[0]).Description);
+                    dic.Add((Enum)field.GetValue(null), objs.Length > 0 ? ((DescriptionAttribute)objs[0]).Description : field.Name);
                 }
             }
 
@@ -43,23 +42,60 @@ namespace ZDevTools.Enums
         /// <summary>
         /// Key 是 枚举值，Value是枚举的描述
         /// </summary>
+        public static Dictionary<T, string> GetDescriptionDictionary<T>()
+            where T : Enum
+        {
+            Dictionary<T, string> dic = new Dictionary<T, string>();
+            FieldInfo[] fieldinfos = typeof(T).GetFields();
+            foreach (FieldInfo field in fieldinfos)
+            {
+                if (field.FieldType.IsEnum)
+                {
+                    object[] objs = field.GetCustomAttributes(typeof(DescriptionAttribute), false);
+                    dic.Add((T)field.GetValue(null), objs.Length > 0 ? ((DescriptionAttribute)objs[0]).Description : field.Name);
+                }
+            }
+            return dic;
+        }
+
+        /// <summary>
+        /// Key 是 枚举值，Value是枚举的描述
+        /// </summary>
         /// <param name="enumType">枚举类型</param>
         /// <returns></returns>
-        public static Dictionary<int, T> GetAttachedAttributeDictionary<T>(Type enumType)
+        public static Dictionary<Enum, T> GetAttachedAttributeDictionary<T>(Type enumType)
             where T : DescriptionAttribute
         {
             checkIsEnum(enumType);
 
-
-            Dictionary<int, T> dic = new Dictionary<int, T>();
+            Dictionary<Enum, T> dic = new Dictionary<Enum, T>();
             FieldInfo[] fieldinfos = enumType.GetFields();
             foreach (FieldInfo field in fieldinfos)
             {
                 if (field.FieldType.IsEnum)
                 {
-                    Object[] objs = field.GetCustomAttributes(typeof(T), false);
-                    if (objs.Length > 0)
-                        dic.Add(((int)field.GetValue(null)), ((T)objs[0]));
+                    var objs = field.GetCustomAttributes(typeof(T), false);
+                    dic.Add((Enum)field.GetValue(null), objs.Length > 0 ? ((T)objs[0]) : null);
+                }
+            }
+            return dic;
+        }
+
+        /// <summary>
+        /// Key 是 枚举值，Value是枚举的描述
+        /// </summary>
+        public static Dictionary<TEnum, TDescriptionAttribute> GetAttachedAttributeDictionary<TEnum, TDescriptionAttribute>()
+            where TDescriptionAttribute : DescriptionAttribute
+            where TEnum : Enum
+        {
+            Dictionary<TEnum, TDescriptionAttribute> dic = new Dictionary<TEnum, TDescriptionAttribute>();
+            FieldInfo[] fieldinfos = typeof(TEnum).GetFields();
+            foreach (FieldInfo field in fieldinfos)
+            {
+                if (field.FieldType.IsEnum)
+                {
+                    var objs = field.GetCustomAttributes(typeof(TDescriptionAttribute), false);
+                    dic.Add((TEnum)field.GetValue(null), objs.Length > 0 ? ((TDescriptionAttribute)objs[0]) : null);
                 }
             }
             return dic;
@@ -76,7 +112,7 @@ namespace ZDevTools.Enums
 
             DescriptionAttribute[] arrDesc = (DescriptionAttribute[])enumType.GetCustomAttributes(typeof(DescriptionAttribute), false);
 
-            return arrDesc.Length > 0 ? arrDesc[0].Description : string.Empty;
+            return arrDesc.Length > 0 ? arrDesc[0].Description : enumType.Name;
         }
 
     }
