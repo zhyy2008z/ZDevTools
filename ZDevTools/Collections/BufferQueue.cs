@@ -79,8 +79,9 @@ namespace ZDevTools.Collections
         /// <param name="content"></param>
         public void Enqueue(T content)
         {
-            if (_length + 1 > _internalBuffer.Length)
-                gainCapacity(_internalBuffer.Length * 2);
+            int newLength = _length + 1;
+            if (newLength > _internalBuffer.Length)
+                gainCapacity(newLength);
 
             _internalBuffer[_tail] = content;
 
@@ -97,8 +98,9 @@ namespace ZDevTools.Collections
             if (span.Length == 0)
                 return;
 
-            if (_length + span.Length > _internalBuffer.Length)
-                gainCapacity(_internalBuffer.Length * 2);
+            int newLength = _length + span.Length;
+            if (newLength > _internalBuffer.Length)
+                gainCapacity(newLength);
 
             int rightLength = getRightLengthFromTail();
 
@@ -124,8 +126,9 @@ namespace ZDevTools.Collections
             if (segment.Count == 0)
                 return;
 
-            if ((_length + segment.Count) > _internalBuffer.Length)
-                gainCapacity(_internalBuffer.Length * 2);
+            int newLength = _length + segment.Count;
+            if (newLength > _internalBuffer.Length)
+                gainCapacity(newLength);
 
             int rightLength = getRightLengthFromTail();
 
@@ -561,8 +564,13 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 增加缓存大小
         /// </summary>
-        void gainCapacity(int capacity)
+        void gainCapacity(int newLength)
         {
+            int capacity = _internalBuffer.Length;
+            do
+                capacity *= 2;
+            while (capacity < newLength);
+
             T[] newBuffer = new T[capacity];
 
             if (_length > 0)
