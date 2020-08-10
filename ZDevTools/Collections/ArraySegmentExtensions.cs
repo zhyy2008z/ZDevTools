@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ZDevTools.Collections
 {
-#if NET
+#if NETFRAMEWORK
     /// <summary>
     /// 针对数组片段的扩展函数
     /// </summary>
