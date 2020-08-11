@@ -80,6 +80,21 @@ namespace ZDevTools.Collections
         {
             segment.CopyTo(destination, 0);
         }
+
+        /// <summary>
+        /// 将数组包装为数组片段，可用生成的数组片段访问原始数组。
+        /// </summary>
+        public static ArraySegment<T> AsArraySegment<T>(this T[] array) => new ArraySegment<T>(array);
+
+        /// <summary>
+        /// 将数组包装为数组片段，可用生成的数组片段访问原始数组。
+        /// </summary>
+        public static ArraySegment<T> AsArraySegment<T>(this T[] array, int offset) => new ArraySegment<T>(array, offset, array?.Length - offset ?? default);
+
+        /// <summary>
+        /// 将数组包装为数组片段，可用生成的数组片段访问原始数组。
+        /// </summary>
+        public static ArraySegment<T> AsArraySegment<T>(this T[] array, int offset, int count) => new ArraySegment<T>(array, offset, count);
     }
 #endif
 }

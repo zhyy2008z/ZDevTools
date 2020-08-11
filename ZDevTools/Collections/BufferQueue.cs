@@ -474,7 +474,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 查看指定位置T
         /// </summary>
-        public bool Peak(int index, out T content)
+        public bool Peek(int index, out T content)
         {
             if ((uint)index >= (uint)_length)
             {
@@ -498,7 +498,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从队头读取数据
         /// </summary>
-        public bool Peak(int count, out T[] buffer)
+        public bool Peek(int count, out T[] buffer)
         {
             if (count <= 0 || count > _length)
             {
@@ -528,7 +528,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从队列指定位置读取指定数量的数据
         /// </summary>
-        public bool Peak(int index, int count, out T[] buffer)
+        public bool Peek(int index, int count, out T[] buffer)
         {
             if (count <= 0 || index < 0 || index + count >= _length)
             {
@@ -562,9 +562,9 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从队头读取数据
         /// </summary>
-        public bool Peak(int count, out ArraySegment<T> segment)
+        public bool Peek(int count, out ArraySegment<T> segment)
         {
-            if (Peak(count, out T[] buffer))
+            if (Peek(count, out T[] buffer))
             {
                 segment = new ArraySegment<T>(buffer);
                 return true;
@@ -579,9 +579,9 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从队列指定位置读取指定数量的数据
         /// </summary>
-        public bool Peak(int index, int count, out ArraySegment<T> segment)
+        public bool Peek(int index, int count, out ArraySegment<T> segment)
         {
-            if (Peak(index, count, out T[] buffer))
+            if (Peek(index, count, out T[] buffer))
             {
                 segment = new ArraySegment<T>(buffer);
                 return true;
@@ -597,9 +597,9 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从队头读取数据
         /// </summary>
-        public bool Peak(int count, out Span<T> span)
+        public bool Peek(int count, out Span<T> span)
         {
-            if (Peak(count, out T[] buffer))
+            if (Peek(count, out T[] buffer))
             {
                 span = buffer;
                 return true;
@@ -614,9 +614,9 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从队头读取数据
         /// </summary>
-        public bool Peak(int count, out Memory<T> memory)
+        public bool Peek(int count, out Memory<T> memory)
         {
-            if (Peak(count, out T[] buffer))
+            if (Peek(count, out T[] buffer))
             {
                 memory = buffer;
                 return true;
@@ -631,9 +631,9 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从队列指定位置读取指定数量的数据
         /// </summary>
-        public bool Peak(int index, int count, out Span<T> span)
+        public bool Peek(int index, int count, out Span<T> span)
         {
-            if (Peak(index, count, out T[] buffer))
+            if (Peek(index, count, out T[] buffer))
             {
                 span = buffer;
                 return true;
@@ -648,9 +648,9 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从队列指定位置读取指定数量的数据
         /// </summary>
-        public bool Peak(int index, int count, out Memory<T> memory)
+        public bool Peek(int index, int count, out Memory<T> memory)
         {
-            if (Peak(index, count, out T[] buffer))
+            if (Peek(index, count, out T[] buffer))
             {
                 memory = buffer;
                 return true;
@@ -670,7 +670,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从队头读取数据
         /// </summary>
-        public bool Peak(Span<T> span)
+        public bool Peek(Span<T> span)
         {
             if (span.Length == 0 || span.Length > _length)
                 return false;
@@ -692,7 +692,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从指定位置读取数据
         /// </summary>
-        public bool Peak(int index, Span<T> span)
+        public bool Peek(int index, Span<T> span)
         {
             if (span.Length == 0 || index < 0 || index + span.Length >= _length)
                 return false;
@@ -716,7 +716,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从队头读取数据
         /// </summary>
-        public bool Peak(ArraySegment<T> segment)
+        public bool Peek(ArraySegment<T> segment)
         {
             if (segment.Count == 0 || segment.Count > _length)
                 return false;
@@ -738,7 +738,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从指定位置读取数据
         /// </summary>
-        public bool Peak(int index, ArraySegment<T> segment)
+        public bool Peek(int index, ArraySegment<T> segment)
         {
             if (segment.Count == 0 || index < 0 || index + segment.Count > _length)
                 return false;
@@ -842,15 +842,44 @@ namespace ZDevTools.Collections
             if (_length > 0)
             {
                 var rightLength = getRightFilledLength();
+                int index;
                 if (rightLength >= _length)
-                    return Array.IndexOf(_internalBuffer, item, _head, _length);
+                {
+                    index = Array.IndexOf(_internalBuffer, item, _head, _length);
+                    if (index > -1)
+                        return index - _head;
+                }
                 else
                 {
-                    var index = Array.IndexOf(_internalBuffer, item, _head, rightLength);
-                    if (index > -1)
-                        return index;
-                    else
-                        return Array.IndexOf(_internalBuffer, item, 0, _tail);
+                    index = Array.IndexOf(_internalBuffer, item, _head);
+                    if (index > -1) return index - _head;
+                    index = Array.IndexOf(_internalBuffer, item, 0, _tail);
+                    if (index > -1) return index + rightLength;
+                }
+            }
+            return -1;
+        }
+
+        /// <summary>
+        /// 获取某个元素从尾部开始搜索所在位置
+        /// </summary>
+        public int LastIndexOf(T item)
+        {
+            if (_length > 0)
+            {
+                var rightLength = getRightFilledLength();
+                int index;
+                if (rightLength >= _length)
+                {
+                    index = Array.LastIndexOf(_internalBuffer, item, _head + _length - 1, _length);
+                    if (index > -1) return index - _head;
+                }
+                else
+                {
+                    index = Array.LastIndexOf(_internalBuffer, item, _tail - 1);
+                    if (index > -1) return index + rightLength;
+                    index = Array.LastIndexOf(_internalBuffer, item, _internalBuffer.Length - 1, rightLength);
+                    if (index > -1) return index - _head;
                 }
             }
             return -1;
@@ -1409,7 +1438,7 @@ namespace ZDevTools.Collections
         /// </summary>
         void gainCapacity(int newLength)
         {
-            int capacity = _internalBuffer.Length;
+            int capacity = _internalBuffer.Length == 0 ? 4 : _internalBuffer.Length;
             do
                 capacity *= 2;
             while (capacity < newLength);

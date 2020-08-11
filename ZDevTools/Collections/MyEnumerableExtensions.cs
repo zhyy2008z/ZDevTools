@@ -94,10 +94,11 @@ namespace ZDevTools.Collections
         public static int LastIndexOf<T>(this IEnumerable<T> items, T item)
         {
             if (items == null) throw new ArgumentNullException(nameof(items));
-
             switch (items)
             {
-                case IList<T> list:
+                case T[] arr:
+                    return Array.LastIndexOf(arr, item);
+                case List<T> list:
                     return list.LastIndexOf(item);
                 default:
                     return items.FindLastIndex(i => EqualityComparer<T>.Default.Equals(item, i));
