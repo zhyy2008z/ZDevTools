@@ -15,10 +15,10 @@ namespace ZDevTools.Utilities
         /// 寻峰函数（一阶微分法）
         /// </summary>
         /// <param name="values">用来寻峰的数据</param>
-        /// <param name="valueLimit">峰值限制</param>
-        /// <param name="widthLimit">峰宽限制</param>
+        /// <param name="valueLimit">峰值限制（大于）</param>
+        /// <param name="widthLimit">峰宽限制（大于等于）</param>
         /// <returns></returns>
-        public static PeakInfo[] FindPeaks(double[] values, double valueLimit, int widthLimit)
+        public static List<PeakInfo> FindPeaks(double[] values, double valueLimit, int widthLimit)
         {
             List<PeakInfo> result = new List<PeakInfo>();
             int width = 0;
@@ -85,17 +85,20 @@ namespace ZDevTools.Utilities
                 }
             }
 
-            return result.Where(pi => pi.Width > widthLimit).ToArray();
+            //移除不符合峰宽限制的结果
+            result.RemoveAll(pi => pi.Width < widthLimit);
+
+            return result;
         }
 
         /// <summary>
         /// 寻峰函数（一阶微分法）
         /// </summary>
         /// <param name="values">用来寻峰的数据</param>
-        /// <param name="valueLimit">峰值限制</param>
-        /// <param name="widthLimit">峰宽限制</param>
+        /// <param name="valueLimit">峰值限制（大于）</param>
+        /// <param name="widthLimit">峰宽限制（大于等于）</param>
         /// <returns></returns>
-        public static PeakInfo<T>[] FindPeaks<T>(T[] values, T valueLimit, int widthLimit) where T : IComparable<T>
+        public static List<PeakInfo<T>> FindPeaks<T>(T[] values, T valueLimit, int widthLimit) where T : IComparable<T>
         {
             List<PeakInfo<T>> result = new List<PeakInfo<T>>();
             int width = 0;
@@ -162,15 +165,18 @@ namespace ZDevTools.Utilities
                 }
             }
 
-            return result.Where(pi => pi.Width > widthLimit).ToArray();
+            //移除不符合峰宽限制的结果
+            result.RemoveAll(pi => pi.Width < widthLimit);
+
+            return result;
         }
 
         /// <summary>
-        /// 寻峰函数（使用窗口内峰值法，不支持计算峰宽）      
+        /// 寻峰函数（使用窗口内峰值法，不支持计算峰宽）
         /// </summary>
         /// <param name="values">用来寻峰的数据</param>
-        /// <param name="peakValueLimit">峰值限制</param>
-        /// <param name="windowSize">寻峰窗口大小</param>
+        /// <param name="peakValueLimit">峰值限制（大于）</param>
+        /// <param name="windowSize">寻峰窗口大小（大于等于）</param>
         public static List<PeakInfo> FindPeaksByWindow(double[] values, double peakValueLimit, int windowSize)
         {
             List<PeakInfo> result = new List<PeakInfo>();
@@ -202,11 +208,11 @@ namespace ZDevTools.Utilities
         }
 
         /// <summary>
-        /// 寻峰函数（使用窗口内峰值法，不支持计算峰宽）      
+        /// 寻峰函数（使用窗口内峰值法，不支持计算峰宽）
         /// </summary>
         /// <param name="values">用来寻峰的数据</param>
         /// <param name="peakValueLimit">峰值限制</param>
-        /// <param name="windowSize">寻峰窗口大小</param>
+        /// <param name="windowSize">寻峰窗口大小（大于等于）</param>
         public static List<PeakInfo<T>> FindPeaksByWindow<T>(T[] values, T peakValueLimit, int windowSize)
             where T : IComparable<T>
         {
@@ -242,9 +248,9 @@ namespace ZDevTools.Utilities
         /// 寻峰函数（使用砍低值法，不支持计算峰宽）
         /// </summary>
         /// <param name="values">用来寻峰的数据</param>
-        /// <param name="peakValueLimit">峰值限制</param>
-        /// <param name="peakWidthLimit">峰宽限制</param>
-        /// <param name="lowPass">低于此值的视为本底信号</param>
+        /// <param name="peakValueLimit">峰值限制（大于）</param>
+        /// <param name="peakWidthLimit">峰宽限制（大于等于）</param>
+        /// <param name="lowPass">低于此值的视为本底信号（大于）</param>
         /// <remarks>基础性能最好的算法</remarks>
         public static List<PeakInfo> FindPeaksByCutLowValue(double[] values, double peakValueLimit, int peakWidthLimit, double lowPass)
         {
@@ -305,9 +311,9 @@ namespace ZDevTools.Utilities
         /// 寻峰函数（使用砍低值法，不支持计算峰宽）
         /// </summary>
         /// <param name="values">用来寻峰的数据</param>
-        /// <param name="peakValueLimit">峰值限制</param>
-        /// <param name="peakWidthLimit">峰宽限制</param>
-        /// <param name="lowPass">低于此值的视为本底信号</param>
+        /// <param name="peakValueLimit">峰值限制（大于）</param>
+        /// <param name="peakWidthLimit">峰宽限制（大于等于）</param>
+        /// <param name="lowPass">低于此值的视为本底信号（大于）</param>
         /// <remarks>基础性能最好的算法</remarks>
         public static List<PeakInfo<T>> FindPeaksByCutLowValue<T>(T[] values, T peakValueLimit, int peakWidthLimit, T lowPass)
             where T : IComparable<T>

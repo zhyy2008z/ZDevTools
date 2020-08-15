@@ -12,11 +12,10 @@ namespace ZDevTools.Collections
     /// </summary>
     /// <remarks>
     /// 使用须知
-    /// 本类型更侧重于Queue，对List的插入与移除操作性能支持不如List，因此在要求高性能的环境下不能代替List。
-    /// 本类型非线程安全类型，请君自己做好线程同步工作
-    /// 本类型杂糅了Queue、List、Stack等类型的功能，一个类型可做多种用途。
-    /// 本类型为了更高的性能不会自动断开对已经被移除的元素的引用。也就是说，您如果向本队列存放引用类型的对象，他们可能有长期无法被释放的风险，请君酌情考虑。
-    /// 本类型为了更好的性能没有枚举时修改保护功能，请勿在foreach时修改本队列中的任何元素。您的修改虽然不会自动引发异常，但这是非常危险的！
+    /// <para>本类型更侧重于Queue，对List的插入与移除操作性能支持不如List，因此在要求高性能的环境下不能代替List。</para>
+    /// <para>本类型非线程安全类型，请君自己做好线程同步工作。</para>
+    /// <para>本类型杂糅了Queue、List、Stack等类型的功能，一个类型可做多种用途。</para>
+    /// <para>本类型为了更高的性能不会自动断开对已经被移除的元素的引用。也就是说，您如果向本队列存放引用类型的对象，他们可能有长期无法被释放的风险，您可以考虑在必要时手动调用<see cref="BufferQueue{T}.EraseExcess()"/>方法来释放这些引用。</para>
     /// </remarks>
     public class BufferQueue<T> : IList<T>, IReadOnlyList<T>
     {
@@ -37,6 +36,10 @@ namespace ZDevTools.Collections
         /// 内部数据实际缓存
         /// </summary>
         private T[] _internalBuffer;
+        /// <summary>
+        /// 队列版本
+        /// </summary>
+        private int _version;
 
         /// <summary>
         /// 获取队列长度
@@ -87,6 +90,7 @@ namespace ZDevTools.Collections
                     _head = 0;
                     _tail = 0;
                 }
+                _version++;
             }
         }
 
@@ -119,6 +123,7 @@ namespace ZDevTools.Collections
                     _internalBuffer[_head + index] = value;
                 else
                     _internalBuffer[index - rightLength] = value;
+                _version++;
             }
         }
 
@@ -137,6 +142,155 @@ namespace ZDevTools.Collections
         }
         #endregion
 
+        #region Methods
+        /// <summary>
+        /// Sets the capacity to the actual number of elements in the <see cref="BufferQueue{T}" />, if that number is less than a threshold value.
+        /// </summary>
+        public void TrimExcess()
+        {
+            int num = (int)(_internalBuffer.Length * 0.9);
+            if (_length < num)
+            {
+                Capacity = _length;
+            }
+        }
+
+        /// <summary>
+        /// 擦除缓冲区中未存储实际元素的空间。由于本类型为了更高的性能不会自动断开对已经被移除的元素的引用，因此特别提供了本方法，方便您手动清除元素引用。一般来说，这个方法不需要调用，除非您的队列里保存了大量的引用类型的大对象（或者管理了非托管资源）。
+        /// </summary>
+        public void EraseExcess()
+        {
+            if (_head < _tail)
+            {
+                Array.Clear(_internalBuffer, 0, _head);
+                Array.Clear(_internalBuffer, _tail, getRightFreeLength());
+            }
+            else if (_head > _tail)
+            {
+                Array.Clear(_internalBuffer, _tail, _head - _tail);
+            }
+            else if (_length == 0) //这里_head==_tail对应队列为空和队列满员两种情况，我们只需要处理队列为空就可以了。
+            {
+                Array.Clear(_internalBuffer, 0, _internalBuffer.Length);
+            }
+        }
+        #endregion
+
+        #region Enumerator
+        /// <summary>
+        /// 迭代器
+        /// </summary>
+        public struct Enumerator : IEnumerator<T>
+        {
+            readonly BufferQueue<T> Queue;
+            readonly int Version;
+            readonly int RightLength;
+            int _index;
+            T _current;
+
+            /// <summary>
+            /// 初始化一个新的迭代器
+            /// </summary>
+            public Enumerator(BufferQueue<T> queue)
+            {
+                this.Queue = queue;
+                this.Version = queue._version;
+                this.RightLength = queue.getRightFilledLength();
+                this._index = -1;
+                this._current = default;
+            }
+
+            /// <inheritdoc/>
+            public T Current
+            {
+                get
+                {
+                    if (_index < 0)
+                    {
+                        if (_index == -1)
+                            throw new InvalidOperationException("枚举尚未开始。");
+                        else
+                            throw new InvalidOperationException("枚举已结束。");
+                    }
+                    else
+                        return _current;
+                }
+            }
+
+            /// <inheritdoc/>
+            object IEnumerator.Current
+            {
+                get
+                {
+                    if (_index < 0)
+                    {
+                        if (_index == -1)
+                            throw new InvalidOperationException("枚举尚未开始。");
+                        else
+                            throw new InvalidOperationException("枚举已结束。");
+                    }
+                    else
+                        return _current;
+                }
+            }
+
+            /// <inheritdoc/>
+            public void Dispose()
+            {
+                _index = -2;
+                _current = default;
+            }
+
+            /// <inheritdoc/>
+            public bool MoveNext()
+            {
+                if (this.Version != Queue._version)
+                    throw new InvalidOperationException("集合已被修改！");
+
+                if (_index == -2) return false;
+
+                _index++;
+
+                if (_index == Queue._length)
+                {
+                    _index = -2;
+                    _current = default;
+                    return false;
+                }
+
+                if (_index < RightLength)
+                    _current = Queue._internalBuffer[Queue._head + _index];
+                else
+                    _current = Queue._internalBuffer[_index - RightLength];
+
+                return true;
+            }
+
+            /// <inheritdoc/>
+            public void Reset()
+            {
+                if (this.Version != Queue._version)
+                    throw new InvalidOperationException("集合已被修改！");
+
+                this._index = -1;
+                this._current = default;
+            }
+        }
+
+        /// <summary>
+        /// 获取迭代器
+        /// </summary>
+        /// <returns></returns>
+        public Enumerator GetEnumerator() => new Enumerator(this);
+
+        /// <inheritdoc/>
+        IEnumerator<T> IEnumerable<T>.GetEnumerator() => new Enumerator(this);
+
+        /// <inheritdoc/>
+        IEnumerator IEnumerable.GetEnumerator() => new Enumerator(this);
+
+        #endregion
+
         #region Clear
         /// <summary>
         /// 清空 T 队列
@@ -146,6 +300,7 @@ namespace ZDevTools.Collections
             _head = 0;
             _tail = 0;
             _length = 0;
+            _version++;
         }
 
         /// <summary>
@@ -168,6 +323,8 @@ namespace ZDevTools.Collections
                 _tail = 0;
             }
 
+            _version++;
+
             return;
         }
         #endregion
@@ -187,6 +344,7 @@ namespace ZDevTools.Collections
 
             _tail = (_tail + 1) % _internalBuffer.Length;
             _length++;
+            _version++;
         }
 
 #if NETCOREAPP
@@ -217,6 +375,7 @@ namespace ZDevTools.Collections
 
             _tail = (_tail + span.Length) % _internalBuffer.Length;
             _length += span.Length;
+            _version++;
         }
 #else
         /// <summary>
@@ -245,6 +404,7 @@ namespace ZDevTools.Collections
 
             _tail = (_tail + segment.Count) % _internalBuffer.Length;
             _length += segment.Count;
+            _version++;
         }
 #endif
         #endregion
@@ -277,6 +437,8 @@ namespace ZDevTools.Collections
                 _head = (_head + 1) % _internalBuffer.Length;
             }
 
+            _version++;
+
             return true;
         }
 
@@ -288,7 +450,7 @@ namespace ZDevTools.Collections
             if (count <= 0 || count > _length)
             {
                 buffer = Array.Empty<T>();
-                return false;
+                return count == 0;
             }
 
             int rightLength = getRightFilledLength();
@@ -318,6 +480,8 @@ namespace ZDevTools.Collections
             {
                 _head = (_head + count) % _internalBuffer.Length;
             }
+
+            _version++;
 
             return true;
         }
@@ -383,8 +547,11 @@ namespace ZDevTools.Collections
         /// </summary>
         public bool Dequeue(Span<T> span)
         {
-            if (span.Length == 0 || span.Length > _length)
+            if (span.Length > _length)
                 return false;
+
+            if (span.Length == 0)
+                return true;
 
             int rightLength = getRightFilledLength();
             var bufferSpan = _internalBuffer.AsSpan();
@@ -411,6 +578,8 @@ namespace ZDevTools.Collections
                 _head = (_head + span.Length) % _internalBuffer.Length;
             }
 
+            _version++;
+
             return true;
         }
 #else
@@ -419,8 +588,11 @@ namespace ZDevTools.Collections
         /// </summary>
         public bool Dequeue(ArraySegment<T> segment)
         {
-            if (segment.Count == 0 || segment.Count > _length)
+            if (segment.Count > _length)
                 return false;
+
+            if (segment.Count == 0)
+                return true;
 
             int rightLength = getRightFilledLength();
 
@@ -445,6 +617,8 @@ namespace ZDevTools.Collections
             {
                 _head = (_head + segment.Count) % _internalBuffer.Length;
             }
+
+            _version++;
 
             return true;
         }
@@ -794,32 +968,6 @@ namespace ZDevTools.Collections
         }
         #endregion
 
-        #region Enumerable
-        /// <summary>
-        /// 枚举T队列
-        /// </summary>
-        public IEnumerator<T> GetEnumerator()
-        {
-            int rightLength = getRightFilledLength();
-            for (int i = 0; i < _length; i++)
-            {
-                if (i < rightLength)
-                {
-                    yield return _internalBuffer[_head + i];
-                }
-                else
-                {
-                    yield return _internalBuffer[i - rightLength];
-                }
-            }
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
-        #endregion
-
         #region List
 
         #region Miscellaneous
@@ -953,6 +1101,7 @@ namespace ZDevTools.Collections
                 }
             }
             _length++;
+            _version++;
         }
 
 #if NETCOREAPP
@@ -1038,6 +1187,7 @@ namespace ZDevTools.Collections
                 }
             }
             _length += span.Length;
+            _version++;
         }
 #else
         /// <summary>
@@ -1121,6 +1271,7 @@ namespace ZDevTools.Collections
                 }
             }
             _length += segment.Count;
+            _version++;
         }
 #endif
         #endregion
@@ -1135,6 +1286,8 @@ namespace ZDevTools.Collections
         {
             throwIfOutOfRangeForAccess(index, span.Length);
 
+            if (span.Length == 0) return;
+
             int rightLength = getRightFilledLength();
             var bufferSpan = _internalBuffer.AsSpan();
             if (rightLength - index >= span.Length)
@@ -1148,6 +1301,7 @@ namespace ZDevTools.Collections
             {
                 span.CopyTo(bufferSpan.Slice(index - rightLength));
             }
+            _version++;
         }
 #else
         /// <summary>
@@ -1156,6 +1310,8 @@ namespace ZDevTools.Collections
         public void SetRange(int index, ArraySegment<T> segment)
         {
             throwIfOutOfRangeForAccess(index, segment.Count);
+
+            if (segment.Count == 0) return;
 
             int rightLength = getRightFilledLength();
             if (rightLength - index >= segment.Count)
@@ -1171,6 +1327,7 @@ namespace ZDevTools.Collections
             {
                 Array.Copy(segment.Array, segment.Offset, _internalBuffer, index - rightLength, segment.Count);
             }
+            _version++;
         }
 #endif
         #endregion
@@ -1223,6 +1380,7 @@ namespace ZDevTools.Collections
                 }
             }
             _length--;
+            _version++;
         }
 
         /// <summary>
@@ -1231,6 +1389,8 @@ namespace ZDevTools.Collections
         public void RemoveRange(int index, int count)
         {
             throwIfOutOfRangeForAccess(index, count);
+
+            if (count == 0) return;
 
             if (index == _length - count) //尾部直接移除
             {
@@ -1272,6 +1432,7 @@ namespace ZDevTools.Collections
                 }
             }
             _length -= count;
+            _version++;
         }
 
         /// <inheritdoc/>
@@ -1413,6 +1574,8 @@ namespace ZDevTools.Collections
                 _head = (_head + 1) % _internalBuffer.Length;
             }
 
+            _version++;
+
             return true;
         }
 
@@ -1429,6 +1592,7 @@ namespace ZDevTools.Collections
             _head = (_head - 1 + _internalBuffer.Length) % _internalBuffer.Length;
             _internalBuffer[_head] = item;
             _length++;
+            _version++;
         }
         #endregion
 

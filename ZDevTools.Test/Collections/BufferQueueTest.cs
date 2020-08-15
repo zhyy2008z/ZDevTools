@@ -117,6 +117,24 @@ namespace ZDevTools.Test.Collections
             Assert.Equal(0, queue.IndexOf(343));
 
             Assert.Equal(3, queue.LastIndexOf(34));
+
+            Assert.ThrowsAny<Exception>(() =>
+            {
+                foreach (var item in queue)
+                {
+                    queue.Enqueue(3);
+                }
+            });
+
+            queue.EraseExcess();
+
+            queue.Capacity = 100;
+
+            Assert.Equal(100, queue.Capacity);
+
+            queue.TrimExcess();
+
+            Assert.Equal(queue.Length, queue.Capacity);
         }
 
         [Fact]
@@ -223,6 +241,24 @@ namespace ZDevTools.Test.Collections
             Assert.Equal(0, queue.IndexOf(343));
 
             Assert.Equal(3, queue.LastIndexOf(34));
+
+            Assert.ThrowsAny<Exception>(() =>
+            {
+                foreach (var item in queue)
+                {
+                    queue.Enqueue(3);
+                }
+            });
+
+            queue.EraseExcess();
+
+            queue.Capacity = 100;
+
+            Assert.Equal(100, queue.Capacity);
+
+            queue.TrimExcess();
+
+            Assert.Equal(queue.Length, queue.Capacity);
         }
 #else
         [Fact]
@@ -331,6 +367,24 @@ namespace ZDevTools.Test.Collections
             Assert.Equal(0, queue.IndexOf(343));
 
             Assert.Equal(3, queue.LastIndexOf(34));
+                        
+            Assert.ThrowsAny<Exception>(() =>
+            {
+                foreach (var item in queue)
+                {
+                    queue.Enqueue(3);
+                }
+            });
+
+            queue.EraseExcess();
+
+            queue.Capacity = 100;
+
+            Assert.Equal(100, queue.Capacity);
+
+            queue.TrimExcess();
+
+            Assert.Equal(queue.Length, queue.Capacity);
         }
 
         [Fact]
@@ -437,6 +491,24 @@ namespace ZDevTools.Test.Collections
             Assert.Equal(0, queue.IndexOf(343));
 
             Assert.Equal(3, queue.LastIndexOf(34));
+            
+            Assert.ThrowsAny<Exception>(() =>
+            {
+                foreach (var item in queue)
+                {
+                    queue.Enqueue(3);
+                }
+            });
+
+            queue.EraseExcess();
+
+            queue.Capacity = 100;
+
+            Assert.Equal(100, queue.Capacity);
+
+            queue.TrimExcess();
+
+            Assert.Equal(queue.Length, queue.Capacity);
         }
 #endif
     }

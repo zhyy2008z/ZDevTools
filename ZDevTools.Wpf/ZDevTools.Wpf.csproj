@@ -13,16 +13,17 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
     <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
-    <PackageReleaseNotes>添加文档</PackageReleaseNotes>
-    <Version>1.0.1</Version>
+    <PackageReleaseNotes>增加ReactiveUI.Fody相关扩展函数。</PackageReleaseNotes>
+    <PackageTags>ReactiveUI Autofac Wpf</PackageTags>
+    <Version>1.1.0</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.4" />
-    <PackageReference Include="ReactiveUI" Version="11.4.1" />
-    <PackageReference Include="Splat.Microsoft.Extensions.DependencyInjection" Version="9.4.5" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.7" />
+    <PackageReference Include="ReactiveUI" Version="11.5.17" />
+    <PackageReference Include="Splat.Microsoft.Extensions.DependencyInjection" Version="9.5.20" />
   </ItemGroup>
 
   <ItemGroup>

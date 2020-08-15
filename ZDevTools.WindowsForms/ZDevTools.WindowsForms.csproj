@@ -9,15 +9,15 @@
     <Copyright>Copyright © 穿越中的逍遥 2020</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
-    <PackageReleaseNotes>引入ReactiveUI与Autofac，成为类似ZDevTools.Wpf那样的项目</PackageReleaseNotes>
+    <PackageReleaseNotes>增加ReactiveUI.Fody相关扩展函数。</PackageReleaseNotes>
     <usewindowsforms>true</usewindowsforms>
-    <PackageTags>AutoComplete ReactiveUI Autofac</PackageTags>
+    <PackageTags>AutoComplete ReactiveUI Autofac WindowsForms</PackageTags>
     <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
-    <Version>2.0.1</Version>
+    <Version>2.1.0</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
-  
+
 
   <ItemGroup>
     <EmbeddedResource Include="Controls\CustomCompleteTextBox.bmp" />
@@ -32,21 +32,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Controls\CustomCompleteTextBox.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="Controls\ImageButton.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Update="Controls\ImageButtonBase.cs">
-      <SubType>Component</SubType>
-    </Compile>
+    <Compile Update="Controls\CustomCompleteTextBox.cs" />
+    <Compile Update="Controls\ImageButton.cs" />
+    <Compile Update="Controls\ImageButtonBase.cs" />
     <Compile Update="Controls\ImageButtonBase.Designer.cs">
       <DependentUpon>ImageButtonBase.cs</DependentUpon>
     </Compile>
-    <Compile Update="Controls\ToolStripDropDownExt.cs">
-      <SubType>Component</SubType>
-    </Compile>
+    <Compile Update="Controls\ToolStripDropDownExt.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -57,7 +49,7 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac" Version="5.2.0" />
-    <PackageReference Include="ReactiveUI" Version="11.4.1" />
+    <PackageReference Include="ReactiveUI" Version="11.5.17" />
   </ItemGroup>
 
 </Project>
