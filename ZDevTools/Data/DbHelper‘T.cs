@@ -98,14 +98,16 @@ namespace ZDevTools.Data
     /// 1.增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
     /// 
     /// 2019年12月29日 v4.3
-    /// 1.修正<see cref="ConvertParameter(TParameter[], out string[])"/>函数行为不正确问题
-    /// 2.修正<see cref="ConvertParameter(TParameter[], DbHelper{TConnection, TTransaction, TCommand, TDataReader, TParameter, TDataAdapter, TCommandBuilder}.InParameters, out string[])"/>函数行为不正确问题
+    /// 1.修正<see cref="convertParameter(TParameter[], out string[])"/>函数行为不正确问题
+    /// 2.修正<see cref="convertParameter(TParameter[], DbHelper{TConnection, TTransaction, TCommand, TDataReader, TParameter, TDataAdapter, TCommandBuilder}.InParameters, out string[])"/>函数行为不正确问题
     /// </para>
     /// 
     /// 2020年4月29日 v5.0
     /// 1.全面支持Async Api
     /// </summary>
+#pragma warning disable CA1063 // Implement IDisposable Correctly
     public class DbHelper<TConnection, TTransaction, TCommand, TDataReader, TParameter, TDataAdapter, TCommandBuilder> : IDisposable
+#pragma warning restore CA1063 // Implement IDisposable Correctly
 #if NETCOREAPP
         , IAsyncDisposable
 #endif
@@ -155,7 +157,7 @@ namespace ZDevTools.Data
         /// <param name="parameters">参数列表</param>
         /// <param name="paramNames">输出的参数名数组</param>
         /// <returns></returns>
-        static TParameter[] ConvertParameter(TParameter[] parameters, out string[] paramNames)
+        static TParameter[] convertParameter(TParameter[] parameters, out string[] paramNames)
         //v2.0 添加paramNames支持输出参数名称数组，以供进行其他处理
         {
             paramNames = parameters.Select(parameter => parameter.ParameterName).ToArray();
@@ -169,10 +171,10 @@ namespace ZDevTools.Data
         /// <param name="inParameters">In语句参数</param>
         /// <param name="paramNames">输出的参数名数组</param>
         /// <returns></returns>
-        static TParameter[] ConvertParameter(TParameter[] parameters, InParameters inParameters, out string[] paramNames) //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        static TParameter[] convertParameter(TParameter[] parameters, InParameters inParameters, out string[] paramNames) //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
         //v2.0 添加paramNames支持输出参数名称数组，以供进行其他处理
         {
-            ConvertParameter(parameters, out paramNames);
+            convertParameter(parameters, out paramNames);
 
             var inPLength = inParameters.Parameters.Sum(p => p.Length);
             TParameter[] retParameters = new TParameter[parameters.Length + inPLength];
@@ -186,7 +188,7 @@ namespace ZDevTools.Data
             return retParameters;
         }
 
-        static TParameter[] ConvertParameter(object[] parameters, out string[] paramNames, out InParameters inParameters) //改成按序数字占位符样式
+        static TParameter[] convertParameter(object[] parameters, out string[] paramNames, out InParameters inParameters) //改成按序数字占位符样式
         //v2.0 添加paramNames支持输出参数名称数组，以供进行其他处理
         //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
         {
@@ -599,7 +601,9 @@ namespace ZDevTools.Data
         /// <summary>
         /// 本方法的內部直接调用Close方法。
         /// </summary>
+#pragma warning disable CA1063 // Implement IDisposable Correctly
         public void Dispose()
+#pragma warning restore CA1063 // Implement IDisposable Correctly
         {
             Close();
         }
@@ -613,6 +617,8 @@ namespace ZDevTools.Data
         #endregion
 
         #region 查询与执行
+
+#pragma warning disable CA2100 // Review SQL queries for security vulnerabilities
 
         #region Scalar
         /// <summary>
@@ -629,7 +635,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, inParameters);
@@ -658,7 +664,7 @@ namespace ZDevTools.Data
             await ExecuteAsync(async (TCommand cmd) =>
              {
                  string[] paramNames;
-                 cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                 cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
                  try
                  {
                      cmd.CommandText = buildSql(sql, paramNames, inParameters);
@@ -686,7 +692,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, null);
@@ -714,7 +720,7 @@ namespace ZDevTools.Data
             await ExecuteAsync(async (TCommand cmd) =>
            {
                string[] paramNames;
-               cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+               cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
                try
                {
                    cmd.CommandText = buildSql(sql, paramNames, null);
@@ -741,7 +747,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, null);
@@ -767,7 +773,7 @@ namespace ZDevTools.Data
             await ExecuteAsync(async (TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, null);
@@ -796,7 +802,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, inParameters);
@@ -825,7 +831,7 @@ namespace ZDevTools.Data
             await ExecuteAsync(async (TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, inParameters);
@@ -853,7 +859,7 @@ namespace ZDevTools.Data
             {
                 string[] paramNames;
                 InParameters inParameters;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames, out inParameters));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames, out inParameters));
                 cmd.CommandText = buildSql(sql, paramNames, inParameters);
                 r = (T)cmd.ExecuteScalar();
             });
@@ -874,7 +880,7 @@ namespace ZDevTools.Data
             {
                 string[] paramNames;
                 InParameters inParameters;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames, out inParameters));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames, out inParameters));
                 cmd.CommandText = buildSql(sql, paramNames, inParameters);
                 r = (T)await cmd.ExecuteScalarAsync();
             });
@@ -931,7 +937,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, null);
@@ -959,7 +965,7 @@ namespace ZDevTools.Data
             await ExecuteAsync(async (TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, null);
@@ -988,7 +994,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, inParameters);
@@ -1017,7 +1023,7 @@ namespace ZDevTools.Data
             await ExecuteAsync(async (TCommand cmd) =>
            {
                string[] paramNames;
-               cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+               cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
                try
                {
                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
@@ -1044,7 +1050,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, null);
@@ -1071,7 +1077,7 @@ namespace ZDevTools.Data
             await ExecuteAsync(async (TCommand cmd) =>
            {
                string[] paramNames;
-               cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+               cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
                try
                {
                    cmd.CommandText = buildSql(sql, paramNames, null);
@@ -1100,7 +1106,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, inParameters);
@@ -1129,7 +1135,7 @@ namespace ZDevTools.Data
             await ExecuteAsync(async (TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, inParameters);
@@ -1157,7 +1163,7 @@ namespace ZDevTools.Data
             {
                 string[] paramNames;
                 InParameters inParameters;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames, out inParameters));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames, out inParameters));
                 cmd.CommandText = buildSql(sql, paramNames, inParameters);
                 affectedRowCount = cmd.ExecuteNonQuery();
             });
@@ -1178,7 +1184,7 @@ namespace ZDevTools.Data
             {
                 string[] paramNames;
                 InParameters inParameters;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames, out inParameters));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames, out inParameters));
                 cmd.CommandText = buildSql(sql, paramNames, inParameters);
                 affectedRowCount = await cmd.ExecuteNonQueryAsync();
             });
@@ -1229,7 +1235,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, null);
@@ -1256,7 +1262,7 @@ namespace ZDevTools.Data
             await ExecuteAsync(async (TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, null);
@@ -1285,7 +1291,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, inParameters);
@@ -1314,7 +1320,7 @@ namespace ZDevTools.Data
             await ExecuteAsync(async (TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, inParameters);
@@ -1343,7 +1349,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, null);
@@ -1368,7 +1374,7 @@ namespace ZDevTools.Data
             await ExecuteAsync(async (TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, null);
@@ -1399,7 +1405,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, inParameters);
@@ -1427,7 +1433,7 @@ namespace ZDevTools.Data
             await ExecuteAsync(async (TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, inParameters);
@@ -1457,7 +1463,7 @@ namespace ZDevTools.Data
             {
                 string[] paramNames;
                 InParameters inParameters;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames, out inParameters));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames, out inParameters));
                 cmd.CommandText = buildSql(sql, paramNames, inParameters);
                 using (var reader = (TDataReader)cmd.ExecuteReader())
                     job(reader);
@@ -1477,7 +1483,7 @@ namespace ZDevTools.Data
             {
                 string[] paramNames;
                 InParameters inParameters;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames, out inParameters));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames, out inParameters));
                 cmd.CommandText = buildSql(sql, paramNames, inParameters);
 #if NETCOREAPP
                 await
@@ -1645,7 +1651,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, null);
@@ -1679,7 +1685,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, inParameters);
@@ -1710,7 +1716,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, null);
@@ -1743,7 +1749,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, null);
@@ -1775,7 +1781,7 @@ namespace ZDevTools.Data
             {
                 string[] paramNames;
                 InParameters inParameters;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames, out inParameters));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames, out inParameters));
                 cmd.CommandText = buildSql(sql, paramNames, inParameters);
                 using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
                 {
@@ -1838,7 +1844,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, null);
@@ -1872,7 +1878,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, inParameters);
@@ -1903,7 +1909,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, null);
@@ -1936,7 +1942,7 @@ namespace ZDevTools.Data
             Execute((TCommand cmd) =>
             {
                 string[] paramNames;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
                 try
                 {
                     cmd.CommandText = buildSql(sql, paramNames, inParameters);
@@ -1968,7 +1974,7 @@ namespace ZDevTools.Data
             {
                 string[] paramNames;
                 InParameters inParameters;
-                cmd.Parameters.AddRange(ConvertParameter(parameters, out paramNames, out inParameters));
+                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames, out inParameters));
                 cmd.CommandText = buildSql(sql, paramNames, inParameters);
                 using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
                 {
@@ -2015,6 +2021,8 @@ namespace ZDevTools.Data
             });
         }
         #endregion
+
+#pragma warning restore CA2100 // Review SQL queries for security vulnerabilities
 
         #endregion
 
