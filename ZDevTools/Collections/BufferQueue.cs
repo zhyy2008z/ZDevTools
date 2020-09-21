@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -135,10 +136,27 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 指定默认缓存大小初始化一个T队列
         /// </summary>
-        /// <param name="capacity"></param>
         public BufferQueue(int capacity)
         {
             _internalBuffer = new T[capacity];
+        }
+
+        /// <summary>
+        /// 使用已有序列构造一个新实例
+        /// </summary>
+        public BufferQueue(IEnumerable<T> items)
+        {
+            _internalBuffer = items.ToArray();
+            _length = _internalBuffer.Length;
+        }
+
+        /// <summary>
+        /// 使用一个已存在的元素数组作为内部缓存（注意：此数组本身及其所有元素将被本类接管，传入后您不再被允许修改此传入数组）
+        /// </summary>
+        public BufferQueue(T[] buffer)
+        {
+            _internalBuffer = buffer;
+            _length = _internalBuffer.Length;
         }
         #endregion
 

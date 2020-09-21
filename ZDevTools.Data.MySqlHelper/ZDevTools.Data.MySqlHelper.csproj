@@ -2,12 +2,12 @@
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
-    <PackageReleaseNotes>更新引用</PackageReleaseNotes>
+    <PackageReleaseNotes>MySql没有参数值为null的问题，简化构建代码</PackageReleaseNotes>
     <Copyright>Copyright © 穿越中的逍遥 2020</Copyright>
     <PackageTags>MySqlHelper</PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
-    <Version>2.0.2</Version>
+    <Version>2.0.3</Version>
     <Description>针对MySql.Data实现的MySqlHelper</Description>
     <Company>穿越中的逍遥</Company>
     <Authors>穿越中的逍遥</Authors>
@@ -23,7 +23,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MySql.Data" Version="8.0.21" />
+    <PackageReference Include="MySql.Data"
+                      Version="8.0.21" />
   </ItemGroup>
 
   <ItemGroup>

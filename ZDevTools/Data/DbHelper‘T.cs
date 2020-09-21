@@ -2050,7 +2050,7 @@ namespace ZDevTools.Data
         {
             var parameter = new TParameter();
             parameter.ParameterName = name;
-            parameter.Value = value ?? DBNull.Value; //v2.4 当为CreateParameter函数的value参数赋null值时导致提示"未提供该参数"错误
+            parameter.Value = value ?? DBNull.Value; //v2.4 解决某些数据库（如：SqlServer）该值为null时，执行sql语句时会提示"未提供该参数"错误的问题
             return parameter;
         }
 
@@ -2066,7 +2066,7 @@ namespace ZDevTools.Data
             var parameter = new TParameter();
             parameter.ParameterName = name;
             parameter.DbType = dbType;
-            parameter.Value = value ?? DBNull.Value; //v2.4 当为CreateParameter函数的value参数赋null值时导致提示"未提供该参数"错误
+            parameter.Value = value ?? DBNull.Value; //v2.4 解决某些数据库（如：SqlServer）该值为null时，执行sql语句时会提示"未提供该参数"错误的问题
             return parameter;
         }
 
@@ -2084,7 +2084,7 @@ namespace ZDevTools.Data
             parameter.ParameterName = name;
             parameter.DbType = dbType;
             parameter.Size = size;
-            parameter.Value = value ?? DBNull.Value;//v2.4 当为CreateParameter函数的value参数赋null值时导致提示"未提供该参数"错误
+            parameter.Value = value ?? DBNull.Value; //v2.4 解决某些数据库（如：SqlServer）该值为null时，执行sql语句时会提示"未提供该参数"错误的问题
             return parameter;
         }
 

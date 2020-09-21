@@ -34,10 +34,14 @@
                      x:Name="conditionTextBox"></TextBox>
         </Grid>
         <ListBox x:Name="logListBox"
-                 Grid.Row="1"
-                 CommandManager.Executed="logListBox_Executed">
+                 Grid.Row="1">
+            <ListBox.CommandBindings>
+                <CommandBinding Command="ApplicationCommands.Copy"
+                                Executed="logListBox_Executed"></CommandBinding>
+            </ListBox.CommandBindings>
             <ListBox.InputBindings>
                 <KeyBinding x:Name="copyKeyBinding"
+                            Command="ApplicationCommands.Copy"
                             Key="C"
                             Modifiers="Ctrl"></KeyBinding>
             </ListBox.InputBindings>

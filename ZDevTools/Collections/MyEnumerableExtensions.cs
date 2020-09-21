@@ -264,5 +264,17 @@ namespace ZDevTools.Collections
                 lastValue = item;
             }
         }
+
+        /// <summary>
+        /// 序列变为BufferQueue
+        /// </summary>
+        public static BufferQueue<T> ToBufferQueue<T>(this IEnumerable<T> source)
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+            return new BufferQueue<T>(source);
+        }
     }
 }

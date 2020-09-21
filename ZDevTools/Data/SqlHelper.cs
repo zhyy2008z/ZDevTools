@@ -31,7 +31,7 @@ namespace ZDevTools.Data
             var parameter = new SqlParameter();
             parameter.ParameterName = name;
             parameter.SqlDbType = sqlDbType;
-            parameter.Value = value ?? DBNull.Value; //v2.4 当为CreateParameter函数的value参数赋null值时导致提示"未提供该参数"错误
+            parameter.Value = value ?? DBNull.Value; //v2.4 解决SqlServer该值为null时，执行sql语句时会提示"未提供该参数"错误的问题
             return parameter;
         }
 
@@ -49,7 +49,7 @@ namespace ZDevTools.Data
             parameter.ParameterName = name;
             parameter.SqlDbType = sqlDbType;
             parameter.Size = size;
-            parameter.Value = value ?? DBNull.Value;//v2.4 当为CreateParameter函数的value参数赋null值时导致提示"未提供该参数"错误
+            parameter.Value = value ?? DBNull.Value;//v2.4 解决SqlServer该值为null时，执行sql语句时会提示"未提供该参数"错误的问题
             return parameter;
         }
 

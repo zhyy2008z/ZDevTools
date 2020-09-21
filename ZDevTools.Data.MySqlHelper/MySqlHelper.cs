@@ -1,4 +1,5 @@
 ﻿using System;
+
 using MySql.Data.MySqlClient;
 
 namespace ZDevTools.Data
@@ -26,7 +27,7 @@ namespace ZDevTools.Data
             var parameter = new MySqlParameter();
             parameter.ParameterName = name;
             parameter.MySqlDbType = mySqlDbType;
-            parameter.Value = value ?? DBNull.Value; //v2.4 当为CreateParameter函数的value参数赋null值时导致提示"未提供该参数"错误
+            parameter.Value = value; //由于为null时，mysql是接受这个null值的，因此不再需要将该值替换为DBNull。
             return parameter;
         }
 
@@ -44,7 +45,7 @@ namespace ZDevTools.Data
             parameter.ParameterName = name;
             parameter.MySqlDbType = mySqlDbType;
             parameter.Size = size;
-            parameter.Value = value ?? DBNull.Value;//v2.4 当为CreateParameter函数的value参数赋null值时导致提示"未提供该参数"错误
+            parameter.Value = value;
             return parameter;
         }
 
@@ -63,7 +64,7 @@ namespace ZDevTools.Data
                 var parameter = new MySqlParameter();
                 parameter.ParameterName = $"{InStatementAutoVariablePrefix}{name}_{i}";
                 parameter.MySqlDbType = mySqlDbType;
-                parameter.Value = values[i] ?? DBNull.Value;
+                parameter.Value = values[i];
                 parameters[i] = parameter;
             }
             return new InParameter(name, parameters);
@@ -86,7 +87,7 @@ namespace ZDevTools.Data
                 parameter.ParameterName = $"{InStatementAutoVariablePrefix}{name}_{i}";
                 parameter.MySqlDbType = mySqlDbType;
                 parameter.Size = size;
-                parameter.Value = values[i] ?? DBNull.Value;
+                parameter.Value = values[i];
                 parameters[i] = parameter;
             }
             return new InParameter(name, parameters);
