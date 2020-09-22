@@ -260,6 +260,51 @@ namespace ZDevTools.Test.Collections
 
             Assert.Equal(queue.Length, queue.Capacity);
         }
+
+        [Fact]
+        public void TestPart3()
+        {
+            var list = new int[] { 1, 2, 3, 4, 5, 6, 7 };
+
+            var queue = list.ToBufferQueue();
+
+            Assert.Equal(7, queue.Count);
+
+
+            queue.Push(9);
+            Assert.Equal(8, queue.Count);
+            Assert.Equal(7, list.Length);
+
+            queue[1] = 3;
+
+            Assert.Equal(2, list[1]);
+
+            Assert.Equal(3, queue[1]);
+
+
+
+            var buffer = new int[] { 2, 3, 4, 5, 6, 7, 8 };
+
+            var queue2 = new BufferQueue<int>(buffer);
+
+            Assert.Equal(7, queue2.Count);
+
+            queue2[1] = 6;
+
+            Assert.Equal(6, buffer[1]);
+
+            Assert.Equal(6, queue2[1]);
+
+            queue2.Push(9);
+            Assert.Equal(8, queue2.Count);
+            Assert.Equal(7, buffer.Length);
+
+            queue2[1] = 4;
+
+            Assert.Equal(6, buffer[1]);
+
+            Assert.Equal(4, queue2[1]);
+        }
 #else
         [Fact]
         public void TestPart1()
@@ -367,7 +412,7 @@ namespace ZDevTools.Test.Collections
             Assert.Equal(0, queue.IndexOf(343));
 
             Assert.Equal(3, queue.LastIndexOf(34));
-                        
+
             Assert.ThrowsAny<Exception>(() =>
             {
                 foreach (var item in queue)
@@ -491,7 +536,7 @@ namespace ZDevTools.Test.Collections
             Assert.Equal(0, queue.IndexOf(343));
 
             Assert.Equal(3, queue.LastIndexOf(34));
-            
+
             Assert.ThrowsAny<Exception>(() =>
             {
                 foreach (var item in queue)
@@ -509,6 +554,51 @@ namespace ZDevTools.Test.Collections
             queue.TrimExcess();
 
             Assert.Equal(queue.Length, queue.Capacity);
+        }
+
+        [Fact]
+        public void TestPart3()
+        {
+            var list = new int[] { 1, 2, 3, 4, 5, 6, 7 };
+
+            var queue = list.ToBufferQueue();
+
+            Assert.Equal(7, queue.Count);
+
+
+            queue.Push(9);
+            Assert.Equal(8, queue.Count);
+            Assert.Equal(7, list.Length);
+
+            queue[1] = 3;
+
+            Assert.Equal(2, list[1]);
+
+            Assert.Equal(3, queue[1]);
+
+
+
+            var buffer = new int[] { 2, 3, 4, 5, 6, 7, 8 };
+
+            var queue2 = new BufferQueue<int>(buffer);
+
+            Assert.Equal(7, queue2.Count);
+
+            queue2[1] = 6;
+
+            Assert.Equal(6, buffer[1]);
+
+            Assert.Equal(6, queue2[1]);
+
+            queue2.Push(9);
+            Assert.Equal(8, queue2.Count);
+            Assert.Equal(7, buffer.Length);
+
+            queue2[1] = 4;
+
+            Assert.Equal(6, buffer[1]);
+
+            Assert.Equal(4, queue2[1]);
         }
 #endif
     }
