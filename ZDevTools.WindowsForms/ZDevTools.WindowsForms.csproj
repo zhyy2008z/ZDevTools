@@ -48,8 +48,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="5.2.0" />
-    <PackageReference Include="ReactiveUI" Version="11.5.17" />
+    <PackageReference Include="Autofac" Version="6.0.0" />
+    <PackageReference Include="ReactiveUI" Version="12.1.5" />
   </ItemGroup>
 
 </Project>
