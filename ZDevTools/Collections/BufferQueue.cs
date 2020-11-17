@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace ZDevTools.Collections
 {
@@ -18,7 +19,7 @@ namespace ZDevTools.Collections
     /// <para>本类型杂糅了Queue、List、Stack等类型的功能，一个类型可做多种用途。</para>
     /// <para>本类型为了更高的性能不会自动断开对已经被移除的元素的引用。也就是说，您如果向本队列存放引用类型的对象，他们可能有长期无法被释放的风险，您可以考虑在必要时手动调用<see cref="BufferQueue{T}.EraseExcess()"/>方法来释放这些引用。</para>
     /// </remarks>
-    public class BufferQueue<T> : IList<T>, IReadOnlyList<T>
+    public class BufferQueue<T> : IList<T>, IReadOnlyList<T>, IList
     {
         #region Constructor & Fields & Properties
         /// <summary>
@@ -95,10 +96,22 @@ namespace ZDevTools.Collections
             }
         }
 
-        /// <summary>
-        /// 是否只读
-        /// </summary>
+        /// <inheritdoc/>
         bool ICollection<T>.IsReadOnly => false;
+
+        object _syncRoot;
+        /// <inheritdoc/>
+        public object SyncRoot
+        {
+            get
+            {
+                if (_syncRoot == null)
+                {
+                    Interlocked.CompareExchange<object>(ref _syncRoot, new object(), null);
+                }
+                return _syncRoot;
+            }
+        }
 
         /// <summary>
         /// 获取索引所在位置元素
@@ -1488,31 +1501,7 @@ namespace ZDevTools.Collections
 
         #region CopyTo
         /// <inheritdoc/>
-        public void CopyTo(T[] array, int arrayIndex)
-        {
-            if (array == null)
-                throw new ArgumentNullException(nameof(array));
-
-            if (arrayIndex < 0 || arrayIndex > array.Length)
-                throw new ArgumentOutOfRangeException(nameof(arrayIndex));
-
-            if (array.Length - arrayIndex < _length)
-                throw new ArgumentException("目标数组长度不足以储存本队列所有元素。");
-
-            if (_length > 0)
-            {
-                int rightLength = getRightFilledLength();
-                if (rightLength >= _length)
-                {
-                    Array.Copy(_internalBuffer, _head, array, arrayIndex, _length);
-                }
-                else
-                {
-                    Array.Copy(_internalBuffer, _head, array, arrayIndex, rightLength);
-                    Array.Copy(_internalBuffer, 0, array, arrayIndex + rightLength, _length - rightLength);
-                }
-            }
-        }
+        public void CopyTo(T[] array, int arrayIndex) => copyTo(array, arrayIndex);
 
 #if NETCOREAPP
         /// <summary>
@@ -1562,6 +1551,52 @@ namespace ZDevTools.Collections
             }
         }
 #endif
+        #endregion
+
+        #region IList
+        /// <inheritdoc/>
+        bool ICollection.IsSynchronized => false;
+
+        int ICollection.Count => this.Count;
+
+        bool IList.IsFixedSize => false;
+
+        bool IList.IsReadOnly => false;
+
+        object IList.this[int index] { get => this[index]; set => this[index] = (T)value; }
+
+        int IList.Add(object value)
+        {
+            this.Add((T)value);
+            return Count - 1;
+        }
+
+        bool IList.Contains(object value)
+        {
+            if (value is T || (value == null && default(T) == null))
+                return this.Contains((T)value);
+            else
+                return false;
+        }
+
+        int IList.IndexOf(object value)
+        {
+            if (value is T || (value == null && default(T) == null))
+                return this.IndexOf((T)value);
+            else
+                return -1;
+        }
+
+        void IList.Insert(int index, object value) => this.Insert(index, (T)value);
+
+        void IList.Remove(object value)
+        {
+            if (value is T || (value == null && default(T) == null))
+                this.Remove((T)value);
+        }
+
+        void ICollection.CopyTo(Array array, int index) => copyTo(array, index);
+
         #endregion
 
         #endregion
@@ -1682,6 +1717,32 @@ namespace ZDevTools.Collections
         {
             if ((uint)index > (uint)_length)
                 throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        void copyTo(Array array, int arrayIndex)
+        {
+            if (array == null)
+                throw new ArgumentNullException(nameof(array));
+
+            if (arrayIndex < 0 || arrayIndex > array.Length)
+                throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+
+            if (array.Length - arrayIndex < _length)
+                throw new ArgumentException("目标数组长度不足以储存本队列所有元素。");
+
+            if (_length > 0)
+            {
+                int rightLength = getRightFilledLength();
+                if (rightLength >= _length)
+                {
+                    Array.Copy(_internalBuffer, _head, array, arrayIndex, _length);
+                }
+                else
+                {
+                    Array.Copy(_internalBuffer, _head, array, arrayIndex, rightLength);
+                    Array.Copy(_internalBuffer, 0, array, arrayIndex + rightLength, _length - rightLength);
+                }
+            }
         }
         #endregion
     }
