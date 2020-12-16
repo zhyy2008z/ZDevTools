@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 namespace ZDevTools.Utilities
 {
+    //todo:下一步计划：考虑支持Span
+
     /// <summary>
     /// 数学工具
     /// </summary>
@@ -17,8 +19,9 @@ namespace ZDevTools.Utilities
         /// <param name="values">用来寻峰的数据</param>
         /// <param name="valueLimit">峰值限制（大于）</param>
         /// <param name="widthLimit">峰宽限制（大于等于）</param>
+        /// <param name="mergeDistance">合并峰距（小于），当两峰相距较近时，允许相对较小的峰合并到大峰</param>
         /// <returns></returns>
-        public static List<PeakInfo> FindPeaks(double[] values, double valueLimit, int widthLimit)
+        public static List<PeakInfo> FindPeaks(double[] values, double valueLimit, int widthLimit, int mergeDistance)
         {
             List<PeakInfo> result = new List<PeakInfo>();
             int width = 0;
@@ -70,7 +73,7 @@ namespace ZDevTools.Utilities
                 var last = result[i - 1];
                 var current = result[i];
                 var interval = current.Index - last.Index;
-                if (interval < widthLimit)
+                if (interval < mergeDistance)
                 {
                     if (current.Value > last.Value)
                     {
@@ -97,8 +100,9 @@ namespace ZDevTools.Utilities
         /// <param name="values">用来寻峰的数据</param>
         /// <param name="valueLimit">峰值限制（大于）</param>
         /// <param name="widthLimit">峰宽限制（大于等于）</param>
+        /// <param name="mergeDistance">合并峰距（小于），当两峰相距较近时，允许相对较小的峰合并到大峰</param>
         /// <returns></returns>
-        public static List<PeakInfo<T>> FindPeaks<T>(T[] values, T valueLimit, int widthLimit) where T : IComparable<T>
+        public static List<PeakInfo<T>> FindPeaks<T>(T[] values, T valueLimit, int widthLimit, int mergeDistance) where T : IComparable<T>
         {
             List<PeakInfo<T>> result = new List<PeakInfo<T>>();
             int width = 0;
@@ -150,7 +154,7 @@ namespace ZDevTools.Utilities
                 var last = result[i - 1];
                 var current = result[i];
                 var interval = current.Index - last.Index;
-                if (interval < widthLimit)
+                if (interval < mergeDistance)
                 {
                     if (current.Value.CompareTo(last.Value) > 0)
                     {

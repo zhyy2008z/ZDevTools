@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <Description>服务核心类库用于创建服务实现时使用</Description>
     <Company>穿越中的逍遥</Company>
     <Authors>穿越中的逍遥</Authors>
@@ -19,15 +19,11 @@
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="10.1.1" />
     <PackageReference Include="Google.Protobuf" Version="3.14.0" />
-    <PackageReference Include="Grpc.Core" Version="2.33.1" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0" />
+    <PackageReference Include="Grpc.Core" Version="2.34.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="ServiceStack.Redis" Version="5.10.2" />
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="5.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\ZDevTools.Wpf\ZDevTools.Wpf.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,6 +31,10 @@
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZDevTools.NetCore\ZDevTools.NetCore.csproj" />
   </ItemGroup>
 
 </Project>

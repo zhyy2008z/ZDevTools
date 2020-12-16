@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
-    <Version>4.5</Version>
+    <TargetFrameworks>netcoreapp3.1;net472;net5.0</TargetFrameworks>
+    <Version>4.6</Version>
     <Description>开发工具库，目前包含一个SqlHelper库，TreeNode树结构类型及算法，RSA算法加密解密实用工具类，SymbolicLink与SocketListener</Description>
     <Authors>穿越中的逍遥</Authors>
     <Copyright>Copyright © 穿越中的逍遥 2020</Copyright>
@@ -11,7 +11,8 @@
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReleaseNotes>
-      1、BufferQueue实现 IList 接口
+      1、改进枚举相关辅助类
+      2、一阶微分法寻峰函数开放峰合并参数
     </PackageReleaseNotes>
     <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
     <PackageTags>SqlHelper TreeNode RSAHelper SocketListener SymbolicLink</PackageTags>
@@ -32,9 +33,16 @@
                       Version="4.8.2" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net5.0'">
+    <PackageReference Include="System.Data.SqlClient"
+                      Version="4.8.2" />
+  </ItemGroup>
+
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
     <PackageReference Include="System.Threading.Tasks.Extensions"
                       Version="4.5.4" />
+    <PackageReference Include="System.ComponentModel.Annotations"
+                      Version="5.0.0" />
   </ItemGroup>
 
 </Project>

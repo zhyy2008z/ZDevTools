@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <RootNamespace>ZDevTools.Wpf</RootNamespace>
     <AssemblyName>ZDevTools.Wpf</AssemblyName>
@@ -22,8 +22,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
-    <PackageReference Include="ReactiveUI" Version="12.1.5" />
-    <PackageReference Include="Splat.Microsoft.Extensions.DependencyInjection" Version="9.7.1" />
+    <PackageReference Include="ReactiveUI" Version="13.0.1" />
+    <PackageReference Include="Splat.Microsoft.Extensions.DependencyInjection" Version="9.8.1" />
   </ItemGroup>
 
   <ItemGroup>
