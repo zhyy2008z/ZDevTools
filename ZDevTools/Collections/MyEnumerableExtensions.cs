@@ -163,6 +163,69 @@ namespace ZDevTools.Collections
         }
 
         /// <summary>
+        /// 获取一个序列中最小值的索引及最小值本身
+        /// </summary>
+        public static int MinValueIndex<T>(this IEnumerable<T> items, Comparison<T> comparison, out T minValue)
+        {
+            if (items == null) throw new ArgumentNullException(nameof(items));
+            if (comparison == null) throw new ArgumentNullException(nameof(comparison));
+
+            int result = -1;
+            int i = 0;
+            minValue = default;
+            foreach (var item in items)
+            {
+                if (i == 0)
+                {
+                    minValue = item;
+                    result = 0;
+                }
+                else
+                {
+                    if (comparison(minValue, item) > 0)
+                    {
+                        minValue = item;
+                        result = i;
+                    }
+                }
+                i++;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取一个序列中最大值的索引及最大值本身
+        /// </summary>
+        public static int MaxValueIndex<T>(this IEnumerable<T> items, Comparison<T> comparison, out T maxValue)
+        {
+            if (items == null) throw new ArgumentNullException(nameof(items));
+            if (comparison == null) throw new ArgumentNullException(nameof(comparison));
+
+            int result = -1;
+            int i = 0;
+            maxValue = default;
+            foreach (var item in items)
+            {
+                if (i == 0)
+                {
+                    maxValue = item;
+                    result = 0;
+                }
+                else
+                {
+                    if (comparison(maxValue, item) < 0)
+                    {
+                        maxValue = item;
+                        result = i;
+                    }
+                }
+                i++;
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 获取由区间 [<paramref name="startIndex"/>, <paramref name="endIndex"/>] 代表的一组序列
         /// </summary>
         /// <typeparam name="T"></typeparam>

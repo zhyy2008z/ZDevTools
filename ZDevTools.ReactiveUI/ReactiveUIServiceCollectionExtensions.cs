@@ -1,16 +1,13 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Linq;
+using System.Reflection;
 
 using ReactiveUI;
 
-using System.Linq;
-using System.Reflection;
 
-
-namespace ZDevTools.Wpf
+namespace Microsoft.Extensions.DependencyInjection
 {
-    public static class ServiceCollectionExtensions
+    public static class ReactiveUIServiceCollectionExtensions
     {
-
         public static IServiceCollection AddReactiveUIComponents(this IServiceCollection serviceCollection, Assembly assembly)
         {
             //注册所有的View和ViewModel

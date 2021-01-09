@@ -1,8 +1,6 @@
-﻿using ReactiveUI;
+﻿using System;
 
-using System;
-
-namespace ZDevTools.Wpf.ReactiveUI
+namespace ReactiveUI.Converters
 {
     public class EnumBindingTypeConverter : IBindingTypeConverter
     {

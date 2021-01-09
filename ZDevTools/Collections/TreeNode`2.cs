@@ -11,7 +11,6 @@ namespace ZDevTools.Collections
     /// <typeparam name="TKey">节点Id泛型参数</typeparam>
     public class TreeNode<TTreeNode, TKey> : TreeNode<TTreeNode>
         where TTreeNode : TreeNode<TTreeNode, TKey>
-        where TKey : IEquatable<TKey>
     {
         #region 属性
         TKey _id;

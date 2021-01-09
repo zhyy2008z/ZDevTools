@@ -35,7 +35,9 @@
                                     DisplayMemberBinding="{Binding Message,Mode=OneWay}">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Message,Mode=OneWay}" Cursor="Hand" MouseDown="textBlock_MouseDown"></TextBlock>
+                                <TextBlock Text="{Binding Message,Mode=OneWay}"
+                                           Cursor="Hand"
+                                           MouseDown="textBlock_MouseDown"></TextBlock>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

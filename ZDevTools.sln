@@ -25,6 +25,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZDevTools.Data.MySqlHelper"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZDevTools.Test", "ZDevTools.Test\ZDevTools.Test.csproj", "{A3ADC69B-72E1-4CF5-B9DF-0667B4054538}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZDevTools.XamarinForms", "ZDevTools.XamarinForms\ZDevTools.XamarinForms.csproj", "{0FEEA7FF-58CE-4B62-8454-FEE3093F91C6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZDevTools.ReactiveUI", "ZDevTools.ReactiveUI\ZDevTools.ReactiveUI.csproj", "{F96C16C0-8890-4454-9512-08F0FD7E25A5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -75,6 +79,14 @@ Global
 		{A3ADC69B-72E1-4CF5-B9DF-0667B4054538}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A3ADC69B-72E1-4CF5-B9DF-0667B4054538}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A3ADC69B-72E1-4CF5-B9DF-0667B4054538}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FEEA7FF-58CE-4B62-8454-FEE3093F91C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FEEA7FF-58CE-4B62-8454-FEE3093F91C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FEEA7FF-58CE-4B62-8454-FEE3093F91C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FEEA7FF-58CE-4B62-8454-FEE3093F91C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F96C16C0-8890-4454-9512-08F0FD7E25A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F96C16C0-8890-4454-9512-08F0FD7E25A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F96C16C0-8890-4454-9512-08F0FD7E25A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F96C16C0-8890-4454-9512-08F0FD7E25A5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

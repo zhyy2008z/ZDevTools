@@ -37,16 +37,16 @@
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.0" />
     <PackageReference Include="Extended.Wpf.Toolkit" Version="4.0.1" />
     <PackageReference Include="fishlee.net.simpleupdater" Version="4.3.0" />
-    <PackageReference Include="ReactiveUI.Events.WPF" Version="13.0.1" />
-    <PackageReference Include="ReactiveUI.Fody" Version="13.0.1" />
-    <PackageReference Include="ReactiveUI.WPF" Version="13.0.1" />
+    <PackageReference Include="ReactiveUI.Events.WPF" Version="13.0.27" />
+    <PackageReference Include="ReactiveUI.Fody" Version="13.0.27" />
+    <PackageReference Include="ReactiveUI.WPF" Version="13.0.27" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="3.1.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\..\Public\Documents\Work Projects\BasicUserRolePrivilege\BasicUserRolePrivilege.InterrogationServiceModule\BasicUserRolePrivilege.InterrogationServiceModule.csproj" />
+    <ProjectReference Include="..\ZDevTools.ReactiveUI\ZDevTools.ReactiveUI.csproj" />
     <ProjectReference Include="..\ZDevTools.ServiceCore\ZDevTools.ServiceCore.csproj" />
     <ProjectReference Include="..\ZDevTools.Wpf\ZDevTools.Wpf.csproj" />
   </ItemGroup>

@@ -121,5 +121,22 @@ namespace ZDevTools.Enums
 
             return arrDesc.Length > 0 ? arrDesc[0] : null;
         }
+
+        /// <summary>
+        /// 获取所有特性
+        /// </summary>
+        public static object[] GetAttributes(this Enum enumValue)
+        {
+            string objName = enumValue.ToString();
+
+            Type t = enumValue.GetType();
+
+            FieldInfo fi = t.GetField(objName);
+
+            if (fi == null)
+                return null;
+
+            return fi.GetCustomAttributes(false);
+        }
     }
 }

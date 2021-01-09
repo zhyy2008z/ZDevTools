@@ -3,14 +3,12 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
-using ReactiveUI;
-using Splat;
-using System.Reactive.Concurrency;
 
 namespace ZDevTools.Wpf
 {

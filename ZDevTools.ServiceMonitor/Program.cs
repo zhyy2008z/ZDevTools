@@ -1,9 +1,6 @@
 ﻿using Microsoft.Extensions.Hosting;
-using ReactiveUI;
 using System;
-using System.IO;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using System.Globalization;
 using Serilog;
@@ -11,10 +8,7 @@ using Serilog.Events;
 using Splat.Microsoft.Extensions.DependencyInjection;
 using AutoMapper;
 using AutoMapper.EquivalencyExpression;
-using System.Linq;
-using System.Runtime.Loader;
 using Microsoft.Extensions.Options;
-using ZDevTools.Wpf;
 
 namespace ZDevTools.ServiceMonitor
 {

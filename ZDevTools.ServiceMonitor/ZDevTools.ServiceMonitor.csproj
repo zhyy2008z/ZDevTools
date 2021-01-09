@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <Description>服务监视器</Description>
     <Authors>穿越中的逍遥</Authors>
@@ -12,17 +12,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoMapper.Collection" Version="7.0.0" />
+    <PackageReference Include="AutoMapper.Collection" Version="7.0.1" />
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.0" />
-    <PackageReference Include="ReactiveUI.Events.WPF" Version="12.1.5" />
-    <PackageReference Include="ReactiveUI.Fody" Version="12.1.5" />
-    <PackageReference Include="ReactiveUI.WPF" Version="12.1.5" />
+    <PackageReference Include="ReactiveUI.Events.WPF" Version="13.0.27" />
+    <PackageReference Include="ReactiveUI.Fody" Version="13.0.27" />
+    <PackageReference Include="ReactiveUI.WPF" Version="13.0.27" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="3.1.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="ServiceStack.Redis" Version="5.10.2" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ZDevTools.ReactiveUI\ZDevTools.ReactiveUI.csproj" />
     <ProjectReference Include="..\ZDevTools.Wpf\ZDevTools.Wpf.csproj" />
   </ItemGroup>
 

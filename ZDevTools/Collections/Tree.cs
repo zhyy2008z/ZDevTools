@@ -6,6 +6,8 @@ using System.Reflection;
 
 namespace ZDevTools.Collections
 {
+    //todo: 移除 IEquatable，节点支持自行判断判断相等性的方法，支持非唯一根节点的树
+
     /// <summary>
     /// 树类型（相当于节点树管理器）
     /// </summary>
@@ -14,7 +16,6 @@ namespace ZDevTools.Collections
     /// <remarks>非线程安全，请自行做好线程同步操作</remarks>
     public class Tree<TTreeNode, TKey>
         where TTreeNode : TreeNode<TTreeNode, TKey>
-        where TKey : IEquatable<TKey>
     {
         readonly Dictionary<TKey, TTreeNode> FlattenNodes;
 

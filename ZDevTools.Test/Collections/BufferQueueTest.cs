@@ -305,6 +305,25 @@ namespace ZDevTools.Test.Collections
 
             Assert.Equal(4, queue2[1]);
         }
+
+
+        [Fact]
+        public void TestPart4()
+        {
+            BufferQueue<int> queue = new BufferQueue<int>() { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+            queue.RemoveAll(n => n > 2 && n < 7);
+            Assert.Equal(new List<int>() { 0, 1, 2, 7, 8, 9 }, queue);
+
+            queue.Insert(4, new[] { 3, 3, 3, 5 });
+            Assert.Equal(new List<int>() { 0, 1, 2, 7, 3, 3, 3, 5, 8, 9 }, queue);
+
+            queue.RemoveRange(4, 4);
+
+            Assert.Equal(new List<int>() { 0, 1, 2, 7, 8, 9 }, queue);
+        }
+
+
 #else
         [Fact]
         public void TestPart1()

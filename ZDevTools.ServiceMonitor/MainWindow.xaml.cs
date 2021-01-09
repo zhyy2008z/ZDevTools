@@ -31,8 +31,7 @@ namespace ZDevTools.ServiceMonitor
             this.ViewModel = viewModel;
 
             InitializeComponent();
-
-
+        
             this.WhenActivated(disposables =>
             {
                 this.OneWayBind(ViewModel, vm => vm.Reports, v => v.reportsListView.ItemsSource).DisposeWith(disposables);

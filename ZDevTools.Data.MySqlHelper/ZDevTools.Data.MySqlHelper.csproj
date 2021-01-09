@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;net472;net5.0</TargetFrameworks>
     <PackageReleaseNotes>更新包引用</PackageReleaseNotes>
     <Copyright>Copyright © 穿越中的逍遥 2020</Copyright>
     <PackageTags>MySqlHelper</PackageTags>
@@ -23,7 +23,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MySql.Data" Version="8.0.22" />
+    <PackageReference Include="MySql.Data"
+                      Version="8.0.22" />
   </ItemGroup>
 
   <ItemGroup>

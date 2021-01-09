@@ -15,7 +15,7 @@ namespace ReactiveUI.Fody.Helpers
     public static class ObservableAsPropertyEx
     {
         /// <summary>
-        /// 为可观察属性设置默认值
+        /// Constructs a "default" ObservableAsPropertyHelper object. This is useful for when you will initialize the OAPH later, but don't want bindings to access a null OAPH at startup.
         /// </summary>
         public static ObservableAsPropertyHelper<TRet> ToPropertyDefaultEx<TObj, TRet>(this TObj source, Expression<Func<TObj, TRet>> property, TRet initialValue = default, IScheduler scheduler = null) where TObj : ReactiveObject
         {
