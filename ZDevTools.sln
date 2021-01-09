@@ -29,6 +29,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZDevTools.XamarinForms", "Z
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZDevTools.ReactiveUI", "ZDevTools.ReactiveUI\ZDevTools.ReactiveUI.csproj", "{F96C16C0-8890-4454-9512-08F0FD7E25A5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZDevTools.DevExpress", "..\..\..\..\..\Documents\My Software\Open Source\ZDevTools\ZDevTools.DevExpress\ZDevTools.DevExpress.csproj", "{795F4549-1617-4EC4-B341-DD29C831E154}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +89,10 @@ Global
 		{F96C16C0-8890-4454-9512-08F0FD7E25A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F96C16C0-8890-4454-9512-08F0FD7E25A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F96C16C0-8890-4454-9512-08F0FD7E25A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{795F4549-1617-4EC4-B341-DD29C831E154}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{795F4549-1617-4EC4-B341-DD29C831E154}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{795F4549-1617-4EC4-B341-DD29C831E154}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{795F4549-1617-4EC4-B341-DD29C831E154}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
