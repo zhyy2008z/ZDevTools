@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace ZDevTools.Collections
@@ -12,24 +13,11 @@ namespace ZDevTools.Collections
     /// <typeparam name="TKey"></typeparam>
     public class TreeNodeWrapper<TTreeNode, TKey>
         where TTreeNode : TreeNode<TTreeNode, TKey>
-        where TKey : IEquatable<TKey>
     {
         readonly bool Longterm;
         readonly List<TTreeNode> InnerNodes;
         readonly Dictionary<TKey, TTreeNode> FlattenNodes;
-
-        /// <summary>
-        /// 根据提供的节点创建节点临时包装(要求所有节点必须来自同一颗树)
-        /// </summary>
-        /// <param name="nodes">来自同一颗树的节点</param>
-        public TreeNodeWrapper(IEnumerable<TTreeNode> nodes) : this(nodes, false, false) { }
-
-        /// <summary>
-        /// 根据提供的节点创建节点临时包装(要求所有节点必须来自同一颗树)
-        /// </summary>
-        /// <param name="nodes">来自同一颗树的节点</param>
-        /// <param name="distinct">是否需要去重</param>
-        public TreeNodeWrapper(IEnumerable<TTreeNode> nodes, bool distinct) : this(nodes, distinct, false) { }
+        readonly IEqualityComparer<TKey> Comparer;
 
         /// <summary>
         /// 根据提供的节点创建节点包装(要求所有节点必须来自同一颗树)
@@ -37,10 +25,13 @@ namespace ZDevTools.Collections
         /// <param name="nodes">来自同一颗树的节点</param>
         /// <param name="distinct">是否需要去重</param>
         /// <param name="longterm">是否长期包装，如果是长期包装则会采取以空间换时间的算法</param>
-        public TreeNodeWrapper(IEnumerable<TTreeNode> nodes, bool distinct, bool longterm)
+        /// <param name="tree">所在树</param>
+        internal TreeNodeWrapper(Tree<TTreeNode, TKey> tree, IEnumerable<TTreeNode> nodes, bool distinct, bool longterm)
         {
             Longterm = longterm;
             InnerNodes = nodes.ToList();
+            Tree = tree;
+            Comparer = tree.Comparer;
 
             if (distinct)
             {
@@ -67,7 +58,7 @@ namespace ZDevTools.Collections
 
             if (longterm)
             {
-                FlattenNodes = new Dictionary<TKey, TTreeNode>();
+                FlattenNodes = new Dictionary<TKey, TTreeNode>(Comparer);
                 foreach (var node in InnerNodes)
                 {
                     foreach (var n in node.AllToList())
@@ -76,10 +67,17 @@ namespace ZDevTools.Collections
             }
         }
 
+        #region 属性
         /// <summary>
         /// 被包装的节点
         /// </summary>
         public IReadOnlyList<TTreeNode> Nodes => InnerNodes;
+
+        /// <summary>
+        /// 包装归属树
+        /// </summary>
+        public Tree<TTreeNode, TKey> Tree { get; }
+        #endregion
 
         #region 线性化
         /// <summary>
@@ -164,7 +162,7 @@ namespace ZDevTools.Collections
         {
             if (Longterm)
             {
-                return !InnerNodes.Any(node => node.Id.Equals(id)) && FlattenNodes.ContainsKey(id);
+                return rootNodesNotContainsById(id) && FlattenNodes.ContainsKey(id);
             }
             else
             {
@@ -192,7 +190,7 @@ namespace ZDevTools.Collections
         {
             if (Longterm)
             {
-                return FlattenNodes.Values.Any(node => !InnerNodes.Any(n => n.Id.Equals(node.Id)) && predicate(node));
+                return FlattenNodes.Values.Any(node => rootNodesNotContainsById(node.Id) && predicate(node));
             }
             else
             {
@@ -283,7 +281,7 @@ namespace ZDevTools.Collections
         {
             if (this.Longterm)
             {
-                if (!InnerNodes.Any(node => node.Id.Equals(id)) && FlattenNodes.TryGetValue(id, out var result))
+                if (rootNodesNotContainsById(id) && FlattenNodes.TryGetValue(id, out var result))
                     return result;
                 else
                     return null;
@@ -308,7 +306,7 @@ namespace ZDevTools.Collections
         {
             if (Longterm)
             {
-                return FlattenNodes.Values.FirstOrDefault(node => !InnerNodes.Any(n => n.Id.Equals(node.Id)) && predicate(node));
+                return FlattenNodes.Values.FirstOrDefault(node => rootNodesNotContainsById(node.Id) && predicate(node));
             }
             else
             {
@@ -330,7 +328,7 @@ namespace ZDevTools.Collections
         {
             if (this.Longterm)
             {
-                return FlattenNodes.Values.Where(node => !InnerNodes.Any(n => n.Id.Equals(node.Id)) && predicate(node)).ToList();
+                return FlattenNodes.Values.Where(node => rootNodesNotContainsById(node.Id) && predicate(node)).ToList();
             }
             else
             {
@@ -341,6 +339,11 @@ namespace ZDevTools.Collections
                 return result;
             }
         }
+        #endregion
+
+        #region Helpers
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        bool rootNodesNotContainsById(TKey id) => !InnerNodes.Any(node => Comparer.Equals(node.Id, id));
         #endregion
     }
 }

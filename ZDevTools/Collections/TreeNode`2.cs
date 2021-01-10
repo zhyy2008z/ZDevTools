@@ -43,55 +43,21 @@ namespace ZDevTools.Collections
             }
         }
 
+        IEqualityComparer<TKey> _comparer;
+
+        Tree<TTreeNode, TKey> _tree;
         /// <summary>
         /// 该节点所属树引用
         /// </summary>
-        public Tree<TTreeNode, TKey> Tree { get; internal set; }
-        #endregion
-
-        #region 解析
-        /// <summary>
-        /// 该方法用于解析节点列表，解析后组织为节点树结构，并获得唯一根节点（忽略返回的平化节点字典）
-        /// </summary>
-        /// <param name="nodes">treeNode可枚举对象</param>
-        /// <remarks>您必须保证nodes中有且仅有一个根节点，否则会报错。节点排序：后入先出，因此，nodes中排序靠后的节点会最先出现在节点树中</remarks>
-        public static TTreeNode Parse(IEnumerable<TTreeNode> nodes) => Parse(null, nodes, out _);
-
-        /// <summary>
-        /// 该方法用于解析节点列表，解析后组织为节点树结构，并获得唯一根节点
-        /// </summary>
-        /// <param name="nodes">treeNode可枚举对象</param>
-        /// <param name="flattenNodes">平化的节点字典</param>
-        /// <param name="tree">所属Tree</param>
-        /// <remarks>您必须保证nodes中有且仅有一个根节点，否则会报错。
-        /// 如果整理出错，请不要再次使用这些节点，因为节点状态已更改并且无法保证处于未附加状态中。
-        /// </remarks>
-        public static TTreeNode Parse(Tree<TTreeNode, TKey> tree, IEnumerable<TTreeNode> nodes, out Dictionary<TKey, TTreeNode> flattenNodes)
+        public Tree<TTreeNode, TKey> Tree
         {
-            flattenNodes = nodes.ToDictionary(node => node.Id);
-            var treeNodes = nodes.Reverse().ToList(); //逆转顺序后可以让nodes节点的形成层级后，同级节点的相对顺序保持不变
-
-            //整理为树
-            for (int i = treeNodes.Count - 1; i > -1; i--)
+            get => _tree;
+            internal set
             {
-                var current = treeNodes[i];
-                //检查条件，不允许已附加到树的节点参与解析
-                if (current.Tree != null)
-                    throw new TreeNodeException<TTreeNode, TKey>("同一个节点不能同时被多个树引用！", current);
-                current.Tree = tree;
-                flattenNodes.TryGetValue(current.ParentId, out TTreeNode parent);
-                if (parent != null && !current.ParentId.Equals(current.Id)) //有父节点且父节点不是自己，这才能判定为根节点，根节点的Parent属性值是null
-                {
-                    current.Parent = parent;
-                    ((IList<TTreeNode>)parent.Children).Add(current);
-                    treeNodes.Remove(current);
-                }
+                _tree = value;
+                if (_tree != null)
+                    _comparer = _tree.Comparer;
             }
-
-            if (treeNodes.Count > 1)
-                throw new TreeNodeException<TTreeNode, TKey>("整理失败，发现多个节点疑似根节点！");
-
-            return treeNodes.Count == 1 ? treeNodes[0] : null;
         }
         #endregion
 
@@ -103,9 +69,9 @@ namespace ZDevTools.Collections
         {
             return contains((TTreeNode)this, id);
         }
-        static bool contains(TTreeNode node, TKey id)
+        bool contains(TTreeNode node, TKey id)
         {
-            if (node.Id.Equals(id))
+            if (_comparer.Equals(node.Id, id))
                 return true;
             else
                 foreach (var child in node.Children)
@@ -127,11 +93,11 @@ namespace ZDevTools.Collections
         /// </summary>
         public bool ContainsAncestor(TKey ancestorKey, bool includeSelf = false)
         {
-            if (includeSelf && this.Id.Equals(ancestorKey)) return true;
+            if (includeSelf && _comparer.Equals(this.Id, ancestorKey)) return true;
             var parent = this.Parent;
             while (parent != null)
             {
-                if (parent.Id.Equals(ancestorKey)) return true;
+                if (_comparer.Equals(parent.Id, ancestorKey)) return true;
                 parent = parent.Parent;
             }
             return false;
@@ -170,9 +136,9 @@ namespace ZDevTools.Collections
         {
             return find((TTreeNode)this, id);
         }
-        static TTreeNode find(TTreeNode node, TKey id)
+        TTreeNode find(TTreeNode node, TKey id)
         {
-            if (node.Id.Equals(id))
+            if (_comparer.Equals(node.Id, id))
                 return node;
             else
                 foreach (var child in node.Children)
@@ -191,11 +157,11 @@ namespace ZDevTools.Collections
         /// </summary>
         public TTreeNode FindAncestor(TKey ancestorKey, bool includeSelf = false)
         {
-            if (includeSelf && this.Id.Equals(ancestorKey)) return (TTreeNode)this;
+            if (includeSelf && _comparer.Equals(this.Id, ancestorKey)) return (TTreeNode)this;
             var parent = this.Parent;
             while (parent != null)
             {
-                if (parent.Id.Equals(ancestorKey)) return parent;
+                if (_comparer.Equals(parent.Id, ancestorKey)) return parent;
                 parent = parent.Parent;
             }
             return null;
