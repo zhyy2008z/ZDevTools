@@ -15,17 +15,17 @@ namespace ZDevTools.Collections
         /// </summary>
         public static void Add<T>(this BufferQueue<T> queue, T item) => queue.Enqueue(item);
 
-#if NETCOREAPP
+        //#if NETCOREAPP
         /// <summary>
         /// 在队尾添加一批元素
         /// </summary>
         public static void AddRange<T>(this BufferQueue<T> queue, ReadOnlySpan<T> span) => queue.Enqueue(span);
-#else
-        /// <summary>
-        /// 在队尾添加一批元素
-        /// </summary>
-        public static void AddRange<T>(this BufferQueue<T> queue, ArraySegment<T> segment) => queue.Enqueue(segment);
-#endif
+        //#else
+        ///// <summary>
+        ///// 在队尾添加一批元素
+        ///// </summary>
+        //public static void AddRange<T>(this BufferQueue<T> queue, ArraySegment<T> segment) => queue.Enqueue(segment);
+        //#endif
         #endregion
 
     }

@@ -23,17 +23,17 @@ namespace ZDevTools.Utilities
         /// <summary>
         /// 转换Byte数组为十六进制字符串
         /// </summary>
-        public static string HexStringFromBytes(byte[] bytes)
+        public static string ToHexString(byte[] bytes)
         {
             return string.Concat(bytes.Select(byt => byt.ToString("x2")));
             //return string.Concat(Array.ConvertAll(bytes, b => b.ToString("x2")));
         }
 
-#if NETCOREAPP
+        //#if NETCOREAPP
         /// <summary>
         /// 转换Span为十六进制字符串
         /// </summary>
-        public static string HexStringFromSpan(ReadOnlySpan<byte> span)
+        public static string ToHexString(ReadOnlySpan<byte> span)
         {
             StringBuilder sb = new StringBuilder();
             foreach (var byt in span)
@@ -42,7 +42,7 @@ namespace ZDevTools.Utilities
             }
             return sb.ToString();
         }
-#endif
+        //#endif
 
     }
 }

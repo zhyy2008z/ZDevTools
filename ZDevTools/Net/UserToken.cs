@@ -45,29 +45,29 @@ namespace ZDevTools.Net
             get => ByteQueue == null || ByteQueue.Length == 0;
         }
 
-#if NETCOREAPP
+        //#if NETCOREAPP
         /// <summary>
         /// 从网络流获取缓冲队列
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public BufferQueue<byte> GetByteQueue(Memory<byte> data)
+        public BufferQueue<byte> GetByteQueue(ReadOnlySpan<byte> span)
         {
             if (ByteQueue == null) ByteQueue = new BufferQueue<byte>(ReceivingBuffer.Length);
-            ByteQueue.Enqueue(data.Span);
+            ByteQueue.Enqueue(span);
             return ByteQueue;
         }
-#else
-        /// <summary>
-        /// 从网络流获取缓冲队列
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public BufferQueue<byte> GetByteQueue(ArraySegment<byte> data)
-        {
-            if (ByteQueue == null) ByteQueue = new BufferQueue<byte>(ReceivingBuffer.Length);
-            ByteQueue.Enqueue(data);
-            return ByteQueue;
-        }
-#endif
+        //#else
+        //        /// <summary>
+        //        /// 从网络流获取缓冲队列
+        //        /// </summary>
+        //        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //        public BufferQueue<byte> GetByteQueue(ArraySegment<byte> data)
+        //        {
+        //            if (ByteQueue == null) ByteQueue = new BufferQueue<byte>(ReceivingBuffer.Length);
+        //            ByteQueue.Enqueue(data);
+        //            return ByteQueue;
+        //        }
+        //#endif
 
         /// <summary>
         /// 重写该方法以释放你自己的资源

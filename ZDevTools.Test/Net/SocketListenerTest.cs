@@ -30,7 +30,7 @@ namespace ZDevTools.Test.Net
 
             listener.MessageHandlerAsync = async (token, data) =>
             {
-                var queue = token.GetByteQueue(data);
+                var queue = token.GetByteQueue(data.Span);
 
                 while (queue.Dequeue(1000000, out Memory<byte> memory))
                 {
@@ -128,7 +128,7 @@ namespace ZDevTools.Test.Net
 
             listener.MessageHandler = (token, data) =>
             {
-                var queue = token.GetByteQueue(data);
+                var queue = token.GetByteQueue(data.Span);
 
                 while (queue.Dequeue(1000000, out Memory<byte> memory))
                 {

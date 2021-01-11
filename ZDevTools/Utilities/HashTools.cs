@@ -25,7 +25,7 @@ namespace ZDevTools.Utilities
         public static string ComputeSha384(byte[] clearBytes)
         {
             using (var sha384 = SHA384.Create())
-                return StringTools.HexStringFromBytes(sha384.ComputeHash(clearBytes));
+                return StringTools.ToHexString(sha384.ComputeHash(clearBytes));
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace ZDevTools.Utilities
         public static string ComputeMd5(byte[] clearBytes)
         {
             using (var md5 = MD5.Create())
-                return StringTools.HexStringFromBytes(md5.ComputeHash(clearBytes));
+                return StringTools.ToHexString(md5.ComputeHash(clearBytes));
         }
     }
 }

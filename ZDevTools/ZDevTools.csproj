@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.1;net472;net5.0</TargetFrameworks>
-    <Version>4.6</Version>
+    <Version>5.0</Version>
     <Description>开发工具库，目前包含一个SqlHelper库，TreeNode树结构类型及算法，RSA算法加密解密实用工具类，SymbolicLink与SocketListener</Description>
     <Authors>穿越中的逍遥</Authors>
     <Copyright>Copyright © 穿越中的逍遥 2020</Copyright>
@@ -15,6 +15,8 @@
       2、一阶微分法寻峰函数开放峰合并参数
       3、改造Tree，TKey无需实现IEquatable接口
       4、改造Tree，支持非唯一根节点模式
+      5、部分API改造为Span
+      6、包含一些BreakChanges
     </PackageReleaseNotes>
     <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
     <PackageTags>SqlHelper TreeNode RSAHelper SocketListener SymbolicLink</PackageTags>
@@ -45,6 +47,10 @@
                       Version="4.5.4" />
     <PackageReference Include="System.ComponentModel.Annotations"
                       Version="5.0.0" />
+    <PackageReference Include="System.Memory"
+                      Version="4.5.4" />
+    <PackageReference Include="IndexRange"
+                      Version="1.0.0" />
   </ItemGroup>
 
 </Project>
