@@ -2,28 +2,38 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
-    <Description>服务核心类库用于创建服务实现时使用</Description>
-    <Company>穿越中的逍遥</Company>
-    <Authors>穿越中的逍遥</Authors>
+
     <Product>服务核心类库</Product>
-    <Copyright>Copyright © 自由软件 2020</Copyright>
-    <Version>2.1.0</Version>
-    <PackageReleaseNotes>重构底层程序</PackageReleaseNotes>
-    <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
+    <Description>服务核心类库用于创建服务实现时使用</Description>
+    <PackageTags>ZDevTools ServiceCore</PackageTags>
+    <Version>2.2.0</Version>
+    <PackageReleaseNotes>支持net5.0</PackageReleaseNotes>
+
+    <Authors>穿越中的逍遥</Authors>
+    <Company>穿越中的逍遥</Company>
+    <Copyright>Copyright © 穿越中的逍遥 2021</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
     <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoMapper" Version="10.1.1" />
-    <PackageReference Include="Google.Protobuf" Version="3.14.0" />
-    <PackageReference Include="Grpc.Core" Version="2.34.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="ServiceStack.Redis" Version="5.10.2" />
-    <PackageReference Include="System.ServiceProcess.ServiceController" Version="5.0.0" />
+    <PackageReference Include="AutoMapper"
+                      Version="10.1.1" />
+    <PackageReference Include="Google.Protobuf"
+                      Version="3.14.0" />
+    <PackageReference Include="Grpc.Core"
+                      Version="2.34.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting"
+                      Version="5.0.0" />
+    <PackageReference Include="Newtonsoft.Json"
+                      Version="12.0.3" />
+    <PackageReference Include="ServiceStack.Redis"
+                      Version="5.10.4" />
+    <PackageReference Include="System.ServiceProcess.ServiceController"
+                      Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -2,16 +2,31 @@
 
   <PropertyGroup>
     <TargetFrameworks>net5.0;netstandard2.0</TargetFrameworks>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
+    <Product>程序开发工具库</Product>
+    <Description>这是一个为Microsoft.Extensions提供扩展服务的类库</Description>
+    <PackageTags>ZDevTools NetCore</PackageTags>
+    <Version>1.0</Version>
+    <PackageReleaseNotes>初始发布</PackageReleaseNotes>
+
+    <Authors>穿越中的逍遥</Authors>
+    <Company>穿越中的逍遥</Company>
+    <Copyright>Copyright © 穿越中的逍遥 2021</Copyright>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net5.0'">
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="5.0.0" />
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration"
                       Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions"

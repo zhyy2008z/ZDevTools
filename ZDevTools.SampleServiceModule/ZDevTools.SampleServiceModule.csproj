@@ -2,11 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+
     <Description>样例服务</Description>
-    <Company>穿越中的逍遥</Company>
-    <Copyright>Copyright © 自由软件 2020</Copyright>
+
     <Authors>穿越中的逍遥</Authors>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <Company>穿越中的逍遥</Company>
+    <Copyright>Copyright © 穿越中的逍遥 2021</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,9 +15,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.14.0" />
-    <PackageReference Include="Grpc" Version="2.34.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.34.0">
+    <PackageReference Include="Google.Protobuf"
+                      Version="3.14.0" />
+    <PackageReference Include="Grpc"
+                      Version="2.34.0" />
+    <PackageReference Include="Grpc.Tools"
+                      Version="2.34.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

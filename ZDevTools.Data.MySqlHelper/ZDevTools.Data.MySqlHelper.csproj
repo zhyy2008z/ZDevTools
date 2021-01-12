@@ -2,15 +2,19 @@
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.1;net472;net5.0</TargetFrameworks>
-    <PackageReleaseNotes>更新包引用</PackageReleaseNotes>
-    <Copyright>Copyright © 穿越中的逍遥 2020</Copyright>
+
+    <Product>程序开发工具库(MySqlHelper)</Product>
+    <Description>针对MySql.Data实现的MySqlHelper</Description>
     <PackageTags>MySqlHelper</PackageTags>
+    <Version>2.1</Version>
+    <PackageReleaseNotes>支持net5.0</PackageReleaseNotes>
+
+    <Authors>穿越中的逍遥</Authors>
+    <Company>穿越中的逍遥</Company>
+    <Copyright>Copyright © 穿越中的逍遥 2021</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
-    <Version>2.0.4</Version>
-    <Description>针对MySql.Data实现的MySqlHelper</Description>
-    <Company>穿越中的逍遥</Company>
-    <Authors>穿越中的逍遥</Authors>
+    <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>

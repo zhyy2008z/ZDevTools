@@ -1,20 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
     <TargetFrameworks>net5.0;net472</TargetFrameworks>
-    <ApplicationIcon />
-    <StartupObject />
-    <Authors>穿越中的逍遥</Authors>
-    <Company>穿越中的逍遥</Company>
+    <OutputType>WinExe</OutputType>
+
     <Product>软件自动重启器</Product>
     <Description>软件自动重启器</Description>
-    <PackageReleaseNotes>添加文档</PackageReleaseNotes>
-    <Version>1.0.1</Version>
+    <PackageTags>Rebooter</PackageTags>
+    <Version>1.1</Version>
+    <PackageReleaseNotes>支持net5.0</PackageReleaseNotes>
+
+    <Authors>穿越中的逍遥</Authors>
+    <Company>穿越中的逍遥</Company>
+    <Copyright>Copyright © 穿越中的逍遥 2021</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
     <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
-    <PackageTags>Rebooter</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>

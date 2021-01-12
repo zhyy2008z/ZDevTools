@@ -379,7 +379,7 @@ namespace ZDevTools.Utilities
         /// <param name="window">窗口参数</param>
         /// <param name="values">数据</param>
         /// <returns></returns>
-        public static double[] ApplyWindowFilter(double[] window, double[] values)
+        public static double[] ApplyWindowFilter(ReadOnlySpan<double> values, double[] window)
         {
             var r = window.Length / 2;
             if (values.Length - r < 0)
@@ -468,71 +468,6 @@ namespace ZDevTools.Utilities
         //    }
         //    return result;
         //}
-
-        /// <summary>
-        /// 应用移动窗口滤波（对一维数组整体运用窗口滤波算法，效率较高）
-        /// </summary>
-        /// <param name="window">窗口参数</param>
-        /// <param name="values">数据</param>
-        /// <returns></returns>
-        public static double[] ApplyWindowFilter(ReadOnlySpan<double> window, ReadOnlySpan<double> values)
-        {
-            var r = window.Length / 2;
-            if (values.Length - r < 0)
-                throw new ArgumentException("数据点数过少", nameof(values));
-
-            double[] result = new double[values.Length];
-
-            double windowSum = default;
-            foreach (var item in window)
-                windowSum += item;
-
-            //从r位置开始到length-r位置，应用以j为中心的高斯滤波
-            for (int i = r; i < values.Length - r; i++)
-            {
-                double sum = 0;
-                for (int j = 0; j < window.Length; j++)
-                    sum += window[j] * values[i + j - r];
-                result[i] = sum / windowSum;
-            }
-
-            for (int i = 0; i < r; i++)
-            {
-                //每个点都需要计算自己的高斯权值和
-                windowSum = 0;
-                double sum = 0;
-                for (int j = 0; j < window.Length; j++)
-                {
-                    var valueIndex = i - r + j;
-
-                    if (valueIndex > -1 && valueIndex < values.Length)
-                    {
-                        windowSum += window[j];
-                        sum += window[j] * values[valueIndex];
-                    }
-                }
-                result[i] = sum / windowSum;
-            }
-
-            for (int i = values.Length - r; i < values.Length; i++)
-            {
-                //每个点都需要计算自己的高斯权值和
-                windowSum = 0;
-                double sum = 0;
-                for (int j = 0; j < window.Length; j++)
-                {
-                    var valueIndex = i - r + j;
-
-                    if (valueIndex > -1 && valueIndex < values.Length)
-                    {
-                        windowSum += window[j];
-                        sum += window[j] * values[valueIndex];
-                    }
-                }
-                result[i] = sum / windowSum;
-            }
-            return result;
-        }
     }
 
 }

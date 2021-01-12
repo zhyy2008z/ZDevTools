@@ -2,18 +2,20 @@
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
-    <Authors>穿越中的逍遥</Authors>
-    <Company>穿越中的逍遥</Company>
+    <usewindowsforms>true</usewindowsforms>
+
     <Product>程序开发工具库(WindowsForms)</Product>
     <Description>在.Net Framework平台上支持模块化开发WinForms程序，内部使用Autofac作为依赖注入容器并集成ReactiveUI响应式编程框架，并包含一些自定义控件。</Description>
-    <Copyright>Copyright © 穿越中的逍遥 2020</Copyright>
+    <PackageTags>AutoComplete ReactiveUI Autofac WindowsForms</PackageTags>
+    <Version>2.1.2</Version>
+    <PackageReleaseNotes>更新包引用。</PackageReleaseNotes>
+
+    <Authors>穿越中的逍遥</Authors>
+    <Company>穿越中的逍遥</Company>
+    <Copyright>Copyright © 穿越中的逍遥 2021</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
-    <PackageReleaseNotes>更新包引用。</PackageReleaseNotes>
-    <usewindowsforms>true</usewindowsforms>
-    <PackageTags>AutoComplete ReactiveUI Autofac WindowsForms</PackageTags>
     <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
-    <Version>2.1.1</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
@@ -48,8 +50,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="6.1.0" />
-    <PackageReference Include="ReactiveUI" Version="13.0.38" />
+    <PackageReference Include="Autofac"
+                      Version="6.1.0" />
+    <PackageReference Include="ReactiveUI"
+                      Version="13.0.38" />
   </ItemGroup>
 
 </Project>

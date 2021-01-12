@@ -2,14 +2,12 @@
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.1;net472;net5.0</TargetFrameworks>
-    <Version>5.0</Version>
+    <LangVersion>Latest</LangVersion>
+
     <Description>开发工具库，目前包含一个SqlHelper库，TreeNode树结构类型及算法，RSA算法加密解密实用工具类，SymbolicLink与SocketListener</Description>
-    <Authors>穿越中的逍遥</Authors>
-    <Copyright>Copyright © 穿越中的逍遥 2020</Copyright>
     <Product>程序开发工具库</Product>
-    <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
-    <PackageLicenseExpression></PackageLicenseExpression>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageTags>SqlHelper TreeNode RSAHelper SocketListener SymbolicLink</PackageTags>
+    <Version>5.0</Version>
     <PackageReleaseNotes>
       1、改进枚举相关辅助类
       2、一阶微分法寻峰函数开放峰合并参数
@@ -18,11 +16,15 @@
       5、部分API改造为Span
       6、包含一些BreakChanges
     </PackageReleaseNotes>
+
+    <Authors>穿越中的逍遥</Authors>
+    <Company>穿越中的逍遥</Company>
+    <Copyright>Copyright © 穿越中的逍遥 2021</Copyright>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
     <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
-    <PackageTags>SqlHelper TreeNode RSAHelper SocketListener SymbolicLink</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-    <LangVersion>Latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,9 +34,16 @@
     </None>
   </ItemGroup>
 
+  <!-- 虽然 IsExternalInit 在net5.0上不会起作用，但是我们仍然采用条件包引用，是为了让net5.0连引用都不引用。-->
+
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
     <PackageReference Include="System.Data.SqlClient"
                       Version="4.8.2" />
+    <PackageReference Include="IsExternalInit"
+                      Version="1.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net5.0'">
@@ -51,6 +60,11 @@
                       Version="4.5.4" />
     <PackageReference Include="IndexRange"
                       Version="1.0.0" />
+    <PackageReference Include="IsExternalInit"
+                      Version="1.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

@@ -1,25 +1,35 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
     <TargetFramework>net5.0-windows</TargetFramework>
+    <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>server.ico</ApplicationIcon>
+
     <Description>服务监视器</Description>
+
     <Authors>穿越中的逍遥</Authors>
     <Company>穿越中的逍遥</Company>
-    <Copyright>Copyright © 自由软件 2020</Copyright>
-    <ApplicationIcon>server.ico</ApplicationIcon>
+    <Copyright>Copyright © 穿越中的逍遥 2021</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoMapper.Collection" Version="7.0.1" />
-    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.0" />
-    <PackageReference Include="ReactiveUI.Events.WPF" Version="13.0.38" />
-    <PackageReference Include="ReactiveUI.Fody" Version="13.0.38" />
-    <PackageReference Include="ReactiveUI.WPF" Version="13.0.38" />
-    <PackageReference Include="Serilog.Extensions.Hosting" Version="3.1.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
-    <PackageReference Include="ServiceStack.Redis" Version="5.10.2" />
+    <PackageReference Include="AutoMapper.Collection"
+                      Version="7.0.1" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection"
+                      Version="8.1.0" />
+    <PackageReference Include="ReactiveUI.Events.WPF"
+                      Version="13.0.38" />
+    <PackageReference Include="ReactiveUI.Fody"
+                      Version="13.0.38" />
+    <PackageReference Include="ReactiveUI.WPF"
+                      Version="13.0.38" />
+    <PackageReference Include="Serilog.Extensions.Hosting"
+                      Version="3.1.0" />
+    <PackageReference Include="Serilog.Sinks.Console"
+                      Version="3.1.1" />
+    <PackageReference Include="ServiceStack.Redis"
+                      Version="5.10.4" />
   </ItemGroup>
 
   <ItemGroup>
