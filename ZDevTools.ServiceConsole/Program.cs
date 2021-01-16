@@ -17,6 +17,8 @@ using Microsoft.Extensions.Options;
 using ZDevTools.Wpf;
 using ZDevTools.ServiceCore;
 using System.Diagnostics;
+using System.Reflection;
+using Microsoft.Extensions.Configuration;
 
 namespace ZDevTools.ServiceConsole
 {
@@ -91,6 +93,25 @@ namespace ZDevTools.ServiceConsole
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
+            .ConfigureAppConfiguration((HostBuilderContext hostBuilderContext, IConfigurationBuilder config) =>
+            {
+                IHostEnvironment hostingEnvironment = hostBuilderContext.HostingEnvironment;
+                bool value = hostBuilderContext.Configuration.GetValue("hostBuilder:reloadConfigOnChange", defaultValue: true);
+
+                string modulePath = hostBuilderContext.Configuration["ModulePath"];
+                if (string.IsNullOrEmpty(modulePath))
+                    foreach (var fileInfo in hostBuilderContext.HostingEnvironment.ContentRootFileProvider.GetDirectoryContents("plugins").Where(fi => fi.IsDirectory && fi.Name.EndsWith("ServiceModule", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        config.AddJsonFile(Path.Combine(fileInfo.PhysicalPath, "appsettings.json"), optional: true, value)
+                        .AddJsonFile(Path.Combine(fileInfo.PhysicalPath, "appsettings." + hostingEnvironment.EnvironmentName + ".json"), optional: true, value);
+                    }
+                else
+                {
+                    var moduleFolder = Path.GetDirectoryName(modulePath);
+                    config.AddJsonFile(Path.Combine(moduleFolder, "appsettings.json"), optional: true, value)
+                    .AddJsonFile(Path.Combine(moduleFolder, "appsettings." + hostingEnvironment.EnvironmentName + ".json"), optional: true, value);
+                }
+            })
             .ConfigureReactiveUi()
             .ConfigureApplication<App>()
             .ConfigureShell<MainWindow>()
@@ -155,10 +176,23 @@ namespace ZDevTools.ServiceConsole
 
             //加载模块
             var moduleType = typeof(IServiceModule);
-
-            foreach (var fileInfo in hostBuilderContext.HostingEnvironment.ContentRootFileProvider.GetDirectoryContents(string.Empty).Where(fi => fi.Name.EndsWith("ServiceModule.dll", StringComparison.OrdinalIgnoreCase)))
-                foreach (var type in AssemblyLoadContext.Default.LoadFromAssemblyPath(fileInfo.PhysicalPath).GetTypes().Where(type => moduleType.IsAssignableFrom(type) && !type.IsAbstract))
+            string modulePath = hostBuilderContext.Configuration["ModulePath"];
+            if (string.IsNullOrEmpty(modulePath))
+                foreach (var fileInfo in hostBuilderContext.HostingEnvironment.ContentRootFileProvider.GetDirectoryContents("plugins").Where(fi => fi.IsDirectory && fi.Name.EndsWith("ServiceModule", StringComparison.OrdinalIgnoreCase)))
+                {
+                    var mp = Path.Combine(fileInfo.PhysicalPath, fileInfo.Name + ".dll");
+                    var context = new MyPluginLoadContext(mp);
+                    var assembly = context.LoadFromAssemblyName(new AssemblyName(fileInfo.Name));
+                    foreach (var type in assembly.GetTypes().Where(type => moduleType.IsAssignableFrom(type) && !type.IsAbstract))
+                        ((IServiceModule)Activator.CreateInstance(type)).ConfigureServices(hostBuilderContext, serviceCollection);
+                }
+            else
+            {
+                var context = new MyPluginLoadContext(modulePath);
+                var assembly = context.LoadFromAssemblyName(new AssemblyName(Path.GetFileNameWithoutExtension(modulePath)));
+                foreach (var type in assembly.GetTypes().Where(type => moduleType.IsAssignableFrom(type) && !type.IsAbstract))
                     ((IServiceModule)Activator.CreateInstance(type)).ConfigureServices(hostBuilderContext, serviceCollection);
+            }
         }
 
         private static void currentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
