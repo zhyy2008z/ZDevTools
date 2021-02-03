@@ -100,7 +100,7 @@ namespace ZDevTools.ServiceConsole
 
                 string modulePath = hostBuilderContext.Configuration["ModulePath"];
                 if (string.IsNullOrEmpty(modulePath))
-                    foreach (var fileInfo in hostBuilderContext.HostingEnvironment.ContentRootFileProvider.GetDirectoryContents("plugins").Where(fi => fi.IsDirectory && fi.Name.EndsWith("ServiceModule", StringComparison.OrdinalIgnoreCase)))
+                    foreach (var fileInfo in hostBuilderContext.HostingEnvironment.ContentRootFileProvider.GetDirectoryContents("plugins").Where(fi => fi.IsDirectory))
                     {
                         config.AddJsonFile(Path.Combine(fileInfo.PhysicalPath, "appsettings.json"), optional: true, value)
                         .AddJsonFile(Path.Combine(fileInfo.PhysicalPath, "appsettings." + hostingEnvironment.EnvironmentName + ".json"), optional: true, value);
@@ -178,7 +178,7 @@ namespace ZDevTools.ServiceConsole
             var moduleType = typeof(IServiceModule);
             string modulePath = hostBuilderContext.Configuration["ModulePath"];
             if (string.IsNullOrEmpty(modulePath))
-                foreach (var fileInfo in hostBuilderContext.HostingEnvironment.ContentRootFileProvider.GetDirectoryContents("plugins").Where(fi => fi.IsDirectory && fi.Name.EndsWith("ServiceModule", StringComparison.OrdinalIgnoreCase)))
+                foreach (var fileInfo in hostBuilderContext.HostingEnvironment.ContentRootFileProvider.GetDirectoryContents("plugins").Where(fi => fi.IsDirectory))
                 {
                     var mp = Path.Combine(fileInfo.PhysicalPath, fileInfo.Name + ".dll");
                     var context = new MyPluginLoadContext(mp);
