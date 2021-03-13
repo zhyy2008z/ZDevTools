@@ -36,9 +36,9 @@ namespace ZDevTools.WindowsForms
 
                 if (type.IsAssignableTo<ReactiveObject>())//ViewModel
                     containerBuilder.RegisterType(type);
-                else if (type.IsAssignableTo<IScreen>())  //Screen(Singleton)
-                    containerBuilder.RegisterType(type).AsSelf().As<IScreen>().SingleInstance();
-                else //View
+                //else if (type.IsAssignableTo<IScreen>())  //Screen(Singleton)
+                //    containerBuilder.RegisterType(type).AsSelf().As<IScreen>().SingleInstance();
+                else //Maybe View
                 {
                     var type2 = type.ImplementedInterfaces.FirstOrDefault(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IViewFor<>));
                     if (type2 != null)
