@@ -10,6 +10,7 @@
     <Version>5.1</Version>
     <PackageReleaseNotes>
       1、新增MovingCache帮助解决固定大小移动缓存问题
+      2、SocketListener不再强制要求设置消息处理函数
     </PackageReleaseNotes>
 
     <Authors>穿越中的逍遥</Authors>

@@ -240,8 +240,9 @@ namespace ZDevTools.Net
             catch (Exception ex)
             {
                 var message = $"未能继续处理 {e.LastOperation} 操作，{nameof(SocketListener<TUserToken>)} 内部错误";
-                if (CriticalErrorHandler != null)
-                    CriticalErrorHandler(message, ex);
+                var criticalErrorHandler = CriticalErrorHandler;
+                if (criticalErrorHandler != null)
+                    criticalErrorHandler(message, ex);
                 else
                 {
                     reportGeneralError(message, ex);
@@ -336,17 +337,18 @@ namespace ZDevTools.Net
                     var token = (TUserToken)e.UserToken;
                     Socket socket = token.Socket;
 
+                    var messageHandler = MessageHandler;
 #if NETCOREAPP
                     Memory<byte> memory;
                     try
                     {
-                        memory = MessageHandler(token, e.MemoryBuffer.Slice(e.Offset, e.BytesTransferred));
+                        memory = messageHandler == null ? default : messageHandler(token, e.MemoryBuffer.Slice(e.Offset, e.BytesTransferred));
                     }
 #else
                     ArraySegment<byte> segment;
                     try
                     {
-                        segment = MessageHandler(token, new ArraySegment<byte>(e.Buffer, e.Offset, e.BytesTransferred));
+                        segment = messageHandler == null ? default : messageHandler(token, new ArraySegment<byte>(e.Buffer, e.Offset, e.BytesTransferred));
                     }
 
 #endif
@@ -497,17 +499,18 @@ namespace ZDevTools.Net
                     var token = (TUserToken)e.UserToken;
                     Socket socket = token.Socket;
 
+                    var messageHandlerAsync = MessageHandlerAsync;
 #if NETCOREAPP
                     Memory<byte> memory;
                     try
                     {
-                        memory = await MessageHandlerAsync(token, e.MemoryBuffer.Slice(e.Offset, e.BytesTransferred));
+                        memory = messageHandlerAsync == null ? default : await messageHandlerAsync(token, e.MemoryBuffer.Slice(e.Offset, e.BytesTransferred));
                     }
 #else
                     ArraySegment<byte> segment;
                     try
                     {
-                        segment = await MessageHandlerAsync(token, new ArraySegment<byte>(e.Buffer, e.Offset, e.BytesTransferred));
+                        segment = messageHandlerAsync == null ? default : await messageHandlerAsync(token, new ArraySegment<byte>(e.Buffer, e.Offset, e.BytesTransferred));
                     }
 #endif
                     catch (Exception ex)
