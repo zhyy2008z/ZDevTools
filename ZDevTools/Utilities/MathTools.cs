@@ -378,7 +378,7 @@ namespace ZDevTools.Utilities
         /// </summary>
         /// <param name="window">窗口参数</param>
         /// <param name="values">数据</param>
-        /// <returns></returns>
+        /// <returns>返回已应用滤波的数组（新实例）</returns>
         public static double[] ApplyWindowFilter(ReadOnlySpan<double> values, double[] window)
         {
             var r = window.Length / 2;
@@ -432,6 +432,19 @@ namespace ZDevTools.Utilities
                 result[i] = sum / windowSum;
             }
             return result;
+        }
+
+        /// <summary>
+        /// 对一维数组的部分数据直接进行窗口滤波算法（直接应用到传入的数组上）
+        /// </summary>
+        /// <param name="values">数据</param>
+        /// <param name="start">开始应用窗口滤波的起点坐标（包含）</param>
+        /// <param name="end">停止应用窗口滤波的终点坐标（不包含）</param>
+        /// <param name="window">窗口滤波参数</param>
+        public static void ApplyWindowFilter(double[] values, int start, int end, double[] window)
+        {
+            var arr = ApplyWindowFilter(values.AsSpan()[start..end], window);
+            Array.Copy(arr, 0, values, start, arr.Length);
         }
 
         ///// <summary>
