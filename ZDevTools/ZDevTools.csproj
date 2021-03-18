@@ -7,10 +7,9 @@
     <Description>开发工具库，目前包含一个SqlHelper库，TreeNode树结构类型及算法，RSA算法加密解密实用工具类，SymbolicLink与SocketListener</Description>
     <Product>程序开发工具库</Product>
     <PackageTags>SqlHelper TreeNode RSAHelper SocketListener SymbolicLink</PackageTags>
-    <Version>5.1</Version>
+    <Version>5.1.1</Version>
     <PackageReleaseNotes>
-      1、新增MovingCache帮助解决固定大小移动缓存问题
-      2、SocketListener不再强制要求设置消息处理函数
+      MathTools新增一个API
     </PackageReleaseNotes>
 
     <Authors>穿越中的逍遥</Authors>
