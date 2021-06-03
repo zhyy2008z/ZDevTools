@@ -23,7 +23,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
                 if (typeof(ReactiveObject).IsAssignableFrom(type))//ViewModel
                     serviceCollection.AddTransient(type);
-                else if (typeof(IScreen).IsAssignableFrom(type))  //Screen(As Scope)
+                else if (typeof(IScreen).IsAssignableFrom(type))  //Screen(As Scope)，允许一个应用中IScreen出现多次（各Scope内仅实例化一次）
                 {
                     var realType = type.AsType();
                     serviceCollection.AddScoped(realType);

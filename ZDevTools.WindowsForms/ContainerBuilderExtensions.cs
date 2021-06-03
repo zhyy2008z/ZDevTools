@@ -36,7 +36,7 @@ namespace ZDevTools.WindowsForms
 
                 if (type.IsAssignableTo<ReactiveObject>())//ViewModel
                     containerBuilder.RegisterType(type);
-                else if (type.IsAssignableTo<IScreen>())  //Screen(Per Scope)
+                else if (type.IsAssignableTo<IScreen>())  //Screen(Per Scope)，允许一个应用中IScreen出现多次（各Scope内仅实例化一次）
                     containerBuilder.RegisterType(type).AsSelf().As<IScreen>().InstancePerLifetimeScope();
                 else //Maybe View
                 {
