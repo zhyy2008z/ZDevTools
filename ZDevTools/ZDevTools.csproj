@@ -7,9 +7,11 @@
     <Description>开发工具库，目前包含一个SqlHelper库，TreeNode树结构类型及算法，RSA算法加密解密实用工具类，SymbolicLink与SocketListener</Description>
     <Product>程序开发工具库</Product>
     <PackageTags>SqlHelper TreeNode RSAHelper SocketListener SymbolicLink</PackageTags>
-    <Version>5.1.1</Version>
+    <Version>5.2</Version>
     <PackageReleaseNotes>
-      MathTools新增一个API
+      1、修正DBHelper的{where}参数为null时，搜索无结果的问题
+      2、GetScalar区分泛型与非泛型版本，泛型版本不会返回DBNull.Value，而非泛型版本会返回
+      3、in自动变量改为以p开头，例如：p0、p1、p2等等
     </PackageReleaseNotes>
 
     <Authors>穿越中的逍遥</Authors>

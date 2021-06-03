@@ -7,8 +7,8 @@
     <Product>程序开发工具库(WindowsForms)</Product>
     <Description>在.Net Framework平台上支持模块化开发WinForms程序，内部使用Autofac作为依赖注入容器并集成ReactiveUI响应式编程框架，并包含一些自定义控件。</Description>
     <PackageTags>AutoComplete ReactiveUI Autofac WindowsForms</PackageTags>
-    <Version>2.2</Version>
-    <PackageReleaseNotes>IScreen不再为单例</PackageReleaseNotes>
+    <Version>2.3</Version>
+    <PackageReleaseNotes>IScreen变为Scoped</PackageReleaseNotes>
 
     <Authors>穿越中的逍遥</Authors>
     <Company>穿越中的逍遥</Company>

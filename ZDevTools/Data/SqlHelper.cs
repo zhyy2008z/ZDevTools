@@ -61,6 +61,11 @@ namespace ZDevTools.Data
         /// <param name="sqlDbType">参数类型</param>
         public InParameter CreateInParameter(string name, SqlDbType sqlDbType, params object[] values)
         {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentException("参数名不能为空");
+
+            name = name.TrimStart('@');
+
             SqlParameter[] parameters = new SqlParameter[values.Length];
             for (int i = 0; i < values.Length; i++)
             {
@@ -82,6 +87,11 @@ namespace ZDevTools.Data
         /// <param name="size">参数大小</param>
         public InParameter CreateInParameter(string name, SqlDbType sqlDbType, int size, params object[] values)
         {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentException("参数名不能为空");
+
+            name = name.TrimStart('@');
+
             SqlParameter[] parameters = new SqlParameter[values.Length];
             for (int i = 0; i < values.Length; i++)
             {

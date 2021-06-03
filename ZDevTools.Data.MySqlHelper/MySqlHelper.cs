@@ -58,6 +58,11 @@ namespace ZDevTools.Data
         /// <returns></returns>
         public InParameter CreateInParameter(string name, MySqlDbType mySqlDbType, params object[] values)
         {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentException("参数名不能为空");
+
+            name = name.TrimStart('@');
+
             MySqlParameter[] parameters = new MySqlParameter[values.Length];
             for (int i = 0; i < values.Length; i++)
             {
@@ -80,6 +85,11 @@ namespace ZDevTools.Data
         /// <returns></returns>
         public InParameter CreateInParameter(string name, MySqlDbType mySqlDbType, int size, params object[] values)
         {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentException("参数名不能为空");
+
+            name = name.TrimStart('@');
+
             MySqlParameter[] parameters = new MySqlParameter[values.Length];
             for (int i = 0; i < values.Length; i++)
             {

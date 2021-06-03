@@ -6,8 +6,8 @@
     <Product>程序开发工具库(MySqlHelper)</Product>
     <Description>针对MySql.Data实现的MySqlHelper</Description>
     <PackageTags>MySqlHelper</PackageTags>
-    <Version>2.1</Version>
-    <PackageReleaseNotes>支持net5.0</PackageReleaseNotes>
+    <Version>2.1.1</Version>
+    <PackageReleaseNotes>小改进</PackageReleaseNotes>
 
     <Authors>穿越中的逍遥</Authors>
     <Company>穿越中的逍遥</Company>

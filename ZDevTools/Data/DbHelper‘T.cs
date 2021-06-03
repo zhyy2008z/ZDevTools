@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Globalization;
 
 namespace ZDevTools.Data
 {
@@ -22,7 +23,7 @@ namespace ZDevTools.Data
     /// <para>{where}占位符，替换该占位符为 参数名1=@参数名1[...[ and 参数名n=@参数名n]] 形式</para>
     /// <para>{insf}占位符，替换该占位符为 参数名1[...[,参数名n]] 形式</para>        
     /// <para>{insv}占位符，替换该占位符为 @参数名1[...[,@参数名n]] 形式</para>
-    /// <para> {q\d+}占位符，当\d+代表的数字(num)大于0时用于开启查询(query)模式。在query模式下，{where}将仅使用前num个参数替换{where}占位符，用除前num个参数外的参数来替换剩余其他占位符。{q\d+}占位符可以放置于Sql语句的任何位置，该占位符最终被删除。</para>        
+    /// <para>{q\d+}占位符，当\d+代表的数字(num)大于0时用于开启查询(query)模式。在query模式下，{where}将仅使用前num个参数替换{where}占位符，用除前num个参数外的参数来替换剩余其他占位符。{q\d+}占位符可以放置于Sql语句的任何位置，该占位符最终被删除。</para>        
     /// <para>{in:变量名}占位符，替换该占位符为 @变量名_0,@变量名_1,... </para>
     /// <para>使用提醒：本辅助类本身没有多线程同步机制，不保证线程安全！如若在多线程环境下使用，请君自己做好线程同步维护工作！</para>
     /// <para>历史记录</para>
@@ -38,7 +39,7 @@ namespace ZDevTools.Data
     /// 2.修改ConfigAndOpen方法以使sqlhelper总是使用同一连接对象，减少资源消耗
     /// 
     /// 2014年8月28日 v2.0
-    /// 1.添加paramNames支持输出参数名称数组，以供进行其他处理
+    /// 1.添加nameValues支持输出参数名称数组，以供进行其他处理
     /// 2.重大升级，支持sql语句中包含{update}、{where}等类似的占位符，自动填充参数
     /// 
     /// 2014年10月23日 v2.1
@@ -98,12 +99,17 @@ namespace ZDevTools.Data
     /// 1.增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
     /// 
     /// 2019年12月29日 v4.3
-    /// 1.修正<see cref="convertParameter(TParameter[], out string[])"/>函数行为不正确问题
-    /// 2.修正<see cref="convertParameter(TParameter[], DbHelper{TConnection, TTransaction, TCommand, TDataReader, TParameter, TDataAdapter, TCommandBuilder}.InParameters, out string[])"/>函数行为不正确问题
+    /// 1.修正convertParameter函数行为不正确问题
     /// </para>
     /// 
     /// 2020年4月29日 v5.0
     /// 1.全面支持Async Api
+    /// 
+    /// 2021年6月2日 v5.1
+    /// 1.in自动变量改为以p开头，例如：p0、p1、p2等等
+    /// 2.GetScalar非泛型方法支持返回DBNull.Value
+    /// 3.GetScalar泛型版本返回DBNull.Value时自动替换为null
+    /// 4.修正{where}参数为null时，搜索无结果的问题
     /// </summary>
 #pragma warning disable CA1063 // Implement IDisposable Correctly
     public class DbHelper<TConnection, TTransaction, TCommand, TDataReader, TParameter, TDataAdapter, TCommandBuilder> : IDisposable
@@ -155,12 +161,12 @@ namespace ZDevTools.Data
         /// 转换公共参数为sqlserver支持的参数类型
         /// </summary>
         /// <param name="parameters">参数列表</param>
-        /// <param name="paramNames">输出的参数名数组</param>
+        /// <param name="nameValues">输出的参数名，参数值数组</param>
         /// <returns></returns>
-        static TParameter[] convertParameter(TParameter[] parameters, out string[] paramNames)
-        //v2.0 添加paramNames支持输出参数名称数组，以供进行其他处理
+        static TParameter[] convertParameter(TParameter[] parameters, out (string Name, object Value)[] nameValues)
+        //v2.0 添加nameValues支持输出参数名称数组，以供进行其他处理
         {
-            paramNames = parameters.Select(parameter => parameter.ParameterName).ToArray();
+            nameValues = parameters.Select(parameter => (parameter.ParameterName, parameter.Value)).ToArray();
             return parameters;
         }
 
@@ -169,12 +175,12 @@ namespace ZDevTools.Data
         /// </summary>
         /// <param name="parameters">参数列表</param>
         /// <param name="inParameters">In语句参数</param>
-        /// <param name="paramNames">输出的参数名数组</param>
+        /// <param name="nameValues">输出的参数名数组</param>
         /// <returns></returns>
-        static TParameter[] convertParameter(TParameter[] parameters, InParameters inParameters, out string[] paramNames) //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
-        //v2.0 添加paramNames支持输出参数名称数组，以供进行其他处理
+        static TParameter[] convertParameter(TParameter[] parameters, InParameters inParameters, out (string Name, object Value)[] nameValues) //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        //v2.0 添加nameValues支持输出参数名称数组，以供进行其他处理
         {
-            convertParameter(parameters, out paramNames);
+            convertParameter(parameters, out nameValues);
 
             var inPLength = inParameters.Parameters.Sum(p => p.Length);
             TParameter[] retParameters = new TParameter[parameters.Length + inPLength];
@@ -188,41 +194,41 @@ namespace ZDevTools.Data
             return retParameters;
         }
 
-        static TParameter[] convertParameter(object[] parameters, out string[] paramNames, out InParameters inParameters) //改成按序数字占位符样式
-        //v2.0 添加paramNames支持输出参数名称数组，以供进行其他处理
+        static TParameter[] convertParameter(object[] parameters, out (string Name, object Value)[] nameValues, out InParameters inParameters) //改成按序数字占位符样式
+        //v2.0 添加nameValues支持输出参数名称数组，以供进行其他处理
         //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
         {
             //v4.1 修改object[] parameters参数的处理方式为自动命名参数名称方式，参数自动名称示例：@p0,@p1,@p2,@p3...
             var length = parameters.Length;
 
             List<TParameter> parama = new List<TParameter>();
-            paramNames = new string[length];
+            nameValues = new (string, object)[length];
 
             List<InParameter> inParams = new List<InParameter>();
 
             for (int i = 0; i < length; i++)
             {
                 var parameter = parameters[i];
-                var collection = parameter as ICollection;
-                if (collection != null) //线性化可枚举的参数
+                if (parameter is ICollection collection) //线性化可枚举的参数
                 {
                     int j = 0;
                     TParameter[] paras = new TParameter[collection.Count];
                     foreach (var element in collection)
                     {
-                        var paramName = $"{InStatementAutoVariablePrefix}{i}_{j}";
+                        var paramName = $"{InStatementAutoVariablePrefix}p{i}_{j}"; //v5.1 in变量以p开头，如：p1、p2等等
                         var param = new TParameter() { ParameterName = paramName, Value = element ?? DBNull.Value };
                         paras[j] = param;
                         parama.Add(param);//v3.8 修正一个2.4版本就该解决的问题，value参数赋null值时导致提示"未提供该参数"错误
                         j++;
                     }
-                    inParams.Add(new InParameter(i.ToString(), paras));
+                    inParams.Add(new InParameter("p" + i.ToString(), paras));
                 }
                 else
                 {
                     var paramName = "@p" + i;
-                    parama.Add(new TParameter() { ParameterName = paramName, Value = parameter ?? DBNull.Value });//v3.8 修正一个2.4版本就该解决的问题，value参数赋null值时导致提示"未提供该参数"错误
-                    paramNames[i] = paramName;
+                    parameter ??= DBNull.Value;
+                    parama.Add(new TParameter() { ParameterName = paramName, Value = parameter });//v3.8 修正一个2.4版本就该解决的问题，value参数赋null值时导致提示"未提供该参数"错误
+                    nameValues[i] = (paramName, parameter);
                 }
             }
 
@@ -234,14 +240,14 @@ namespace ZDevTools.Data
         /// 创建sql代码片段
         /// </summary>
         /// <param name="sql">sql语句，语句中支持{update}|{where}|{insf}|{insv}|{q\d+}这样的占位符</param>
-        /// <param name="paramNames">作为填充为占位符的基础数据</param>
+        /// <param name="nameValues">作为填充为占位符的基础数据</param>
         /// <param name="inParameters">In语句参数，可以为null</param>
         /// <returns></returns>
-        static string buildSql(string sql, string[] paramNames, InParameters inParameters)
+        static string buildSql(string sql, (string Name, object Value)[] nameValues, InParameters inParameters)
         //v2.0 重大升级，支持sql语句中包含{update}、{where}等类似的占位符，自动填充参数
         //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
         {
-            var matches = Regex.Matches(sql, @"\{update\}|\{where\}|\{insf\}|\{insv\}|\{in:\w+\}|\{q\d+\}"); //v3.1 修改正则表达式，使匹配速度更优
+            var matches = Regex.Matches(sql, @"\{update\}|\{where\}|\{insf\}|\{insv\}|\{in:@?\w+\}|\{q\d+\}"); //v3.1 修改正则表达式，使匹配速度更优
             int length = matches.Count;
             int queryCount = 0;
             for (int i = length - 1; i > -1; i--)
@@ -257,7 +263,7 @@ namespace ZDevTools.Data
             for (int i = 0; i < length; i++)
             {
                 var value = matches[i].Value;
-                var count = paramNames.Length;
+                var count = nameValues.Length;
                 switch (value)
                 {
                     case "{update}":
@@ -266,19 +272,18 @@ namespace ZDevTools.Data
                             const string patternBody = ",{0}=@{0}";
                             var from = queryCount;
                             var to = count;
-                            sql = buildFromPattern(sql, paramNames, patternHead, patternBody, value, from, to);
+                            sql = buildFromPattern(sql, nameValues, patternHead, patternBody, value, from, to);
                         }
                         break;
                     case "{where}":
                         {
-                            const string patternHead = "{0}=@{0}";
-                            const string patternBody = " and {0}=@{0}";
+
                             int from = 0, to;
                             if (queryCount > 0) //是q模式，需要为where做特殊处理
                                 to = queryCount > count ? count : queryCount;
                             else
                                 to = count;
-                            sql = buildFromPattern(sql, paramNames, patternHead, patternBody, value, from, to);
+                            sql = buildFromWherePattern(sql, nameValues, value, from, to);
                         }
                         break;
                     case "{insf}":
@@ -287,7 +292,7 @@ namespace ZDevTools.Data
                             const string patternBody = ",{0}";
                             var from = queryCount;
                             var to = count;
-                            sql = buildFromPattern(sql, paramNames, patternHead, patternBody, value, from, to);
+                            sql = buildFromPattern(sql, nameValues, patternHead, patternBody, value, from, to);
                         }
                         break;
                     case "{insv}":
@@ -296,13 +301,13 @@ namespace ZDevTools.Data
                             const string patternBody = ",@{0}";
                             var from = queryCount;
                             var to = count;
-                            sql = buildFromPattern(sql, paramNames, patternHead, patternBody, value, from, to);
+                            sql = buildFromPattern(sql, nameValues, patternHead, patternBody, value, from, to);
                         }
                         break;
                     default:
-                        if (value.StartsWith("{in:"))
+                        if (value.StartsWith("{in:")) //{in:@p1}
                         {
-                            var name = value.Substring(4, value.Length - 5);
+                            var name = value.Substring(4, value.Length - 5).TrimStart('@'); //p1
                             var num = inParameters.InParameterDictionary[name];
                             if (num > 0)
                             {
@@ -327,17 +332,53 @@ namespace ZDevTools.Data
         /// 通过指定的模式生成sql片段来替还sql语句中的占位符，这些片段是由一个patternHead与多个patternBody组成的
         /// </summary>
         /// <returns></returns>
-        static string buildFromPattern(string sql, string[] paramNames, string patternHead, string patternBody, string value, int from, int to)
-        //v2.0 重大升级，支持sql语句中包含{update}、{where}等类似的占位符，自动填充参数
+        static string buildFromPattern(string sql, (string Name, object Value)[] nameValues, string patternHead, string patternBody, string value, int from, int to)
+        //v2.0 重大升级，支持sql语句中包含{update}等类似的占位符，自动填充参数
         {
             if (to - from > 0)
             {
                 StringBuilder sb = new StringBuilder();
-                if (paramNames[from] != null)
-                    sb.Append(string.Format(patternHead, paramNames[from].TrimStart('@')));//v2.1 添加一个TrimStart处理，以兼容用户输入"@parametername"这样的参数名
+                if (nameValues[from].Name != null)
+                    sb.Append(string.Format(patternHead, nameValues[from].Name.TrimStart('@')));//v2.1 添加一个TrimStart处理，以兼容用户输入"@parametername"这样的参数名
                 for (int i = from + 1; i < to; i++)
-                    if (paramNames[i] != null)
-                        sb.Append(string.Format(patternBody, paramNames[i].TrimStart('@')));//v2.1 添加一个TrimStart处理，以兼容用户输入"@parametername"这样的参数名
+                    if (nameValues[i].Name != null)
+                        sb.Append(string.Format(patternBody, nameValues[i].Name.TrimStart('@')));//v2.1 添加一个TrimStart处理，以兼容用户输入"@parametername"这样的参数名
+                sql = sql.Replace(value, sb.ToString());
+            }
+            else
+                sql = sql.Replace(value, null);//没有可用的参数，直接删除占位符
+            return sql;
+        }
+
+        /// <summary>
+        /// 通过指定的模式生成sql片段来替还sql语句中的占位符，这些片段是由一个patternHead与多个patternBody组成的
+        /// </summary>
+        /// <returns></returns>
+        static string buildFromWherePattern(string sql, (string Name, object Value)[] nameValues, string value, int from, int to)
+        //v5.1 修正sql语句中{where} 支持参数值为null或dbnull时查询失败的问题
+        {
+            const string patternHead = "{0}=@{0}";
+            const string patternBody = " and {0}=@{0}";
+            const string patternHeadIsNull = "{0} is null";
+            const string patternBodyIsNull = " and {0} is null";
+            if (to - from > 0)
+            {
+                StringBuilder sb = new StringBuilder();
+                if (nameValues[from].Name != null)
+                {
+                    if (nameValues[from].Value == null || nameValues[from].Value == DBNull.Value)
+                        sb.Append(string.Format(patternHeadIsNull, nameValues[from].Name.TrimStart('@')));
+                    else
+                        sb.Append(string.Format(patternHead, nameValues[from].Name.TrimStart('@')));
+                }
+                for (int i = from + 1; i < to; i++)
+                    if (nameValues[i].Name != null)
+                    {
+                        if (nameValues[from].Value == null || nameValues[from].Value == DBNull.Value)
+                            sb.Append(string.Format(patternBodyIsNull, nameValues[i].Name.TrimStart('@')));
+                        else
+                            sb.Append(string.Format(patternBody, nameValues[i].Name.TrimStart('@')));
+                    }
                 sql = sql.Replace(value, sb.ToString());
             }
             else
@@ -621,6 +662,8 @@ namespace ZDevTools.Data
 #pragma warning disable CA2100 // Review SQL queries for security vulnerabilities
 
         #region Scalar
+
+        #region No DBNull
         /// <summary>
         /// 获取标量值
         /// </summary>
@@ -631,16 +674,16 @@ namespace ZDevTools.Data
         /// <param name="inParameters">In语句参数</param>
         public T GetScalar<T>(string sql, CommandType commandType, InParameters inParameters, params TParameter[] parameters)//v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
         {
-            T r = default(T);
+            T r = default;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
                     cmd.CommandType = commandType;
-                    r = (T)cmd.ExecuteScalar();
+                    var scalar = cmd.ExecuteScalar();
+                    r = (T)(scalar == DBNull.Value ? null : scalar);
                 }
                 finally
                 {
@@ -660,22 +703,22 @@ namespace ZDevTools.Data
         /// <param name="inParameters">In语句参数</param>
         public async ValueTask<T> GetScalarAsync<T>(string sql, CommandType commandType, InParameters inParameters, params TParameter[] parameters)//v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
         {
-            T r = default(T);
+            T r = default;
             await ExecuteAsync(async (TCommand cmd) =>
-             {
-                 string[] paramNames;
-                 cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
-                 try
-                 {
-                     cmd.CommandText = buildSql(sql, paramNames, inParameters);
-                     cmd.CommandType = commandType;
-                     r = (T)await cmd.ExecuteScalarAsync();
-                 }
-                 finally
-                 {
-                     cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
-                 }
-             });
+            {
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
+                    cmd.CommandType = commandType;
+                    var scalar = await cmd.ExecuteScalarAsync();
+                    r = (T)(scalar == DBNull.Value ? null : scalar);
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
             return r;
         }
 
@@ -688,16 +731,16 @@ namespace ZDevTools.Data
         /// <param name="parameters">参数</param>
         public T GetScalar<T>(string sql, CommandType commandType, params TParameter[] parameters)
         {
-            T r = default(T);
+            T r = default;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandText = buildSql(sql, nameValues, null);
                     cmd.CommandType = commandType;
-                    r = (T)cmd.ExecuteScalar();
+                    var scalar = cmd.ExecuteScalar();
+                    r = (T)(scalar == DBNull.Value ? null : scalar);
                 }
                 finally
                 {
@@ -716,22 +759,22 @@ namespace ZDevTools.Data
         /// <param name="parameters">参数</param>
         public async ValueTask<T> GetScalarAsync<T>(string sql, CommandType commandType, params TParameter[] parameters)
         {
-            T r = default(T);
+            T r = default;
             await ExecuteAsync(async (TCommand cmd) =>
-           {
-               string[] paramNames;
-               cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
-               try
-               {
-                   cmd.CommandText = buildSql(sql, paramNames, null);
-                   cmd.CommandType = commandType;
-                   r = (T)await cmd.ExecuteScalarAsync();
-               }
-               finally
-               {
-                   cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
-               }
-           });
+            {
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, nameValues, null);
+                    cmd.CommandType = commandType;
+                    var scalar = await cmd.ExecuteScalarAsync();
+                    r = (T)(scalar == DBNull.Value ? null : scalar);
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
             return r;
         }
 
@@ -743,15 +786,15 @@ namespace ZDevTools.Data
         /// <param name="parameters">参数</param>
         public T GetScalar<T>(string sql, params TParameter[] parameters) //v2.3 添加一个重载方法
         {
-            T r = default(T);
+            T r = default;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, null);
-                    r = (T)cmd.ExecuteScalar();
+                    cmd.CommandText = buildSql(sql, nameValues, null);
+                    var scalar = cmd.ExecuteScalar();
+                    r = (T)(scalar == DBNull.Value ? null : scalar);
                 }
                 finally
                 {
@@ -769,15 +812,15 @@ namespace ZDevTools.Data
         /// <param name="parameters">参数</param>
         public async ValueTask<T> GetScalarAsync<T>(string sql, params TParameter[] parameters) //v2.3 添加一个重载方法
         {
-            T r = default(T);
+            T r = default;
             await ExecuteAsync(async (TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, null);
-                    r = (T)await cmd.ExecuteScalarAsync();
+                    cmd.CommandText = buildSql(sql, nameValues, null);
+                    var scalar = await cmd.ExecuteScalarAsync();
+                    r = (T)(scalar == DBNull.Value ? null : scalar);
                 }
                 finally
                 {
@@ -798,15 +841,15 @@ namespace ZDevTools.Data
         //v2.3 添加一个重载方法
         //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
         {
-            T r = default(T);
+            T r = default;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
-                    r = (T)cmd.ExecuteScalar();
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
+                    var scalar = cmd.ExecuteScalar();
+                    r = (T)(scalar == DBNull.Value ? null : scalar);
                 }
                 finally
                 {
@@ -827,15 +870,16 @@ namespace ZDevTools.Data
         //v2.3 添加一个重载方法
         //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
         {
-            T r = default(T);
+            T r = default;
             await ExecuteAsync(async (TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
+
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
-                    r = (T)await cmd.ExecuteScalarAsync();
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
+                    var scalar = await cmd.ExecuteScalarAsync();
+                    r = (T)(scalar == DBNull.Value ? null : scalar);
                 }
                 finally
                 {
@@ -857,11 +901,10 @@ namespace ZDevTools.Data
             T r = default;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                InParameters inParameters;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames, out inParameters));
-                cmd.CommandText = buildSql(sql, paramNames, inParameters);
-                r = (T)cmd.ExecuteScalar();
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues, out var inParameters));
+                cmd.CommandText = buildSql(sql, nameValues, inParameters);
+                var scalar = cmd.ExecuteScalar();
+                r = (T)(scalar == DBNull.Value ? null : scalar);
             });
             return r;
         }
@@ -878,11 +921,10 @@ namespace ZDevTools.Data
             T r = default;
             await ExecuteAsync(async (TCommand cmd) =>
             {
-                string[] paramNames;
-                InParameters inParameters;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames, out inParameters));
-                cmd.CommandText = buildSql(sql, paramNames, inParameters);
-                r = (T)await cmd.ExecuteScalarAsync();
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues, out var inParameters));
+                cmd.CommandText = buildSql(sql, nameValues, inParameters);
+                var scalar = await cmd.ExecuteScalarAsync();
+                r = (T)(scalar == DBNull.Value ? null : scalar);
             });
             return r;
         }
@@ -895,11 +937,12 @@ namespace ZDevTools.Data
         /// <returns></returns>
         public T GetScalar<T>(string sql)
         {
-            T r = default(T);
+            T r = default;
             Execute((TCommand cmd) =>
             {
                 cmd.CommandText = sql;
-                r = (T)cmd.ExecuteScalar();
+                var scalar = cmd.ExecuteScalar();
+                r = (T)(scalar == DBNull.Value ? null : scalar);
             });
             return r;
         }
@@ -913,14 +956,297 @@ namespace ZDevTools.Data
         /// <returns></returns>
         public async ValueTask<T> GetScalarAsync<T>(string sql)
         {
-            T r = default(T);
+            T r = default;
             await ExecuteAsync(async (TCommand cmd) =>
             {
                 cmd.CommandText = sql;
-                r = (T)await cmd.ExecuteScalarAsync();
+                var scalar = await cmd.ExecuteScalarAsync();
+                r = (T)(scalar == DBNull.Value ? null : scalar);
             });
             return r;
         }
+        #endregion
+
+        #region Keep DBNull
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="commandType">命令类型</param>
+        /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        public object GetScalar(string sql, CommandType commandType, InParameters inParameters, params TParameter[] parameters)//v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            object r = default;
+            Execute((TCommand cmd) =>
+            {
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
+                    cmd.CommandType = commandType;
+                    r = cmd.ExecuteScalar();
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return r;
+        }
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="commandType">命令类型</param>
+        /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        public async ValueTask<object> GetScalarAsync(string sql, CommandType commandType, InParameters inParameters, params TParameter[] parameters)//v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            object r = default;
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
+                    cmd.CommandType = commandType;
+                    r = await cmd.ExecuteScalarAsync();
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return r;
+        }
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="commandType">命令类型</param>
+        /// <param name="parameters">参数</param>
+        public object GetScalar(string sql, CommandType commandType, params TParameter[] parameters)
+        {
+            object r = default;
+            Execute((TCommand cmd) =>
+            {
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, nameValues, null);
+                    cmd.CommandType = commandType;
+                    r = cmd.ExecuteScalar();
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return r;
+        }
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="commandType">命令类型</param>
+        /// <param name="parameters">参数</param>
+        public async ValueTask<object> GetScalarAsync(string sql, CommandType commandType, params TParameter[] parameters)
+        {
+            object r = default;
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, nameValues, null);
+                    cmd.CommandType = commandType;
+                    r = await cmd.ExecuteScalarAsync();
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return r;
+        }
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="parameters">参数</param>
+        public object GetScalar(string sql, params TParameter[] parameters) //v2.3 添加一个重载方法
+        {
+            object r = default;
+            Execute((TCommand cmd) =>
+            {
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, nameValues, null);
+                    r = cmd.ExecuteScalar();
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return r;
+        }
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="parameters">参数</param>
+        public async ValueTask<object> GetScalarAsync(string sql, params TParameter[] parameters) //v2.3 添加一个重载方法
+        {
+            object r = default;
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, nameValues, null);
+                    r = await cmd.ExecuteScalarAsync();
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return r;
+        }
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        public object GetScalar(string sql, InParameters inParameters, params TParameter[] parameters)
+        //v2.3 添加一个重载方法
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            object r = default;
+            Execute((TCommand cmd) =>
+            {
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
+                    r = cmd.ExecuteScalar();
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return r;
+        }
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="parameters">参数</param>
+        /// <param name="inParameters">In语句参数</param>
+        public async ValueTask<object> GetScalarAsync(string sql, InParameters inParameters, params TParameter[] parameters)
+        //v2.3 添加一个重载方法
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            object r = default;
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
+                    r = await cmd.ExecuteScalarAsync();
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
+            return r;
+        }
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="parameters">参数，sql语句对应索引位置名称为@p0,@p1,@p2...</param>
+        public object GetScalar(string sql, params object[] parameters)
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            object r = default;
+            Execute((TCommand cmd) =>
+            {
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues, out var inParameters));
+                cmd.CommandText = buildSql(sql, nameValues, inParameters);
+                r = cmd.ExecuteScalar();
+            });
+            return r;
+        }
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="parameters">参数，sql语句对应索引位置名称为@p0,@p1,@p2...</param>
+        public async ValueTask<object> GetScalarAsync(string sql, params object[] parameters)
+        //v4.2 增加对Sql语句的In语句的支持，现在新增{in:变量名}这一特殊占位符的支持
+        {
+            object r = default;
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues, out var inParameters));
+                cmd.CommandText = buildSql(sql, nameValues, inParameters);
+                r = await cmd.ExecuteScalarAsync();
+            });
+            return r;
+        }
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
+        /// <returns></returns>
+        public object GetScalar(string sql)
+        {
+            object r = default;
+            Execute((TCommand cmd) =>
+            {
+                cmd.CommandText = sql;
+                r = cmd.ExecuteScalar();
+            });
+            return r;
+        }
+
+
+        /// <summary>
+        /// 获取标量值
+        /// </summary>
+        /// <param name="sql">查询字符串</param>
+        /// <returns></returns>
+        public async ValueTask<object> GetScalarAsync(string sql)
+        {
+            object r = default;
+            await ExecuteAsync(async (TCommand cmd) =>
+            {
+                cmd.CommandText = sql;
+                r = await cmd.ExecuteScalarAsync();
+            });
+            return r;
+        }
+        #endregion
+
         #endregion
 
         #region Execute
@@ -936,11 +1262,10 @@ namespace ZDevTools.Data
             int affectedRowCount = 0;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandText = buildSql(sql, nameValues, null);
                     cmd.CommandType = commandType;
                     affectedRowCount = cmd.ExecuteNonQuery();
                 }
@@ -964,11 +1289,10 @@ namespace ZDevTools.Data
             int affectedRowCount = 0;
             await ExecuteAsync(async (TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandText = buildSql(sql, nameValues, null);
                     cmd.CommandType = commandType;
                     affectedRowCount = await cmd.ExecuteNonQueryAsync();
                 }
@@ -993,11 +1317,10 @@ namespace ZDevTools.Data
             int affectedRowCount = 0;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
                     cmd.CommandType = commandType;
                     affectedRowCount = cmd.ExecuteNonQuery();
                 }
@@ -1022,11 +1345,10 @@ namespace ZDevTools.Data
             int affectedRowCount = 0;
             await ExecuteAsync(async (TCommand cmd) =>
            {
-               string[] paramNames;
-               cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
+               cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
                try
                {
-                   cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                   cmd.CommandText = buildSql(sql, nameValues, inParameters);
                    cmd.CommandType = commandType;
                    affectedRowCount = await cmd.ExecuteNonQueryAsync();
                }
@@ -1049,11 +1371,10 @@ namespace ZDevTools.Data
             int affectedRowCount = 0;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandText = buildSql(sql, nameValues, null);
                     affectedRowCount = cmd.ExecuteNonQuery();
                 }
                 finally
@@ -1076,11 +1397,10 @@ namespace ZDevTools.Data
             int affectedRowCount = 0;
             await ExecuteAsync(async (TCommand cmd) =>
            {
-               string[] paramNames;
-               cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
+               cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
                try
                {
-                   cmd.CommandText = buildSql(sql, paramNames, null);
+                   cmd.CommandText = buildSql(sql, nameValues, null);
                    affectedRowCount = await cmd.ExecuteNonQueryAsync();
                }
                finally
@@ -1105,11 +1425,10 @@ namespace ZDevTools.Data
             int affectedRowCount = 0;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
                     affectedRowCount = cmd.ExecuteNonQuery();
                 }
                 finally
@@ -1134,11 +1453,10 @@ namespace ZDevTools.Data
             int affectedRowCount = 0;
             await ExecuteAsync(async (TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
                     affectedRowCount = await cmd.ExecuteNonQueryAsync();
                 }
                 finally
@@ -1161,10 +1479,8 @@ namespace ZDevTools.Data
             int affectedRowCount = 0;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                InParameters inParameters;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames, out inParameters));
-                cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues, out var inParameters));
+                cmd.CommandText = buildSql(sql, nameValues, inParameters);
                 affectedRowCount = cmd.ExecuteNonQuery();
             });
             return affectedRowCount;
@@ -1182,10 +1498,8 @@ namespace ZDevTools.Data
             int affectedRowCount = 0;
             await ExecuteAsync(async (TCommand cmd) =>
             {
-                string[] paramNames;
-                InParameters inParameters;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames, out inParameters));
-                cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues, out var inParameters));
+                cmd.CommandText = buildSql(sql, nameValues, inParameters);
                 affectedRowCount = await cmd.ExecuteNonQueryAsync();
             });
             return affectedRowCount;
@@ -1234,11 +1548,10 @@ namespace ZDevTools.Data
         {
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandText = buildSql(sql, nameValues, null);
                     cmd.CommandType = commandType;
                     using (var reader = (TDataReader)cmd.ExecuteReader())
                         job(reader);
@@ -1261,11 +1574,10 @@ namespace ZDevTools.Data
         {
             await ExecuteAsync(async (TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandText = buildSql(sql, nameValues, null);
                     cmd.CommandType = commandType;
                     using (var reader = (TDataReader)await cmd.ExecuteReaderAsync())
                         job(reader);
@@ -1290,11 +1602,10 @@ namespace ZDevTools.Data
         {
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
                     cmd.CommandType = commandType;
                     using (var reader = (TDataReader)cmd.ExecuteReader())
                         job(reader);
@@ -1319,11 +1630,10 @@ namespace ZDevTools.Data
         {
             await ExecuteAsync(async (TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
                     cmd.CommandType = commandType;
 #if NETCOREAPP
                     await
@@ -1348,11 +1658,10 @@ namespace ZDevTools.Data
         {
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandText = buildSql(sql, nameValues, null);
                     using (var reader = (TDataReader)cmd.ExecuteReader())
                         job(reader);
                 }
@@ -1373,11 +1682,10 @@ namespace ZDevTools.Data
         {
             await ExecuteAsync(async (TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandText = buildSql(sql, nameValues, null);
 #if NETCOREAPP
                     await
 #endif
@@ -1404,11 +1712,10 @@ namespace ZDevTools.Data
         {
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
                     using (var reader = (TDataReader)cmd.ExecuteReader())
                         job(reader);
                 }
@@ -1432,11 +1739,10 @@ namespace ZDevTools.Data
         {
             await ExecuteAsync(async (TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
 #if NETCOREAPP
                     await
 #endif
@@ -1461,10 +1767,8 @@ namespace ZDevTools.Data
         {
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                InParameters inParameters;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames, out inParameters));
-                cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues, out var inParameters));
+                cmd.CommandText = buildSql(sql, nameValues, inParameters);
                 using (var reader = (TDataReader)cmd.ExecuteReader())
                     job(reader);
             });
@@ -1481,10 +1785,8 @@ namespace ZDevTools.Data
         {
             await ExecuteAsync(async (TCommand cmd) =>
             {
-                string[] paramNames;
-                InParameters inParameters;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames, out inParameters));
-                cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues, out var inParameters));
+                cmd.CommandText = buildSql(sql, nameValues, inParameters);
 #if NETCOREAPP
                 await
 #endif
@@ -1650,11 +1952,10 @@ namespace ZDevTools.Data
             DataSet dataSet = null;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandText = buildSql(sql, nameValues, null);
                     cmd.CommandType = commandType;
                     using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
                     {
@@ -1684,11 +1985,10 @@ namespace ZDevTools.Data
             DataSet dataSet = null;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
                     cmd.CommandType = commandType;
                     using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
                     {
@@ -1715,11 +2015,11 @@ namespace ZDevTools.Data
             DataSet dataSet = null;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
+
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandText = buildSql(sql, nameValues, null);
                     using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
                     {
                         dataSet = new DataSet();
@@ -1748,11 +2048,10 @@ namespace ZDevTools.Data
             DataSet dataSet = null;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandText = buildSql(sql, nameValues, null);
                     using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
                     {
                         dataSet = new DataSet();
@@ -1779,10 +2078,8 @@ namespace ZDevTools.Data
             DataSet dataSet = null;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                InParameters inParameters;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames, out inParameters));
-                cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues, out var inParameters));
+                cmd.CommandText = buildSql(sql, nameValues, inParameters);
                 using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
                 {
                     dataSet = new DataSet();
@@ -1843,11 +2140,10 @@ namespace ZDevTools.Data
             DataTable dataTable = null;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandText = buildSql(sql, nameValues, null);
                     cmd.CommandType = commandType;
                     using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
                     {
@@ -1877,11 +2173,10 @@ namespace ZDevTools.Data
             DataTable dataTable = null;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
                     cmd.CommandType = commandType;
                     using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
                     {
@@ -1908,11 +2203,10 @@ namespace ZDevTools.Data
             DataTable dataTable = null;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, null);
+                    cmd.CommandText = buildSql(sql, nameValues, null);
                     using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
                     {
                         dataTable = new DataTable();
@@ -1941,11 +2235,10 @@ namespace ZDevTools.Data
             DataTable dataTable = null;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out paramNames));
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
                 try
                 {
-                    cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
                     using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
                     {
                         dataTable = new DataTable();
@@ -1972,10 +2265,8 @@ namespace ZDevTools.Data
             DataTable dataTable = null;
             Execute((TCommand cmd) =>
             {
-                string[] paramNames;
-                InParameters inParameters;
-                cmd.Parameters.AddRange(convertParameter(parameters, out paramNames, out inParameters));
-                cmd.CommandText = buildSql(sql, paramNames, inParameters);
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues, out var inParameters));
+                cmd.CommandText = buildSql(sql, nameValues, inParameters);
                 using (var adapter = new TDataAdapter() { SelectCommand = cmd })//v2.3 修正Adapter没有被及时释放的问题
                 {
                     dataTable = new DataTable();
@@ -2136,8 +2427,6 @@ namespace ZDevTools.Data
             /// <param name="parameters">参数对象</param>
             public InParameter(string name, TParameter[] parameters)
             {
-                if (string.IsNullOrEmpty(name))
-                    throw new ArgumentException("参数名不能为空");
                 if (parameters == null || parameters.Length == 0)
                     throw new ArgumentException("参数不能为空");
 
@@ -2164,6 +2453,11 @@ namespace ZDevTools.Data
         /// <returns></returns>
         public InParameter CreateInParameter(string name, params object[] values)
         {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentException("参数名不能为空");
+
+            name = name.TrimStart('@');
+
             TParameter[] parameters = new TParameter[values.Length];
 
             for (int i = 0; i < values.Length; i++)
@@ -2185,6 +2479,11 @@ namespace ZDevTools.Data
         /// <param name="dbType">参数类型</param>
         public InParameter CreateInParameter(string name, DbType dbType, params object[] values)
         {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentException("参数名不能为空");
+
+            name = name.TrimStart('@');
+
             TParameter[] parameters = new TParameter[values.Length];
 
             for (int i = 0; i < values.Length; i++)
@@ -2208,6 +2507,11 @@ namespace ZDevTools.Data
         /// <param name="size">参数大小</param>
         public InParameter CreateInParameter(string name, DbType dbType, int size, params object[] values)
         {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentException("参数名不能为空");
+
+            name = name.TrimStart('@');
+
             TParameter[] parameters = new TParameter[values.Length];
 
             for (int i = 0; i < values.Length; i++)

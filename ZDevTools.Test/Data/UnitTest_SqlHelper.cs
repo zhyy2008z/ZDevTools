@@ -3,6 +3,7 @@ using ZDevTools.Data;
 using System.Collections.Generic;
 using System.Data;
 using Xunit;
+using System.Data.SqlClient;
 
 namespace ZDevTools.Test.Data
 {
@@ -52,6 +53,22 @@ namespace ZDevTools.Test.Data
         }
 
         [Fact]
+        public void GetScalar3()
+        {
+            Assert.True(h.GetScalar<int?>("select bookpages from books where {where}", h.CreateParameter("id", SqlDbType.Int, 13)) == null);
+            Assert.True(h.GetScalar<int?>("select bookpages from books where {where}", h.CreateParameter("id", SqlDbType.Int, 10)) == 32);
+            Assert.True(h.GetScalar("select bookpages from books where {where}", h.CreateParameter("id", SqlDbType.Int, 13)) == DBNull.Value);
+            Assert.True(h.GetScalar<object>("select bookpages from books where {where}", h.CreateParameter("@id", SqlDbType.Int, 13)) == null);
+        }
+
+        [Fact]
+        public void GetScalar4()
+        {
+            Assert.True(h.GetScalar<int>("select count(1) from books where {where}", h.CreateParameter("bookpages", null)) == 2);
+            Assert.True(h.GetScalar<int>("select count(1) from books where {where}", h.CreateParameter("bookcategory", null)) == 4);
+        }
+
+        [Fact]
         public void ExecuteReader1()
         {
             List<Book> books = new List<Data.Book>();
@@ -82,6 +99,84 @@ namespace ZDevTools.Test.Data
         {
             List<Book> books = new List<Data.Book>();
 
+            h.Execute("select * from books where id in ({in:@bookids})", reader =>
+            {
+                while (reader.Read())
+                {
+                    var book = new Book();
+                    book.Id = reader.GetInt32(0);
+                    book.BookName = reader.IsDBNull(1) ? null : reader.GetString(1);
+                    book.BookPages = reader.IsDBNull(2) ? null : (int?)reader.GetInt32(2);
+                    book.BookCategory = reader.IsDBNull(3) ? null : (int?)reader.GetInt32(3);
+                    books.Add(book);
+                }
+            }, h.CreateInParameters(h.CreateInParameter("@bookids", 1, 3, 5, 2)));
+
+            foreach (var book in books)
+            {
+                Console.WriteLine("书名：" + book.BookName);
+            }
+
+            Assert.True(books.Count > 0);
+        }
+
+        [Fact]
+        public void ExecuteReader5()
+        {
+            List<Book> books = new List<Data.Book>();
+
+            h.Execute("select * from books where id in ({in:bookids})", reader =>
+            {
+                while (reader.Read())
+                {
+                    var book = new Book();
+                    book.Id = reader.GetInt32(0);
+                    book.BookName = reader.IsDBNull(1) ? null : reader.GetString(1);
+                    book.BookPages = reader.IsDBNull(2) ? null : (int?)reader.GetInt32(2);
+                    book.BookCategory = reader.IsDBNull(3) ? null : (int?)reader.GetInt32(3);
+                    books.Add(book);
+                }
+            }, h.CreateInParameters(h.CreateInParameter("@bookids", 1, 3, 5, 2)));
+
+            foreach (var book in books)
+            {
+                Console.WriteLine("书名：" + book.BookName);
+            }
+
+            Assert.True(books.Count == 4);
+        }
+
+        [Fact]
+        public void ExecuteReader6()
+        {
+            List<Book> books = new List<Data.Book>();
+
+            h.Execute("select * from books where id in ({in:@bookids})", reader =>
+            {
+                while (reader.Read())
+                {
+                    var book = new Book();
+                    book.Id = reader.GetInt32(0);
+                    book.BookName = reader.IsDBNull(1) ? null : reader.GetString(1);
+                    book.BookPages = reader.IsDBNull(2) ? null : (int?)reader.GetInt32(2);
+                    book.BookCategory = reader.IsDBNull(3) ? null : (int?)reader.GetInt32(3);
+                    books.Add(book);
+                }
+            }, h.CreateInParameters(h.CreateInParameter("bookids", 1, 3, 5, 2)));
+
+            foreach (var book in books)
+            {
+                Console.WriteLine("书名：" + book.BookName);
+            }
+
+            Assert.True(books.Count > 0);
+        }
+
+        [Fact]
+        public void ExecuteReader7()
+        {
+            List<Book> books = new List<Data.Book>();
+
             h.Execute("select * from books where id in ({in:bookids})", reader =>
             {
                 while (reader.Read())
@@ -102,6 +197,7 @@ namespace ZDevTools.Test.Data
 
             Assert.True(books.Count > 0);
         }
+
 
         [Fact]
         public void ExecuteReader3()
@@ -176,14 +272,27 @@ namespace ZDevTools.Test.Data
         [Fact]
         public void GetDataTable()
         {
-            var datatable = h.GetDataTable("select * from books where bookcategory in ({in:0})", new int[] { 1, 3 });
+            var datatable = h.GetDataTable("select * from books where bookcategory in ({in:p0},{in:@p1})", new int[] { 1, 3 }, new int[] { 4 });
 
             foreach (DataRow row in datatable.Rows)
             {
                 Console.WriteLine("书名：" + row[1]);
             }
 
-            Assert.True(datatable.Rows.Count > 0);
+            Assert.True(datatable.Rows.Count == 5);
+        }
+
+        [Fact]
+        public void GetDataTable1()
+        {
+            var datatable = h.GetDataTable("select * from books where bookcategory in ({in:@p0})", new int[] { 1, 3 });
+
+            foreach (DataRow row in datatable.Rows)
+            {
+                Console.WriteLine("书名：" + row[1]);
+            }
+
+            Assert.True(datatable.Rows.Count == 4);
         }
 
         [Fact]
