@@ -239,6 +239,8 @@ namespace ZDevTools.Net
             }
             catch (Exception ex)
             {
+                closeClientSocket(e); //回收客户端socket
+
                 var message = $"未能继续处理 {e.LastOperation} 操作，{nameof(SocketListener<TUserToken>)} 内部错误";
                 var criticalErrorHandler = CriticalErrorHandler;
                 if (criticalErrorHandler != null)
@@ -472,9 +474,12 @@ namespace ZDevTools.Net
             }
             catch (Exception ex)
             {
+                closeClientSocket(e); //回收客户端socket
+
                 var message = $"未能继续处理 {e.LastOperation} 操作，{nameof(SocketListener<TUserToken>)} 内部错误";
-                if (CriticalErrorHandler != null)
-                    CriticalErrorHandler(message, ex);
+                var criticalErrorHandler = CriticalErrorHandler;
+                if (criticalErrorHandler != null)
+                    criticalErrorHandler(message, ex);
                 else
                 {
                     reportGeneralError(message, ex);
