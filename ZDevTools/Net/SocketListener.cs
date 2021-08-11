@@ -52,6 +52,11 @@ namespace ZDevTools.Net
         readonly ManualResetEvent ManualResetEvent;
 
         /// <summary>
+        /// 内部操作锁
+        /// </summary>
+        readonly object Locker = new object();
+
+        /// <summary>
         /// 所有正在与本监听器通讯的Sockets
         /// </summary>
         public ConcurrentDictionary<Socket, Socket> Clients { get; }
@@ -79,18 +84,8 @@ namespace ZDevTools.Net
         public Func<TUserToken, ArraySegment<byte>, ArraySegment<byte>> MessageHandler { get; set; }
 #endif
 
-        ///// <summary>
-        ///// 发送超时设置，默认30000毫秒，该值仅在<see cref="Start(int)"/>时起作用
-        ///// </summary>
-        //public int SendTimeout { get; set; } = 30000;
-
-        ///// <summary>
-        ///// 接收超时设置，默认30000毫秒，该值仅在<see cref="Start(int)"/>时起作用
-        ///// </summary>
-        //public int ReceiveTimeout { get; set; } = 30000;
-
         /// <summary>
-        /// 停止客户端连接关闭等待时间，默认30000毫秒，该值仅在<see cref="Stop(bool)"/>时起作用
+        /// 等待所有客户端主动断开连接的超时时间，默认30000毫秒，该值仅在<see cref="Stop(bool)"/>参数为 <c>true</c> 时起作用
         /// </summary>
         public int StopTimeout { get; set; } = 30000;
 
@@ -142,10 +137,20 @@ namespace ZDevTools.Net
         }
 
         /// <summary>
-        /// Starts the server listening for incoming connection requests.
+        /// Starts the server listening for incoming connection requests.（默认绑定所有网卡(ipv4)）
         /// </summary>
         /// <param name="port">Port where the server will listen for connection requests.</param>
         public void Start(int port)
+        {
+            Start(IPAddress.Any, port);
+        }
+
+        /// <summary>
+        /// Starts the server listening for incoming connection requests.
+        /// </summary>
+        /// <param name="bindedIPAddress">ip地址</param>
+        /// <param name="port">端口号</param>
+        public void Start(IPAddress bindedIPAddress, int port)
         {
             if (_isStopping || _socket != null)
                 return;
@@ -155,7 +160,6 @@ namespace ZDevTools.Net
                 if (_isStopping || _socket != null)
                     return;
 
-                var bindedIPAddress = IPAddress.Parse("0.0.0.0");
                 this._socket = new Socket(bindedIPAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
                 //默认值就挺好，改的意义不大，不如不改
@@ -207,10 +211,9 @@ namespace ZDevTools.Net
         public Action<string, Exception> GeneralErrorHandler { get; set; }
 
         /// <summary>
-        /// 内部锁
+        /// 普通日志消息处理器
         /// </summary>
-        static readonly object Locker = new object();
-
+        public Action<string> LogHandler { get; set; }
 
         #region Sync Mode
         /// <summary>
@@ -242,13 +245,21 @@ namespace ZDevTools.Net
                 closeClientSocket(e); //回收客户端socket
 
                 var message = $"未能继续处理 {e.LastOperation} 操作，{nameof(SocketListener<TUserToken>)} 内部错误";
-                var criticalErrorHandler = CriticalErrorHandler;
-                if (criticalErrorHandler != null)
-                    criticalErrorHandler(message, ex);
+
+                if (_isStopping && ex is ObjectDisposedException disposedException && disposedException.ObjectName == typeof(Socket).FullName)
+                {
+                    reportGeneralError(message, ex); //当socket disposed后产生的disposed exception 可以被当作一般异常对待
+                }
                 else
                 {
-                    reportGeneralError(message, ex);
-                    throw;
+                    var criticalErrorHandler = CriticalErrorHandler;
+                    if (criticalErrorHandler != null)
+                        criticalErrorHandler(message, ex);
+                    else
+                    {
+                        reportGeneralError(message, ex);
+                        throw;
+                    }
                 }
             }
         }
@@ -477,13 +488,21 @@ namespace ZDevTools.Net
                 closeClientSocket(e); //回收客户端socket
 
                 var message = $"未能继续处理 {e.LastOperation} 操作，{nameof(SocketListener<TUserToken>)} 内部错误";
-                var criticalErrorHandler = CriticalErrorHandler;
-                if (criticalErrorHandler != null)
-                    criticalErrorHandler(message, ex);
+
+                if (_isStopping && ex is ObjectDisposedException disposedException && disposedException.ObjectName == typeof(Socket).FullName)
+                {
+                    reportGeneralError(message, ex); //当socket disposed后产生的disposed exception 可以被当作一般异常对待
+                }
                 else
                 {
-                    reportGeneralError(message, ex);
-                    throw;
+                    var criticalErrorHandler = CriticalErrorHandler;
+                    if (criticalErrorHandler != null)
+                        criticalErrorHandler(message, ex);
+                    else
+                    {
+                        reportGeneralError(message, ex);
+                        throw;
+                    }
                 }
             }
         }
@@ -674,6 +693,8 @@ namespace ZDevTools.Net
         /// <summary>
         /// Stop the server.
         /// </summary>
+        /// <param name="waitClientClosed">是否先等待客户端主动关闭，若开启会等待超时时间（<see cref="StopTimeout"/>），若还有客户端未主动断开，则强制断开客户端。</param>
+        /// <exception cref="TimeoutException">当开启等待客户端主动关闭功能时可能抛出此异常</exception>
         public void Stop(bool waitClientClosed = false)
         {
             if (_isStopping || _socket == null)
@@ -691,7 +712,7 @@ namespace ZDevTools.Net
                     bool timeOut = !ManualResetEvent.WaitOne(StopTimeout);
                     closeSocket(); //得体地强制关闭客户端连接
                     if (timeOut) //扔出超时错误
-                        throw new TimeoutException($"等待 {nameof(SocketListener<TUserToken>)} 关闭超时");
+                        throw new TimeoutException($"等待 {nameof(SocketListener<TUserToken>)} 关闭超时，已强制关闭客户端连接");
                 }
                 else
                     closeSocket();
@@ -704,11 +725,13 @@ namespace ZDevTools.Net
             while (Clients.Count > 0)
             {
                 foreach (var client in Clients)
-                {
                     client.Value.Close();
-                }
+
                 Thread.Sleep(500);
+
+                reportLog("Socket(" + _socket.LocalEndPoint.ToString() + ") 停止中，剩余 " + Clients.Count);
             }
+
             this._socket.Close();
             this._socket = null;
             _isStopping = false;
@@ -753,6 +776,11 @@ namespace ZDevTools.Net
         void reportGeneralError(string message)
         {
             reportGeneralError(message, null);
+        }
+
+        void reportLog(string message)
+        {
+            LogHandler?.Invoke(message);
         }
         #endregion
     }
