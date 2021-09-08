@@ -11,7 +11,6 @@ namespace ZDevTools.Net
     /// </summary>
     public struct TcpKeepAlive
     {
-
         /// <summary>
         /// 初始化一个心跳设置
         /// </summary>
@@ -33,13 +32,13 @@ namespace ZDevTools.Net
         public uint IsOn;
 
         /// <summary>
-        /// 空闲多少毫秒后开始进行探测
+        /// 连接空闲多少毫秒（从最后一次数据交互之后算起至当前）后开始进行探测
         /// </summary>
         //[FieldOffset(4)]
         public uint KeepAliveTime;
 
         /// <summary>
-        /// 探测间隔时间，单位：毫秒
+        /// 探测间隔时间，单位：毫秒，探测次数由操作系统决定，这些探测均失败后断开连接
         /// </summary>
         //[FieldOffset(8)]
         public uint KeepAliveInterval;

@@ -21,7 +21,6 @@ namespace ZDevTools.ServiceConsole.ViewModels
     {
         readonly ILogger<ScheduledServiceUIViewModel> Logger;
         readonly IOptions<ConsoleOptions> Options;
-        static readonly object Locker = new object();
         readonly IDialogs Dialogs;
 
         public ScheduledServiceUIViewModel(IDialogs dialogs, ILogger<ScheduledServiceUIViewModel> logger, IOptions<ConsoleOptions> options)

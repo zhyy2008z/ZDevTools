@@ -131,7 +131,7 @@ namespace ZDevTools.ServiceMonitor
                 if (except == null)
                     Log.Fatal($"！v！<未知类型的异常:{exception}>！v！");
                 else
-                    Log.Fatal("！v！<未捕获的异常>！v！", except);
+                    Log.Fatal(except, "！v！<未捕获的异常>！v！");
             }
         }
     }

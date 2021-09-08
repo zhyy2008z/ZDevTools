@@ -17,7 +17,7 @@ namespace ZDevTools.ServiceConsole.ViewModels
         readonly ILogger<WindowsServiceUIViewModel> Logger;
 
         void logInfo(string message) => Logger.LogInformation($"【{DisplayName}】{message}");
-        void logError(Exception exception, string message) => Logger.LogError($"【{DisplayName}】{message}", exception);
+        void logError(Exception exception, string message) => Logger.LogError(exception, $"【{DisplayName}】{message}");
 
         public WindowsServiceUIViewModel(ILogger<WindowsServiceUIViewModel> logger, ILogger<HostedServiceUIViewModel> logger2)
             : base(logger2)

@@ -102,6 +102,8 @@ namespace ZDevTools.ServiceConsole
                 if (string.IsNullOrEmpty(modulePath))
                     foreach (var fileInfo in hostBuilderContext.HostingEnvironment.ContentRootFileProvider.GetDirectoryContents("plugins").Where(fi => fi.IsDirectory))
                     {
+                        var mp = Path.Combine(fileInfo.PhysicalPath, fileInfo.Name + ".dll");
+                        if (!File.Exists(mp)) continue; //跳过插件文件名与插件文件夹名不一致的插件
                         config.AddJsonFile(Path.Combine(fileInfo.PhysicalPath, "appsettings.json"), optional: true, value)
                         .AddJsonFile(Path.Combine(fileInfo.PhysicalPath, "appsettings." + hostingEnvironment.EnvironmentName + ".json"), optional: true, value);
                     }
@@ -181,6 +183,7 @@ namespace ZDevTools.ServiceConsole
                 foreach (var fileInfo in hostBuilderContext.HostingEnvironment.ContentRootFileProvider.GetDirectoryContents("plugins").Where(fi => fi.IsDirectory))
                 {
                     var mp = Path.Combine(fileInfo.PhysicalPath, fileInfo.Name + ".dll");
+                    if (!File.Exists(mp)) continue; //跳过插件文件名与插件文件夹名不一致的插件
                     var context = new MyPluginLoadContext(mp);
                     var assembly = context.LoadFromAssemblyName(new AssemblyName(fileInfo.Name));
                     foreach (var type in assembly.GetTypes().Where(type => moduleType.IsAssignableFrom(type) && !type.IsAbstract))
@@ -210,7 +213,7 @@ namespace ZDevTools.ServiceConsole
                 if (except == null)
                     Log.Fatal($"！v！<未知类型的异常:{exception}>！v！");
                 else
-                    Log.Fatal("！v！<未捕获的异常>！v！", except);
+                    Log.Fatal(except, "！v！<未捕获的异常>！v！");
             }
         }
     }
