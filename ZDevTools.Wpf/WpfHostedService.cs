@@ -27,7 +27,7 @@ namespace ZDevTools.Wpf
         /// </summary>
         /// <param name="logger">ILogger</param>
         /// <param name="serviceProvider">IServiceProvider</param>
-        /// <param name="wpfContext">IWpfContext</param>
+        /// <param name="options"></param>
         public WpfHostedService(ILogger<WpfHostedService<TShell>> logger, IServiceProvider serviceProvider, IOptions<StartupOptions> options)
         {
             Logger = logger;
@@ -89,7 +89,7 @@ namespace ZDevTools.Wpf
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            var isConsoleLifetime = (ServiceProvider.GetService<IHostLifetime>() is ConsoleLifetime);
+            var isConsoleLifetime = ServiceProvider.GetService<IHostLifetime>() is ConsoleLifetime;
             if (IsRunning && !isConsoleLifetime) //由于ConsoleLifetime控制台会导致后面一句出错，因此不让其调用了。
             {
                 Logger.LogDebug("Stopping WPF due to application exit.");

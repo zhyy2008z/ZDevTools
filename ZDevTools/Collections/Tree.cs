@@ -50,8 +50,10 @@ namespace ZDevTools.Collections
         /// <param name="flattenNodes">平化的节点字典</param>
         List<TTreeNode> parse(IEnumerable<TTreeNode> nodes, out Dictionary<TKey, TTreeNode> flattenNodes)
         {
-            flattenNodes = nodes.ToDictionary(node => node.Id, Comparer);
-            var treeNodes = nodes.Reverse().ToList(); //逆转顺序后可以让nodes节点的形成层级后，同级节点的相对顺序保持不变
+            var treeNodes = nodes.ToList();//每轮枚举的TreeNode可能不是同一个对象，因此要提前变为列表，把对象固定下来再用
+            flattenNodes = treeNodes.ToDictionary(node => node.Id, Comparer);
+            //逆转顺序后可以让nodes节点的形成层级后，同级节点的相对顺序保持不变
+            treeNodes.Reverse();
 
             //整理为树
             for (int i = treeNodes.Count - 1; i > -1; i--)

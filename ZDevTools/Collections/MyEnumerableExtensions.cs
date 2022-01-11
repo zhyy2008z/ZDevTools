@@ -9,6 +9,67 @@ namespace ZDevTools.Collections
     /// </summary>
     public static class MyEnumerableExtensions
     {
+        ///// <summary>
+        ///// 索引枚举器
+        ///// </summary>
+        //public struct IndexedEnumerable<T>
+        //{
+        //    readonly IEnumerable<T> Values;
+
+        //    /// <summary>
+        //    /// 初始化枚举器
+        //    /// </summary>
+        //    /// <param name="values"></param>
+        //    public IndexedEnumerable(IEnumerable<T> values) => this.Values = values;
+
+        //    /// <summary>
+        //    /// 获取迭代器
+        //    /// </summary>
+        //    public Enumerator GetEnumerator() => new Enumerator(Values.GetEnumerator());
+
+        //    /// <summary>
+        //    /// 迭代器
+        //    /// </summary>
+        //    public struct Enumerator
+        //    {
+        //        readonly IEnumerator<T> InnerEnumerator;
+        //        int _index;
+
+        //        /// <summary>
+        //        /// 初始化迭代器
+        //        /// </summary>
+        //        public Enumerator(IEnumerator<T> enumerator)
+        //        {
+        //            this.InnerEnumerator = enumerator;
+        //            _index = -1;
+        //        }
+
+        //        /// <summary>
+        //        /// 迭代到下一个
+        //        /// </summary>
+        //        public bool MoveNext()
+        //        {
+        //            _index++;
+        //            return InnerEnumerator.MoveNext();
+        //        }
+
+        //        /// <summary>
+        //        /// 当前值
+        //        /// </summary>
+        //        public (int Index, T Item) Current => (_index, InnerEnumerator.Current);
+        //    }
+        //}
+
+        ///// <summary>
+        ///// 为序列增加索引字段以配合foreach增加索引值
+        ///// </summary>
+        //public static IndexedEnumerable<T> Indexed<T>(this IEnumerable<T> items)
+        //{
+        //    if (items == null) throw new ArgumentNullException(nameof(items));
+
+        //    return new IndexedEnumerable<T>(items);
+        //}
+
         ///<summary>Finds the index of the first item matching an expression in an enumerable.</summary>
         ///<param name="items">The enumerable to search.</param>
         ///<param name="predicate">The expression to test the items against.</param>

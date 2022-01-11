@@ -7,18 +7,14 @@
     <Description>开发工具库，目前包含一个SqlHelper库，TreeNode树结构类型及算法，RSA算法加密解密实用工具类，SymbolicLink与SocketListener</Description>
     <Product>程序开发工具库</Product>
     <PackageTags>SqlHelper TreeNode RSAHelper SocketListener SymbolicLink</PackageTags>
-    <Version>5.2.2</Version>
+    <Version>5.2.3</Version>
     <PackageReleaseNotes>
-      1、SocketListener新增LogHandler接口
-      2、SocketListener默认自动忽略由停止SocketListener产生的Socket Disposed 异常
-      3、新增支持设置监听地址功能
-      4、改进文档注释
-      5、所有SocketListener实例共用同一个内部锁问题
+      1、解决一处潜在的Tree创建失败的问题
     </PackageReleaseNotes>
 
     <Authors>穿越中的逍遥</Authors>
     <Company>穿越中的逍遥</Company>
-    <Copyright>Copyright © 穿越中的逍遥 2021</Copyright>
+    <Copyright>Copyright © 穿越中的逍遥 2022</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
     <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>
