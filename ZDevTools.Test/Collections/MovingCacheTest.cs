@@ -40,6 +40,21 @@ namespace ZDevTools.Test.Collections
             Assert.Equal(new[] { 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, }, cache.ToArray());
             Assert.Equal(3, cache[1]);
             Assert.Equal(11, cache[9]);
+
+            cache[1] = 99;
+            Assert.Equal(99, cache[1]);
+            Assert.Equal(new[] { 2, 99, 4, 5, 6, 7, 8, 9, 10, 11, }, cache);
+
+            cache[9] = 100;
+            Assert.Equal(100, cache[9]);
+            Assert.Equal(new[] { 2, 99, 4, 5, 6, 7, 8, 9, 10, 100, }, cache);
+
+            cache.Clear();
+            Assert.Equal(0, cache.Length);
+            Assert.Equal(10, cache.Capacity);
+
+            cache.EraseExcess();
+
         }
 
 

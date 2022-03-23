@@ -287,11 +287,11 @@ namespace ZDevTools.Test.Collections
         {
             var tree = getTree();
 
-            var ancestors = tree.Nodes[0].Children.First().Children.First().AncestorsToList();
+            var ancestors = tree.Nodes[0].Children.First().Children.First().AncestorToList();
 
             Assert.True(ancestors[0] == tree.Nodes[0].Children.First() && ancestors[1] == tree.Nodes[0]);
 
-            ancestors = tree.Nodes[0].Children.First().Children.First().AncestorsToList(true);
+            ancestors = tree.Nodes[0].Children.First().Children.First().AncestorToList(true);
             Assert.True(ancestors[0] == tree.Nodes[0].Children.First().Children.First() && ancestors[1] == tree.Nodes[0].Children.First() && ancestors[2] == tree.Nodes[0]);
         }
 

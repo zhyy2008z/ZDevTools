@@ -61,6 +61,66 @@ namespace ZDevTools.Collections
         }
         #endregion
 
+        #region 线性化
+        /// <summary>
+        /// 将当前节点及子节点线性化为列表
+        /// </summary>
+        /// <returns></returns>
+        public List<TKey> AllIdToList()
+        {
+            var list = new List<TKey>();
+            linear((TTreeNode)this, list);
+            return list;
+        }
+        static void linear(TTreeNode node, List<TKey> list)
+        {
+            list.Add(node.Id);
+
+            foreach (var item in node.Children)
+            {
+                linear(item, list);
+            }
+        }
+
+        /// <summary>
+        /// 获取指定节点所有的祖先（按照亲疏排序）
+        /// </summary>
+        /// <param name="includeSelf">是否将当前节点包含在内</param>
+        public List<TKey> AncestorIdToList(bool includeSelf = false)
+        {
+            List<TKey> result = new List<TKey>();
+            if (includeSelf) result.Add(this.Id);
+            var parent = this.Parent;
+            while (parent != null)
+            {
+                result.Add(parent.Id);
+                parent = parent.Parent;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 将所有子节点线性化为列表
+        /// </summary>
+        /// <returns></returns>
+        public List<TKey> SubIdToList()
+        {
+            var list = new List<TKey>();
+
+            linearSub((TTreeNode)this, list);
+
+            return list;
+        }
+        static void linearSub(TTreeNode node, List<TKey> list)
+        {
+            foreach (var item in node.Children)
+            {
+                list.Add(item.Id);
+                linearSub(item, list);
+            }
+        }
+        #endregion
+
         #region 判断
         /// <summary>
         /// 当前节点及子节点中是否包含具有指定Id的节点

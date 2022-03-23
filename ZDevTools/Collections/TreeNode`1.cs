@@ -61,7 +61,7 @@ namespace ZDevTools.Collections
         /// 获取指定节点所有的祖先（按照亲疏排序）
         /// </summary>
         /// <param name="includeSelf">是否将当前节点包含在内</param>
-        public List<T> AncestorsToList(bool includeSelf = false)
+        public List<T> AncestorToList(bool includeSelf = false)
         {
             List<T> result = new List<T>();
             if (includeSelf) result.Add((T)this);
