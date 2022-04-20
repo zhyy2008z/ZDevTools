@@ -85,7 +85,12 @@ namespace ZDevTools.Test.Collections
             }
             Assert.Equal(new[] { 3, 3, 3, 3, 3, 5, 2, 5, 3, 32, 2, 3 }, list);
 
-            queue.Clear(3);
+            Assert.True(queue.Clear(3));
+            Assert.Equal(new[] { 3, 3, 5, 2, 5, 3, 32, 2, 3 }, queue);
+
+            Assert.False(queue.Clear(0));
+            Assert.False(queue.Clear(99));
+            Assert.False(queue.Clear(-2));
             Assert.Equal(new[] { 3, 3, 5, 2, 5, 3, 32, 2, 3 }, queue);
 
             Assert.ThrowsAny<Exception>(() => queue.Capacity = 0);
@@ -211,7 +216,12 @@ namespace ZDevTools.Test.Collections
             }
             Assert.Equal(new[] { 3, 3, 3, 3, 3, 5, 2, 5, 3, 32, 2, 3 }, list);
 
-            queue.Clear(3);
+            Assert.True(queue.Clear(3));
+            Assert.Equal(new[] { 3, 3, 5, 2, 5, 3, 32, 2, 3 }, queue);
+
+            Assert.False(queue.Clear(0));
+            Assert.False(queue.Clear(99));
+            Assert.False(queue.Clear(-2));
             Assert.Equal(new[] { 3, 3, 5, 2, 5, 3, 32, 2, 3 }, queue);
 
             Assert.ThrowsAny<Exception>(() => queue.Capacity = 0);
@@ -399,7 +409,13 @@ namespace ZDevTools.Test.Collections
             }
             Assert.Equal(new[] { 3, 3, 3, 3, 3, 5, 2, 5, 3, 32, 2, 3 }, list);
 
-            queue.Clear(3);
+
+            Assert.True(queue.Clear(3));
+            Assert.Equal(new[] { 3, 3, 5, 2, 5, 3, 32, 2, 3 }, queue);
+
+            Assert.False(queue.Clear(0));
+            Assert.False(queue.Clear(99));
+            Assert.False(queue.Clear(-2));
             Assert.Equal(new[] { 3, 3, 5, 2, 5, 3, 32, 2, 3 }, queue);
 
             Assert.ThrowsAny<Exception>(() => queue.Capacity = 0);
@@ -525,7 +541,12 @@ namespace ZDevTools.Test.Collections
             }
             Assert.Equal(new[] { 3, 3, 3, 3, 3, 5, 2, 5, 3, 32, 2, 3 }, list);
 
-            queue.Clear(3);
+            Assert.True(queue.Clear(3));
+            Assert.Equal(new[] { 3, 3, 5, 2, 5, 3, 32, 2, 3 }, queue);
+
+            Assert.False(queue.Clear(0));
+            Assert.False(queue.Clear(99));
+            Assert.False(queue.Clear(-2));
             Assert.Equal(new[] { 3, 3, 5, 2, 5, 3, 32, 2, 3 }, queue);
 
             Assert.ThrowsAny<Exception>(() => queue.Capacity = 0);

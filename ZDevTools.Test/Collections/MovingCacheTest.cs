@@ -55,6 +55,8 @@ namespace ZDevTools.Test.Collections
 
             cache.EraseExcess();
 
+            cache.Enqueue(35);
+            Assert.Equal(1, cache.Length);
         }
 
 

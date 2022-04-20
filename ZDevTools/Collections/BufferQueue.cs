@@ -335,18 +335,16 @@ namespace ZDevTools.Collections
         }
 
         /// <summary>
-        /// 从出队位置清除length大小的T数据
+        /// 从出队位置清除指定数量的T数据，不提取已清除的数据，相较 <c>Dequeue</c> 性能较好。
         /// </summary>
-        public void Clear(int length)
+        /// <returns>是否清除了至少一个T数据</returns>
+        public bool Clear(int count)
         {
-            if (length > _length)
-                length = _length;
+            if (count <= 0 || count > _length)
+                return false;
 
-            if (length == 0)
-                return;
-
-            _head = (_head + length) % _internalBuffer.Length;
-            _length -= length;
+            _head = (_head + count) % _internalBuffer.Length;
+            _length -= count;
 
             if (_length == 0)
             {
@@ -356,7 +354,7 @@ namespace ZDevTools.Collections
 
             _version++;
 
-            return;
+            return true;
         }
         #endregion
 
@@ -407,8 +405,6 @@ namespace ZDevTools.Collections
             _tail = (_tail + span.Length) % _internalBuffer.Length;
             _length += span.Length;
             _version++;
-
-            this.AddRange(new T[2]);
         }
         //#else
         //        /// <summary>
@@ -448,7 +444,10 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 当数据足够时，从队列中提取一个字节
         /// </summary>
-        public bool Dequeue(out T content)
+        public bool Dequeue(out T content) => dequeue(out content);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        bool dequeue(out T content)
         {
             if (_length <= 0)
             {
@@ -478,12 +477,13 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 当数据足够时，从队列中提取指定数量的数据
         /// </summary>
+        /// <returns>至少提取到了一个元素且元素个数与count相等</returns>
         public bool Dequeue(int count, out T[] buffer)
         {
             if (count <= 0 || count > _length)
             {
                 buffer = Array.Empty<T>();
-                return count == 0;
+                return false;
             }
 
             int rightLength = getRightFilledLength();
@@ -522,6 +522,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 当数据足够时，从队列中提取指定数量的数据
         /// </summary>
+        /// <returns>至少提取到了一个元素且元素个数与count相等</returns>
         public bool Dequeue(int count, out ArraySegment<T> segment)
         {
             if (Dequeue(count, out T[] buffer))
@@ -536,10 +537,11 @@ namespace ZDevTools.Collections
             }
         }
 
-//#if NETCOREAPP
+        //#if NETCOREAPP
         /// <summary>
         /// 当数据足够时，从队列中提取指定数量的数据
         /// </summary>
+        /// <returns>至少提取到了一个元素且元素个数与count相等</returns>
         public bool Dequeue(int count, out Span<T> span)
         {
             if (Dequeue(count, out T[] buffer))
@@ -557,6 +559,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 当数据足够时，从队列中提取指定数量的数据
         /// </summary>
+        /// <returns>至少提取到了一个元素且元素个数与count相等</returns>
         public bool Dequeue(int count, out Memory<T> memory)
         {
             if (Dequeue(count, out T[] buffer))
@@ -570,21 +573,19 @@ namespace ZDevTools.Collections
                 return false;
             }
         }
-//#endif
+        //#endif
         #endregion
 
         #region In
-//#if NETCOREAPP
+        //#if NETCOREAPP
         /// <summary>
         /// 当数据足够时，从队列中提取数据
         /// </summary>
+        /// <returns>是否提取到至少一个数据</returns>
         public bool Dequeue(Span<T> span)
         {
-            if (span.Length > _length)
+            if (span.Length == 0 || span.Length > _length)
                 return false;
-
-            if (span.Length == 0)
-                return true;
 
             int rightLength = getRightFilledLength();
             var bufferSpan = _internalBuffer.AsSpan();
@@ -615,7 +616,7 @@ namespace ZDevTools.Collections
 
             return true;
         }
-//#else
+        //#else
         ///// <summary>
         ///// 当数据足够时，从队列中提取数据
         ///// </summary>
@@ -655,7 +656,7 @@ namespace ZDevTools.Collections
 
         //    return true;
         //}
-//#endif
+        //#endif
         #endregion
 
         #endregion
@@ -666,6 +667,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 查看队首的T
         /// </summary>
+        /// <returns>至少提取到了一个元素</returns>
         public bool Peek(out T content)
         {
             if (_length < 1)
@@ -681,6 +683,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 查看指定位置T
         /// </summary>
+        /// <returns>至少提取到了一个元素</returns>
         public bool Peek(int index, out T content)
         {
             if ((uint)index >= (uint)_length)
@@ -705,6 +708,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从队头读取数据
         /// </summary>
+        /// <returns>至少提取到了一个元素且元素个数与count相等</returns>
         public bool Peek(int count, out T[] buffer)
         {
             if (count <= 0 || count > _length)
@@ -735,6 +739,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从队列指定位置读取指定数量的数据
         /// </summary>
+        /// <returns>至少提取到了一个元素且元素个数与count相等</returns>
         public bool Peek(int index, int count, out T[] buffer)
         {
             if (count <= 0 || index < 0 || index + count >= _length)
@@ -769,6 +774,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从队头读取数据
         /// </summary>
+        /// <returns>至少提取到了一个元素且元素个数与count相等</returns>
         public bool Peek(int count, out ArraySegment<T> segment)
         {
             if (Peek(count, out T[] buffer))
@@ -786,6 +792,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从队列指定位置读取指定数量的数据
         /// </summary>
+        /// <returns>至少提取到了一个元素且元素个数与count相等</returns>
         public bool Peek(int index, int count, out ArraySegment<T> segment)
         {
             if (Peek(index, count, out T[] buffer))
@@ -800,10 +807,11 @@ namespace ZDevTools.Collections
             }
         }
 
-//#if NETCOREAPP
+        //#if NETCOREAPP
         /// <summary>
         /// 从队头读取数据
         /// </summary>
+        /// <returns>至少提取到了一个元素且元素个数与count相等</returns>
         public bool Peek(int count, out Span<T> span)
         {
             if (Peek(count, out T[] buffer))
@@ -821,6 +829,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从队头读取数据
         /// </summary>
+        /// <returns>至少提取到了一个元素且元素个数与count相等</returns>
         public bool Peek(int count, out Memory<T> memory)
         {
             if (Peek(count, out T[] buffer))
@@ -838,6 +847,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从队列指定位置读取指定数量的数据
         /// </summary>
+        /// <returns>至少提取到了一个元素且元素个数与count相等</returns>
         public bool Peek(int index, int count, out Span<T> span)
         {
             if (Peek(index, count, out T[] buffer))
@@ -855,6 +865,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从队列指定位置读取指定数量的数据
         /// </summary>
+        /// <returns>至少提取到了一个元素且元素个数与count相等</returns>
         public bool Peek(int index, int count, out Memory<T> memory)
         {
             if (Peek(index, count, out T[] buffer))
@@ -868,15 +879,16 @@ namespace ZDevTools.Collections
                 return false;
             }
         }
-//#endif
+        //#endif
 
         #endregion
 
         #region In
-//#if NETCOREAPP
+        //#if NETCOREAPP
         /// <summary>
         /// 从队头读取数据
         /// </summary>
+        /// <returns>至少提取到了一个元素且元素个数与count相等</returns>
         public bool Peek(Span<T> span)
         {
             if (span.Length == 0 || span.Length > _length)
@@ -899,6 +911,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从指定位置读取数据
         /// </summary>
+        /// <returns>至少提取到了一个元素且元素个数与count相等</returns>
         public bool Peek(int index, Span<T> span)
         {
             if (span.Length == 0 || index < 0 || index + span.Length >= _length)
@@ -919,7 +932,7 @@ namespace ZDevTools.Collections
             }
             return true;
         }
-//#else
+        //#else
         ///// <summary>
         ///// 从队头读取数据
         ///// </summary>
@@ -966,7 +979,7 @@ namespace ZDevTools.Collections
         //    }
         //    return true;
         //}
-//#endif
+        //#endif
         #endregion
 
         #endregion
@@ -1137,7 +1150,7 @@ namespace ZDevTools.Collections
             _version++;
         }
 
-//#if NETCOREAPP
+        //#if NETCOREAPP
         /// <summary>
         /// 入队一组T
         /// </summary>
@@ -1222,96 +1235,96 @@ namespace ZDevTools.Collections
             _length += span.Length;
             _version++;
         }
-//#else
-//        /// <summary>
-//        /// 入队一组T
-//        /// </summary>
-//        public void Insert(int index, ArraySegment<T> segment)
-//        {
-//            throwIfOutOfRangeForInsert(index);
+        //#else
+        //        /// <summary>
+        //        /// 入队一组T
+        //        /// </summary>
+        //        public void Insert(int index, ArraySegment<T> segment)
+        //        {
+        //            throwIfOutOfRangeForInsert(index);
 
-//            if (segment.Count == 0)
-//                return;
+        //            if (segment.Count == 0)
+        //                return;
 
-//            int newLength = _length + segment.Count;
-//            if (newLength > _internalBuffer.Length)
-//                gainCapacity(newLength);
+        //            int newLength = _length + segment.Count;
+        //            if (newLength > _internalBuffer.Length)
+        //                gainCapacity(newLength);
 
-//            if (index == _length) //尾部直接入队
-//            {
-//                int rightFreeLength = getRightFreeLength();
+        //            if (index == _length) //尾部直接入队
+        //            {
+        //                int rightFreeLength = getRightFreeLength();
 
-//                if (rightFreeLength >= segment.Count)
-//                {
-//                    segment.CopyTo(_internalBuffer, _tail);
-//                }
-//                else
-//                {
-//                    segment.Slice(0, rightFreeLength).CopyTo(_internalBuffer, _tail);
-//                    segment.Slice(rightFreeLength).CopyTo(_internalBuffer);
-//                }
+        //                if (rightFreeLength >= segment.Count)
+        //                {
+        //                    segment.CopyTo(_internalBuffer, _tail);
+        //                }
+        //                else
+        //                {
+        //                    segment.Slice(0, rightFreeLength).CopyTo(_internalBuffer, _tail);
+        //                    segment.Slice(rightFreeLength).CopyTo(_internalBuffer);
+        //                }
 
-//                _tail = (_tail + segment.Count) % _internalBuffer.Length;
-//            }
-//            else if (index == 0) //头部直接赋值
-//            {
-//                if (_head >= segment.Count)
-//                {
-//                    segment.CopyTo(_internalBuffer, _head - segment.Count);
-//                }
-//                else
-//                {
-//                    segment.Slice(0, segment.Count - _head).CopyTo(_internalBuffer, _internalBuffer.Length - (segment.Count - _head));
-//                    segment.Slice(segment.Count - _head).CopyTo(_internalBuffer);
-//                }
-//                _head = (_head - segment.Count + _internalBuffer.Length) % _internalBuffer.Length;
-//            }
-//            else
-//            {
-//                //执行到此处_head!=_tail，列队肯定不为空的。
-//                if (_head < _tail)
-//                {
-//                    var rightFreeLength = getRightFreeLength();
-//                    var allAvailable = rightFreeLength >= segment.Count && _head >= segment.Count;
-//                    if (allAvailable && index >= _length / 2 || !allAvailable && rightFreeLength >= segment.Count) //都有足够空间，且更靠近尾部 或者 不都有足够的空间但尾部有空间
-//                    {
-//                        Array.Copy(_internalBuffer, _head + index, _internalBuffer, _head + index + segment.Count, _length - index);
-//                        segment.CopyTo(_internalBuffer, _head + index);
-//                        _tail += segment.Count;
-//                    }
-//                    else //头部有空间
-//                    {
-//                        Array.Copy(_internalBuffer, _head, _internalBuffer, _head - segment.Count, index);
-//                        segment.CopyTo(_internalBuffer, _head - segment.Count + index);
-//                        _head -= segment.Count;
-//                    }
-//                }
-//                else
-//                {
-//                    var rightLength = getRightFilledLength();
-//                    if (index < rightLength)//在头部侧插入
-//                    {
-//                        Array.Copy(_internalBuffer, _head, _internalBuffer, _head - segment.Count, index);
-//                        segment.CopyTo(_internalBuffer, _head - segment.Count + index);
-//                        _head -= segment.Count;
-//                    }
-//                    else //在尾部侧插入
-//                    {
-//                        Array.Copy(_internalBuffer, index - rightLength, _internalBuffer, index - rightLength + segment.Count, _length - index);
-//                        segment.CopyTo(_internalBuffer, index - rightLength);
-//                        _tail += segment.Count;
-//                    }
-//                }
-//            }
-//            _length += segment.Count;
-//            _version++;
-//        }
-//#endif
+        //                _tail = (_tail + segment.Count) % _internalBuffer.Length;
+        //            }
+        //            else if (index == 0) //头部直接赋值
+        //            {
+        //                if (_head >= segment.Count)
+        //                {
+        //                    segment.CopyTo(_internalBuffer, _head - segment.Count);
+        //                }
+        //                else
+        //                {
+        //                    segment.Slice(0, segment.Count - _head).CopyTo(_internalBuffer, _internalBuffer.Length - (segment.Count - _head));
+        //                    segment.Slice(segment.Count - _head).CopyTo(_internalBuffer);
+        //                }
+        //                _head = (_head - segment.Count + _internalBuffer.Length) % _internalBuffer.Length;
+        //            }
+        //            else
+        //            {
+        //                //执行到此处_head!=_tail，列队肯定不为空的。
+        //                if (_head < _tail)
+        //                {
+        //                    var rightFreeLength = getRightFreeLength();
+        //                    var allAvailable = rightFreeLength >= segment.Count && _head >= segment.Count;
+        //                    if (allAvailable && index >= _length / 2 || !allAvailable && rightFreeLength >= segment.Count) //都有足够空间，且更靠近尾部 或者 不都有足够的空间但尾部有空间
+        //                    {
+        //                        Array.Copy(_internalBuffer, _head + index, _internalBuffer, _head + index + segment.Count, _length - index);
+        //                        segment.CopyTo(_internalBuffer, _head + index);
+        //                        _tail += segment.Count;
+        //                    }
+        //                    else //头部有空间
+        //                    {
+        //                        Array.Copy(_internalBuffer, _head, _internalBuffer, _head - segment.Count, index);
+        //                        segment.CopyTo(_internalBuffer, _head - segment.Count + index);
+        //                        _head -= segment.Count;
+        //                    }
+        //                }
+        //                else
+        //                {
+        //                    var rightLength = getRightFilledLength();
+        //                    if (index < rightLength)//在头部侧插入
+        //                    {
+        //                        Array.Copy(_internalBuffer, _head, _internalBuffer, _head - segment.Count, index);
+        //                        segment.CopyTo(_internalBuffer, _head - segment.Count + index);
+        //                        _head -= segment.Count;
+        //                    }
+        //                    else //在尾部侧插入
+        //                    {
+        //                        Array.Copy(_internalBuffer, index - rightLength, _internalBuffer, index - rightLength + segment.Count, _length - index);
+        //                        segment.CopyTo(_internalBuffer, index - rightLength);
+        //                        _tail += segment.Count;
+        //                    }
+        //                }
+        //            }
+        //            _length += segment.Count;
+        //            _version++;
+        //        }
+        //#endif
         #endregion
 
         #region SetRange
 
-//#if NETCOREAPP
+        //#if NETCOREAPP
         /// <summary>
         /// 设置指定位置一个区域的元素
         /// </summary>
@@ -1336,33 +1349,33 @@ namespace ZDevTools.Collections
             }
             _version++;
         }
-//#else
-//        /// <summary>
-//        /// 设置指定位置一个区域的元素
-//        /// </summary>
-//        public void SetRange(int index, ArraySegment<T> segment)
-//        {
-//            throwIfOutOfRangeForAccess(index, segment.Count);
+        //#else
+        //        /// <summary>
+        //        /// 设置指定位置一个区域的元素
+        //        /// </summary>
+        //        public void SetRange(int index, ArraySegment<T> segment)
+        //        {
+        //            throwIfOutOfRangeForAccess(index, segment.Count);
 
-//            if (segment.Count == 0) return;
+        //            if (segment.Count == 0) return;
 
-//            int rightLength = getRightFilledLength();
-//            if (rightLength - index >= segment.Count)
-//            {
-//                Array.Copy(segment.Array, segment.Offset, _internalBuffer, _head + index, segment.Count);
-//            }
-//            else if (index < rightLength)
-//            {
-//                Array.Copy(segment.Array, segment.Offset, _internalBuffer, _head + index, rightLength - index);
-//                Array.Copy(segment.Array, segment.Offset + rightLength - index, _internalBuffer, 0, segment.Count - (rightLength - index));
-//            }
-//            else
-//            {
-//                Array.Copy(segment.Array, segment.Offset, _internalBuffer, index - rightLength, segment.Count);
-//            }
-//            _version++;
-//        }
-//#endif
+        //            int rightLength = getRightFilledLength();
+        //            if (rightLength - index >= segment.Count)
+        //            {
+        //                Array.Copy(segment.Array, segment.Offset, _internalBuffer, _head + index, segment.Count);
+        //            }
+        //            else if (index < rightLength)
+        //            {
+        //                Array.Copy(segment.Array, segment.Offset, _internalBuffer, _head + index, rightLength - index);
+        //                Array.Copy(segment.Array, segment.Offset + rightLength - index, _internalBuffer, 0, segment.Count - (rightLength - index));
+        //            }
+        //            else
+        //            {
+        //                Array.Copy(segment.Array, segment.Offset, _internalBuffer, index - rightLength, segment.Count);
+        //            }
+        //            _version++;
+        //        }
+        //#endif
         #endregion
 
         #region Remove
@@ -1505,7 +1518,7 @@ namespace ZDevTools.Collections
         /// <inheritdoc/>
         public void CopyTo(T[] array, int arrayIndex) => copyTo(array, arrayIndex);
 
-//#if NETCOREAPP
+        //#if NETCOREAPP
         /// <summary>
         /// 将整个队列复制到目标块
         /// </summary>
@@ -1529,30 +1542,30 @@ namespace ZDevTools.Collections
                 }
             }
         }
-//#else
-//        /// <summary>
-//        /// 将整个队列复制到目标数组片段
-//        /// </summary>
-//        public void CopyTo(ArraySegment<T> segment)
-//        {
-//            if (segment.Count < _length)
-//                throw new ArgumentException("目标数组长度不足以储存本队列所有元素。");
+        //#else
+        //        /// <summary>
+        //        /// 将整个队列复制到目标数组片段
+        //        /// </summary>
+        //        public void CopyTo(ArraySegment<T> segment)
+        //        {
+        //            if (segment.Count < _length)
+        //                throw new ArgumentException("目标数组长度不足以储存本队列所有元素。");
 
-//            if (_length > 0)
-//            {
-//                int rightLength = getRightFilledLength();
-//                if (rightLength >= _length)
-//                {
-//                    Array.Copy(_internalBuffer, _head, segment.Array, segment.Offset, _length);
-//                }
-//                else
-//                {
-//                    Array.Copy(_internalBuffer, _head, segment.Array, segment.Offset, rightLength);
-//                    Array.Copy(_internalBuffer, 0, segment.Array, segment.Offset + rightLength, _length - rightLength);
-//                }
-//            }
-//        }
-//#endif
+        //            if (_length > 0)
+        //            {
+        //                int rightLength = getRightFilledLength();
+        //                if (rightLength >= _length)
+        //                {
+        //                    Array.Copy(_internalBuffer, _head, segment.Array, segment.Offset, _length);
+        //                }
+        //                else
+        //                {
+        //                    Array.Copy(_internalBuffer, _head, segment.Array, segment.Offset, rightLength);
+        //                    Array.Copy(_internalBuffer, 0, segment.Array, segment.Offset + rightLength, _length - rightLength);
+        //                }
+        //            }
+        //        }
+        //#endif
         #endregion
 
         #region IList
@@ -1607,32 +1620,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 从栈中弹出一个元素
         /// </summary>
-        public bool Pop(out T item)
-        {
-            if (_length <= 0)
-            {
-                item = default;
-                return false;
-            }
-
-            item = _internalBuffer[_head];
-
-            _length--;
-
-            if (_length == 0)
-            {
-                _head = 0;
-                _tail = 0;
-            }
-            else
-            {
-                _head = (_head + 1) % _internalBuffer.Length;
-            }
-
-            _version++;
-
-            return true;
-        }
+        public bool Pop(out T item) => dequeue(out item);
 
         /// <summary>
         /// 向栈中压入一个元素
