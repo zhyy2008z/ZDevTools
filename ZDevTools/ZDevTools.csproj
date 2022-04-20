@@ -7,10 +7,12 @@
     <Description>开发工具库，目前包含一个SqlHelper库，TreeNode树结构类型及算法，RSA算法加密解密实用工具类，SymbolicLink与SocketListener</Description>
     <Product>程序开发工具库</Product>
     <PackageTags>SqlHelper TreeNode RSAHelper SocketListener SymbolicLink</PackageTags>
-    <Version>5.3.1</Version>
+    <Version>5.3.2</Version>
     <PackageReleaseNotes>
-      1、改进BufferQueue.Clear API
-      2、统一各api中对count参数的返回结果处理方式，统一为count==0时返回false
+      1、添加BufferQueue.ClearOne API
+      2、[破坏性更新]BufferQueue.Insert(int,Span)改为BufferQueue.InsertRange(int,Span)
+      3、优化BufferQueue部分API性能
+      4、BufferQueue新增一个构造函数BufferQueue(ReadOnlySpan)
     </PackageReleaseNotes>
 
     <Authors>穿越中的逍遥</Authors>

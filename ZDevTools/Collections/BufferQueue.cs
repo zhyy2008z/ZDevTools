@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace ZDevTools.Collections
@@ -22,6 +21,8 @@ namespace ZDevTools.Collections
     public class BufferQueue<T> : IList<T>, IReadOnlyList<T>, IList
     {
         #region Constructor & Fields & Properties
+        const int DefaultCapacity = 4;
+
         /// <summary>
         /// 头部指针（或者左侧剩余空间【可能大于实际剩余空间】）
         /// </summary>
@@ -144,7 +145,10 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 构造一个新实例
         /// </summary>
-        public BufferQueue() : this(2048) { }
+        public BufferQueue()
+        {
+            _internalBuffer = Array.Empty<T>();
+        }
 
         /// <summary>
         /// 指定默认缓存大小初始化一个T队列
@@ -159,15 +163,50 @@ namespace ZDevTools.Collections
         /// </summary>
         public BufferQueue(IEnumerable<T> items)
         {
-            _internalBuffer = items.ToArray();
-            _length = _internalBuffer.Length;
+            if (items == null) throw new ArgumentNullException(nameof(items));
+
+            if (items is ICollection<T> collection)
+            {
+                var count = collection.Count;
+                if (count == 0)
+                    _internalBuffer = Array.Empty<T>();
+                else
+                {
+                    _internalBuffer = new T[count];
+                    collection.CopyTo(_internalBuffer, 0);
+                    _length = count;
+                }
+            }
+            else
+            {
+                _internalBuffer = new T[DefaultCapacity];
+                foreach (var item in items)
+                    Enqueue(item);
+            }
         }
 
         /// <summary>
-        /// 使用一个已存在的元素数组作为内部缓存（注意：此数组本身及其所有元素将被本类接管，传入后您不再被允许修改此传入数组）
+        /// 使用块数据构造一个新实例
+        /// </summary>
+        public BufferQueue(ReadOnlySpan<T> span)
+        {
+            if (span.IsEmpty)
+                _internalBuffer = Array.Empty<T>();
+            else
+            {
+                _internalBuffer = new T[span.Length];
+                span.CopyTo(_internalBuffer);
+                _length = span.Length;
+            }
+        }
+
+        /// <summary>
+        /// 使用一个已存在的元素数组作为内部缓存（注意：此数组本身及其所有元素将被本类接管，传入后您不应该再修改此传入的数组）
         /// </summary>
         public BufferQueue(T[] buffer)
         {
+            if (buffer == null) throw new ArgumentNullException(nameof(buffer));
+
             _internalBuffer = buffer;
             _length = _internalBuffer.Length;
         }
@@ -350,6 +389,32 @@ namespace ZDevTools.Collections
             {
                 _head = 0;
                 _tail = 0;
+            }
+
+            _version++;
+
+            return true;
+        }
+
+        /// <summary>
+        /// 从出队位置清除一个元素，不提取已清除的数据，性能相对更好
+        /// </summary>
+        /// <returns>是否从出队位置清除了一个元素</returns>
+        public bool ClearOne()
+        {
+            if (_length < 1)
+                return false;
+
+            _length--;
+
+            if (_length == 0)
+            {
+                _head = 0;
+                _tail = 0;
+            }
+            else
+            {
+                _head = (_head + 1) % _internalBuffer.Length;
             }
 
             _version++;
@@ -1017,8 +1082,6 @@ namespace ZDevTools.Collections
         #region List
 
         #region Miscellaneous
-        void ICollection<T>.Add(T item) => Enqueue(item);
-
         /// <summary>
         /// Returns a read-only System.Collections.ObjectModel.ReadOnlyCollection`1 wrapper for the current collection.
         /// </summary>
@@ -1083,6 +1146,18 @@ namespace ZDevTools.Collections
         /// 队列中是否存在指定元素
         /// </summary>
         public bool Contains(T item) => IndexOf(item) > -1;
+        #endregion
+
+        #region Add
+        /// <summary>
+        /// 在队尾添加
+        /// </summary>
+        public void Add(T item) => Enqueue(item);
+
+        /// <summary>
+        /// 在队尾添加一批元素
+        /// </summary>
+        public void AddRange(ReadOnlySpan<T> span) => Enqueue(span);
         #endregion
 
         #region Insert
@@ -1154,7 +1229,7 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 入队一组T
         /// </summary>
-        public void Insert(int index, ReadOnlySpan<T> span)
+        public void InsertRange(int index, ReadOnlySpan<T> span)
         {
             throwIfOutOfRangeForInsert(index);
 
@@ -1618,12 +1693,12 @@ namespace ZDevTools.Collections
 
         #region Stack
         /// <summary>
-        /// 从栈中弹出一个元素
+        /// 从栈中弹出一个元素（队首处）
         /// </summary>
         public bool Pop(out T item) => dequeue(out item);
 
         /// <summary>
-        /// 向栈中压入一个元素
+        /// 向栈中压入一个元素（队首处）
         /// </summary>
         public void Push(T item)
         {
@@ -1645,10 +1720,10 @@ namespace ZDevTools.Collections
         /// </summary>
         void gainCapacity(int newLength)
         {
-            int capacity = _internalBuffer.Length == 0 ? 4 : _internalBuffer.Length;
-            do
-                capacity *= 2;
-            while (capacity < newLength);
+            int capacity = _internalBuffer.Length == 0 ? DefaultCapacity : _internalBuffer.Length * 2;
+
+            if (capacity < newLength)
+                capacity = newLength;
 
             T[] newBuffer = new T[capacity];
 
