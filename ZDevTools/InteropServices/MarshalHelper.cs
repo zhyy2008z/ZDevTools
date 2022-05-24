@@ -12,7 +12,6 @@ namespace ZDevTools.InteropServices
     /// </summary>
     public static class MarshalHelper
     {
-
         /// <summary>
         /// 结构转为字节数组
         /// </summary>
