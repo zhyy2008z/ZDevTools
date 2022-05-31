@@ -243,5 +243,209 @@ namespace ZDevTools.Test.Collections
             queue = new BufferQueue<int>(100);
             Assert.Equal(100, queue.Capacity);
         }
+
+        [Fact]
+        public void TestInsertRange1()
+        {
+            //测试离头部更近，头部无足够空间，插入部分可以全部放在头部，无剩余有效数据搬运需要搬运
+
+            BufferQueue<int> queue = new BufferQueue<int>() { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+            queue.Capacity = 12;
+
+            queue.Clear(3);
+            Assert.Equal(new[] { 3, 4, 5, 6, 7, 8, 9 }, queue);
+
+
+            queue.InsertRange(1, new[] { 2, 2, 1, 5 });
+
+            Assert.Equal(new[] { 3, 2, 2, 1, 5, 4, 5, 6, 7, 8, 9 }, queue);
+        }
+
+        [Fact]
+        public void TestInsertRange2()
+        {
+            //测试离头部更近，头部无足够空间，插入部分可以全部放在头部，有剩余有效数据搬运到缓存的开始位置
+
+            BufferQueue<int> queue = new BufferQueue<int>() { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+            queue.Capacity = 13;
+
+            queue.Clear(3);
+            Assert.Equal(new[] { 3, 4, 5, 6, 7, 8, 9 }, queue);
+
+
+            queue.InsertRange(2, new[] { 2, 2, 1, 5, });
+
+            Assert.Equal(new[] { 3, 4, 2, 2, 1, 5, 5, 6, 7, 8, 9 }, queue);
+        }
+
+        [Fact]
+        public void TestInsertRange3()
+        {
+            //测试离头部更近，头部无足够空间，插入部分只有一部分可以放在头部
+
+            BufferQueue<int> queue = new BufferQueue<int>() { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+            queue.Capacity = 13;
+
+            queue.Clear(2);
+            Assert.Equal(new[] { 2, 3, 4, 5, 6, 7, 8, 9 }, queue);
+
+
+            queue.InsertRange(2, new[] { 2, 2, 1, 5, 5 });
+
+            Assert.Equal(new[] { 2, 3, 2, 2, 1, 5, 5, 4, 5, 6, 7, 8, 9 }, queue);
+        }
+
+        [Fact]
+        public void TestInsertRange4()
+        {
+            //测试离尾部更近，尾部无足够空间，插入数据可以全部放在尾部，没有剩余有效数据需要搬运到尾部
+
+            BufferQueue<int> queue = new BufferQueue<int>() { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+            queue.Capacity = 13;
+
+            queue.Clear(4);
+            Assert.Equal(new[] { 4, 5, 6, 7, 8, 9 }, queue);
+
+            queue.InsertRange(4, new[] { 2, 2, 1, 5, 5 });
+
+            Assert.Equal(new[] { 4, 5, 6, 7, 2, 2, 1, 5, 5, 8, 9 }, queue);
+        }
+
+        [Fact]
+        public void TestInsertRange5()
+        {
+            //测试离尾部更近，尾部无足够空间，插入数据可以全部放在尾部，有剩余有效数据需要搬运到尾部
+
+            BufferQueue<int> queue = new BufferQueue<int>() { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+            queue.Capacity = 13;
+
+            queue.Clear(4);
+            Assert.Equal(new[] { 4, 5, 6, 7, 8, 9 }, queue);
+
+            queue.InsertRange(3, new[] { 2, 2, 1, 5, 5 });
+
+            Assert.Equal(new[] { 4, 5, 6, 2, 2, 1, 5, 5, 7, 8, 9 }, queue);
+        }
+
+        [Fact]
+        public void TestInsertRange6()
+        {
+            //测试离尾部更近，尾部无足够空间，插入数据只有部分可以放在尾部
+
+            BufferQueue<int> queue = new BufferQueue<int>() { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+            queue.Capacity = 13;
+
+            queue.Clear(4);
+            Assert.Equal(new[] { 4, 5, 6, 7, 8, 9 }, queue);
+
+            queue.InsertRange(4, new[] { 2, 2, 1, 5, 5, 9 });
+
+            Assert.Equal(new[] { 4, 5, 6, 7, 2, 2, 1, 5, 5, 9, 8, 9 }, queue);
+        }
+
+        [Fact]
+        public void TestInsert1()
+        {
+            //测试离头部更近，头部有空间
+
+            BufferQueue<int> queue = new BufferQueue<int>() { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+            queue.Capacity = 13;
+
+            queue.Clear(4);
+
+            Assert.Equal(new[] { 4, 5, 6, 7, 8, 9 }, queue);
+
+            queue.Insert(2, 9);
+
+            Assert.Equal(new[] { 4, 5, 9, 6, 7, 8, 9 }, queue);
+        }
+
+        [Fact]
+        public void TestInsert2()
+        {
+            //测试离头部更近，头部无足够空间
+
+            BufferQueue<int> queue = new BufferQueue<int>() { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+            queue.Capacity = 13;
+
+            Assert.Equal(new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }, queue);
+
+            queue.Insert(1, 9);
+
+            Assert.Equal(new[] { 0, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9 }, queue);
+        }
+
+        [Fact]
+        public void TestInsert3()
+        {
+            //测试离尾部更近，尾部有足够空间
+
+            BufferQueue<int> queue = new BufferQueue<int>() { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+            queue.Capacity = 13;
+
+            Assert.Equal(new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }, queue);
+
+            queue.Insert(8, 19);
+
+            Assert.Equal(new[] { 0, 1, 2, 3, 4, 5, 6, 7, 19, 8, 9, }, queue);
+        }
+
+        [Fact]
+        public void TestInsert4()
+        {
+            //测试离尾部更近，尾部无足够空间
+
+            BufferQueue<int> queue = new BufferQueue<int>() { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+            queue.Clear(4);
+
+            Assert.Equal(new[] { 4, 5, 6, 7, 8, 9 }, queue);
+
+            queue.Insert(4, item: 9);
+
+            Assert.Equal(new[] { 4, 5, 6, 7, 9, 8, 9 }, queue);
+        }
+
+        [Fact]
+        public void TestInserRandom()
+        {
+            BufferQueue<int> queue = new BufferQueue<int>() { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            Random random = new Random();
+            for (int i = 0; i < 10000; i++)
+            {
+                var index = random.Next(queue.Count + 1);
+                var item = random.Next();
+                var expect = queue.Take(index).Append(item).Concat(queue.Skip(index)).ToArray();
+                queue.Insert(index, item);
+                Assert.Equal(expect, queue);
+            }
+        }
+
+        [Fact]
+        public void TestInsertRangeRandom()
+        {
+            BufferQueue<int> queue = new BufferQueue<int>() { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            Random random = new Random();
+            for (int i = 0; i < 1000; i++)
+            {
+                var length = random.Next(10);
+                var items = new int[length];
+                for (int j = 0; j < length; j++)
+                    items[j] = random.Next();
+                var index = random.Next(queue.Count + 1);
+                var expect = queue.Take(index).Concat(items).Concat(queue.Skip(index)).ToArray();
+                queue.InsertRange(index, items);
+                Assert.Equal(expect, queue);
+            }
+        }
     }
 }

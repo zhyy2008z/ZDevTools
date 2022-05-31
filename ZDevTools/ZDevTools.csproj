@@ -7,10 +7,10 @@
     <Description>开发工具库，目前包含一个SqlHelper库，TreeNode树结构类型及算法，RSA算法加密解密实用工具类，SymbolicLink与SocketListener</Description>
     <Product>程序开发工具库</Product>
     <PackageTags>SqlHelper TreeNode RSAHelper SocketListener SymbolicLink</PackageTags>
-    <Version>5.5</Version>
+    <Version>5.5.1</Version>
     <PackageReleaseNotes>
-      1、添加CpuUsageMonitor工具对象
-      2、添加SystemTools工具类
+      1、修正BufferQueue.InsertRange API
+      2、优化BufferQueue.Insert API
     </PackageReleaseNotes>
 
     <Authors>穿越中的逍遥</Authors>
