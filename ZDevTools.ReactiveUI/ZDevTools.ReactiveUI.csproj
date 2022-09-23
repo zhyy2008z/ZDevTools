@@ -7,8 +7,8 @@
     <Product>程序开发工具库(ReactiveUI)</Product>
     <Description>这是一个为Microsoft.Extensions提供与ReactiveUI有关务的类库</Description>
     <PackageTags>ZDevTools ReactiveUI</PackageTags>
-    <Version>1.1</Version>
-    <PackageReleaseNotes>ReactiveUI注册IScreen改为Scoped作用域</PackageReleaseNotes>
+    <Version>1.2</Version>
+    <PackageReleaseNotes>优先注册IScreen</PackageReleaseNotes>
 
     <Authors>穿越中的逍遥</Authors>
     <Company>穿越中的逍遥</Company>

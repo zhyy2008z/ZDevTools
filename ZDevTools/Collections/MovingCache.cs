@@ -42,9 +42,9 @@ namespace ZDevTools.Collections
         public int Capacity => Buffer.Length;
 
         /// <summary>
-        /// 缓存是否可读（缓存已存满）
+        /// 当前缓存已存储数量
         /// </summary>
-        public int Length => _isFull ? Buffer.Length : _position;
+        public int Count => _isFull ? Buffer.Length : _position;
 
         bool _isFull;
         /// <summary>
@@ -66,7 +66,7 @@ namespace ZDevTools.Collections
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private ref T getElement(int index)
         {
-            if ((uint)index >= (uint)Length)
+            if ((uint)index >= (uint)Count)
                 throw new ArgumentOutOfRangeException(nameof(index));
 
             if (_isFull)
@@ -98,7 +98,7 @@ namespace ZDevTools.Collections
         /// </summary>
         public T[] ToArray()
         {
-            T[] result = new T[Length];
+            T[] result = new T[Count];
             if (_isFull)
             {
                 var rightLength = getRightLength();
@@ -106,7 +106,7 @@ namespace ZDevTools.Collections
                 Array.Copy(Buffer, 0, result, rightLength, _position);
             }
             else
-                Array.Copy(Buffer, result, Length);
+                Array.Copy(Buffer, result, Count);
             return result;
         }
 
@@ -216,7 +216,7 @@ namespace ZDevTools.Collections
 
                 _index++;
 
-                if (_index == Cache.Length)
+                if (_index == Cache.Count)
                 {
                     _index = -2;
                     _current = default;

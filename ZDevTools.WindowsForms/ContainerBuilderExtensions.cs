@@ -34,10 +34,11 @@ namespace ZDevTools.WindowsForms
             {
                 if (type.IsAbstract) continue;
 
-                if (type.IsAssignableTo<ReactiveObject>())//ViewModel
-                    containerBuilder.RegisterType(type);
-                else if (type.IsAssignableTo<IScreen>())  //Screen(Per Scope)，允许一个应用中IScreen出现多次（各Scope内仅实例化一次）
+                //应将IScreen优先处理，因为这个接口更为重要
+                if (type.IsAssignableTo<IScreen>())  //Screen(Per Scope)，允许一个应用中IScreen出现多次（各Scope内仅实例化一次）
                     containerBuilder.RegisterType(type).AsSelf().As<IScreen>().InstancePerLifetimeScope();
+                else if (type.IsAssignableTo<ReactiveObject>())//ViewModel
+                    containerBuilder.RegisterType(type);
                 else //Maybe View
                 {
                     var type2 = type.ImplementedInterfaces.FirstOrDefault(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IViewFor<>));

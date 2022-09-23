@@ -50,13 +50,13 @@ namespace ZDevTools.Test.Collections
             Assert.Equal(new[] { 2, 99, 4, 5, 6, 7, 8, 9, 10, 100, }, cache);
 
             cache.Clear();
-            Assert.Equal(0, cache.Length);
+            Assert.Equal(0, cache.Count);
             Assert.Equal(10, cache.Capacity);
 
             cache.EraseExcess();
 
             cache.Enqueue(35);
-            Assert.Equal(1, cache.Length);
+            Assert.Equal(1, cache.Count);
         }
 
 

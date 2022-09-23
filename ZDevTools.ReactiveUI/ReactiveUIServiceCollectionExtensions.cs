@@ -21,14 +21,14 @@ namespace Microsoft.Extensions.DependencyInjection
             {
                 if (type.IsAbstract) continue;
 
-                if (typeof(ReactiveObject).IsAssignableFrom(type))//ViewModel
-                    serviceCollection.AddTransient(type);
-                else if (typeof(IScreen).IsAssignableFrom(type))  //Screen(As Scope)，允许一个应用中IScreen出现多次（各Scope内仅实例化一次）
+                //应将IScreen优先处理，因为这个接口更为重要
+                if (typeof(IScreen).IsAssignableFrom(type))  //Screen(As Scope)，允许一个应用中IScreen出现多次（各Scope内仅实例化一次）
                 {
-                    var realType = type.AsType();
-                    serviceCollection.AddScoped(realType);
-                    serviceCollection.AddScoped(typeof(IScreen), serviceProvider => serviceProvider.GetService(realType));
+                    serviceCollection.AddScoped(type);
+                    serviceCollection.AddScoped(typeof(IScreen), serviceProvider => serviceProvider.GetService(type));
                 }
+                else if (typeof(ReactiveObject).IsAssignableFrom(type))//ViewModel
+                    serviceCollection.AddTransient(type);
                 else //Maybe View
                 {
                     var type2 = type.ImplementedInterfaces.FirstOrDefault(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IViewFor<>));

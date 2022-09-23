@@ -1,21 +1,20 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Collections.Generic;
-using System.Collections;
-using System.Linq;
 using System.Threading.Tasks;
-using System.Globalization;
 
 namespace ZDevTools.Data
 {
     /// <summary>
     /// <para>数据库通用访问辅助类</para>
     /// <para>开发者：穿越中的逍遥</para>
-    /// <para>版本：5.0</para>
-    /// <para>日期：2020年4月29日</para>
+    /// <para>版本：5.1</para>
+    /// <para>日期：2021年6月2日</para>
     /// <para>简介：</para>
     /// <para>虽然是个辅助类，但是支持事务管理（仅单事务管理）。您可以通过继承或填充泛型参数直接操作其他类型的数据库，如Oracle、MySql等。</para>
     /// <para>本辅助类支持占位符，使用方法如下： //v3.1 增加占位符功能的描述</para>
@@ -267,43 +266,43 @@ namespace ZDevTools.Data
                 switch (value)
                 {
                     case "{update}":
-                        {
-                            const string patternHead = "{0}=@{0}";
-                            const string patternBody = ",{0}=@{0}";
-                            var from = queryCount;
-                            var to = count;
-                            sql = buildFromPattern(sql, nameValues, patternHead, patternBody, value, from, to);
-                        }
+                    {
+                        const string patternHead = "{0}=@{0}";
+                        const string patternBody = ",{0}=@{0}";
+                        var from = queryCount;
+                        var to = count;
+                        sql = buildFromPattern(sql, nameValues, patternHead, patternBody, value, from, to);
                         break;
+                    }
                     case "{where}":
-                        {
+                    {
 
-                            int from = 0, to;
-                            if (queryCount > 0) //是q模式，需要为where做特殊处理
-                                to = queryCount > count ? count : queryCount;
-                            else
-                                to = count;
-                            sql = buildFromWherePattern(sql, nameValues, value, from, to);
-                        }
+                        int from = 0, to;
+                        if (queryCount > 0) //是q模式，需要为where做特殊处理
+                            to = queryCount > count ? count : queryCount;
+                        else
+                            to = count;
+                        sql = buildFromWherePattern(sql, nameValues, value, from, to);
                         break;
+                    }
                     case "{insf}":
-                        {
-                            const string patternHead = "{0}";
-                            const string patternBody = ",{0}";
-                            var from = queryCount;
-                            var to = count;
-                            sql = buildFromPattern(sql, nameValues, patternHead, patternBody, value, from, to);
-                        }
+                    {
+                        const string patternHead = "{0}";
+                        const string patternBody = ",{0}";
+                        var from = queryCount;
+                        var to = count;
+                        sql = buildFromPattern(sql, nameValues, patternHead, patternBody, value, from, to);
                         break;
+                    }
                     case "{insv}":
-                        {
-                            const string patternHead = "@{0}";
-                            const string patternBody = ",@{0}";
-                            var from = queryCount;
-                            var to = count;
-                            sql = buildFromPattern(sql, nameValues, patternHead, patternBody, value, from, to);
-                        }
+                    {
+                        const string patternHead = "@{0}";
+                        const string patternBody = ",@{0}";
+                        var from = queryCount;
+                        var to = count;
+                        sql = buildFromPattern(sql, nameValues, patternHead, patternBody, value, from, to);
                         break;
+                    }
                     default:
                         if (value.StartsWith("{in:")) //{in:@p1}
                         {
@@ -498,7 +497,7 @@ namespace ZDevTools.Data
 
 
         /// <summary>
-        /// 开启一个事务，提交事务请显式调用<see cref="Commit()"/>，否则事务无法提交。
+        /// 按需打开并保持连接后开启一个事务，提交事务请显式调用<see cref="Commit()"/>，否则事务无法提交。
         /// </summary>
         /// <returns>返回DBHelper对象本身，使用<see cref="IDisposable"/>接口</returns>
         public IDisposable BeginTransaction() //v3.3 原Open方法重命名为BeginTransaction方法
@@ -509,7 +508,7 @@ namespace ZDevTools.Data
         }
 
         /// <summary>
-        /// 开启一个事务，提交事务请显式调用<see cref="Commit()"/>，否则事务无法提交。
+        /// 按需打开并保持连接后开启一个事务，提交事务请显式调用<see cref="Commit()"/>，否则事务无法提交。
         /// </summary>
         /// <returns>返回DBHelper对象本身，使用<see cref="IDisposable"/>接口</returns>
         public async ValueTask<IDisposable> BeginTransactionAsync() //v3.3 原Open方法重命名为BeginTransaction方法
@@ -524,7 +523,7 @@ namespace ZDevTools.Data
         }
 
         /// <summary>
-        /// 开启一个事务，提交事务请显式调用<see cref="Commit()"/>，否则事务无法提交。
+        /// 按需打开并保持连接后开启一个事务，提交事务请显式调用<see cref="Commit()"/>，否则事务无法提交。
         /// </summary>
         /// <param name="isolationLevel">显式指定一个隔离级别</param>
         /// <returns>返回DBHelper对象本身，使用<see cref="IDisposable"/>接口</returns>
@@ -536,7 +535,7 @@ namespace ZDevTools.Data
         }
 
         /// <summary>
-        /// 开启一个事务，提交事务请显式调用<see cref="Commit()"/>，否则事务无法提交。
+        /// 按需打开并保持连接后开启一个事务，提交事务请显式调用<see cref="Commit()"/>，否则事务无法提交。
         /// </summary>
         /// <param name="isolationLevel">显式指定一个隔离级别</param>
         /// <returns>返回DBHelper对象本身，使用<see cref="IDisposable"/>接口</returns>
@@ -968,6 +967,8 @@ namespace ZDevTools.Data
         #endregion
 
         #region Keep DBNull
+        //这里需要保留DBNull以支持这样的场景：执行一个标量查询语句后，使用返回结果null来表示“the first column of the first row in the result set is not found”，使用DBNull.Value来表示“the value in the database is null”。由于DBNull是独立的类型，因此在泛型版本中将无法被转型成功，因此将DBNull.Value替换为null，而非泛型版本则保留了DBNull.Value用以支持前述场景。
+
         /// <summary>
         /// 获取标量值
         /// </summary>
@@ -1344,19 +1345,19 @@ namespace ZDevTools.Data
         {
             int affectedRowCount = 0;
             await ExecuteAsync(async (TCommand cmd) =>
-           {
-               cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
-               try
-               {
-                   cmd.CommandText = buildSql(sql, nameValues, inParameters);
-                   cmd.CommandType = commandType;
-                   affectedRowCount = await cmd.ExecuteNonQueryAsync();
-               }
-               finally
-               {
-                   cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
-               }
-           });
+            {
+                cmd.Parameters.AddRange(convertParameter(parameters, inParameters, out var nameValues));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, nameValues, inParameters);
+                    cmd.CommandType = commandType;
+                    affectedRowCount = await cmd.ExecuteNonQueryAsync();
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
             return affectedRowCount;
         }
 
@@ -1396,18 +1397,18 @@ namespace ZDevTools.Data
         {
             int affectedRowCount = 0;
             await ExecuteAsync(async (TCommand cmd) =>
-           {
-               cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
-               try
-               {
-                   cmd.CommandText = buildSql(sql, nameValues, null);
-                   affectedRowCount = await cmd.ExecuteNonQueryAsync();
-               }
-               finally
-               {
-                   cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
-               }
-           });
+            {
+                cmd.Parameters.AddRange(convertParameter(parameters, out var nameValues));
+                try
+                {
+                    cmd.CommandText = buildSql(sql, nameValues, null);
+                    affectedRowCount = await cmd.ExecuteNonQueryAsync();
+                }
+                finally
+                {
+                    cmd.Parameters.Clear(); //v2.3 修正parameter绑定到cmd后不能用到其他cmd的问题
+                }
+            });
             return affectedRowCount;
         }
 
@@ -1530,10 +1531,10 @@ namespace ZDevTools.Data
         {
             int affectedRowCount = 0;
             await ExecuteAsync(async (TCommand cmd) =>
-             {
-                 cmd.CommandText = sql;
-                 affectedRowCount = await cmd.ExecuteNonQueryAsync();
-             });
+            {
+                cmd.CommandText = sql;
+                affectedRowCount = await cmd.ExecuteNonQueryAsync();
+            });
             return affectedRowCount;
         }
 
