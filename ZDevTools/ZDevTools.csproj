@@ -32,7 +32,7 @@
   <!-- 虽然 IsExternalInit 在net5.0上不会起作用，但是我们仍然采用条件包引用，是为了让net5.0连引用都不引用。-->
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-    <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
     <PackageReference Include="IsExternalInit" Version="1.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -40,12 +40,12 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net5.0'">
-    <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
   </ItemGroup>
   
   <!--<ItemGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch(
          $(TargetFramework), '^net\d+\.\d+$'))">
-    <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
   </ItemGroup>-->
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
