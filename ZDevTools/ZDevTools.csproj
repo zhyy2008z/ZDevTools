@@ -7,10 +7,9 @@
     <Description>开发工具库，目前包含一个SqlHelper库，TreeNode树结构类型及算法，RSA算法加密解密实用工具类，SymbolicLink与SocketListener</Description>
     <Product>程序开发工具库</Product>
     <PackageTags>SqlHelper TreeNode RSAHelper SocketListener SymbolicLink</PackageTags>
-    <Version>5.6</Version>
+    <Version>5.6.1</Version>
     <PackageReleaseNotes>
-      1、改进MarshalHelper API，使其适应的场景更广
-      2、[Break Change]重命名MovingCache.Length为MovingCache.Count
+      1、MathTools新增针对float类型的ApplyWindowFilter函数
     </PackageReleaseNotes>
 
     <Authors>穿越中的逍遥</Authors>
@@ -43,6 +42,11 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net5.0'">
     <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
   </ItemGroup>
+  
+  <!--<ItemGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch(
+         $(TargetFramework), '^net\d+\.\d+$'))">
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
+  </ItemGroup>-->
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />

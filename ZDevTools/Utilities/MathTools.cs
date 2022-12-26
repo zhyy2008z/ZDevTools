@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ZDevTools.Utilities
 {
@@ -447,40 +445,78 @@ namespace ZDevTools.Utilities
             Array.Copy(arr, 0, values, start, arr.Length);
         }
 
-        ///// <summary>
-        ///// 应用移动窗口滤波（支持仅对一维数组的部分数据进行窗口滤波算法）
-        ///// </summary>
-        ///// <param name="window">窗口滤波参数</param>
-        ///// <param name="values">数据</param>
-        ///// <param name="start">开始应用窗口滤波的起点坐标（包含）</param>
-        ///// <param name="end">停止应用窗口滤波的终点坐标（不包含）</param>
-        //public static double[] ApplyWindowFilter(double[] window, double[] values, int start, int end)
-        //{
-        //    double[] result = (double[])values.Clone();
-        //    var r = window.Length / 2;
+        /// <summary>
+        /// 应用移动窗口滤波（对一维数组整体运用窗口滤波算法，效率较高）
+        /// </summary>
+        /// <param name="window">窗口参数</param>
+        /// <param name="values">数据</param>
+        /// <returns>返回已应用滤波的数组（新实例）</returns>
+        public static float[] ApplyWindowFilter(ReadOnlySpan<float> values, float[] window)
+        {
+            var r = window.Length / 2;
+            if (values.Length - r < 0)
+                throw new ArgumentException("数据点数过少", nameof(values));
 
-        //    start = Math.Max(start, 0);
-        //    end = Math.Min(end, values.Length);
+            float[] result = new float[values.Length];
+            var windowSum = window.Sum();
+            //从r位置开始到length-r位置，应用以j为中心的高斯滤波
+            for (int i = r; i < values.Length - r; i++)
+            {
+                float sum = 0;
+                for (int j = 0; j < window.Length; j++)
+                    sum += window[j] * values[i + j - r];
+                result[i] = sum / windowSum;
+            }
 
-        //    for (int i = start; i < end; i++)
-        //    {
-        //        //每个点都需要计算自己的高斯权值和
-        //        double windowSum = 0;
-        //        double sum = 0;
-        //        for (int j = 0; j < window.Length; j++)
-        //        {
-        //            var valueIndex = i - r + j;
+            for (int i = 0; i < r; i++)
+            {
+                //每个点都需要计算自己的高斯权值和
+                windowSum = 0;
+                float sum = 0;
+                for (int j = 0; j < window.Length; j++)
+                {
+                    var valueIndex = i - r + j;
 
-        //            if (valueIndex > start - 1 && valueIndex < end)
-        //            {
-        //                windowSum += window[j];
-        //                sum += window[j] * values[valueIndex];
-        //            }
-        //        }
-        //        result[i] = sum / windowSum;
-        //    }
-        //    return result;
-        //}
+                    if (valueIndex > -1 && valueIndex < values.Length)
+                    {
+                        windowSum += window[j];
+                        sum += window[j] * values[valueIndex];
+                    }
+                }
+                result[i] = sum / windowSum;
+            }
+
+            for (int i = values.Length - r; i < values.Length; i++)
+            {
+                //每个点都需要计算自己的高斯权值和
+                windowSum = 0;
+                float sum = 0;
+                for (int j = 0; j < window.Length; j++)
+                {
+                    var valueIndex = i - r + j;
+
+                    if (valueIndex > -1 && valueIndex < values.Length)
+                    {
+                        windowSum += window[j];
+                        sum += window[j] * values[valueIndex];
+                    }
+                }
+                result[i] = sum / windowSum;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 对一维数组的部分数据直接进行窗口滤波算法（直接应用到传入的数组上）
+        /// </summary>
+        /// <param name="values">数据</param>
+        /// <param name="start">开始应用窗口滤波的起点坐标（包含）</param>
+        /// <param name="end">停止应用窗口滤波的终点坐标（不包含）</param>
+        /// <param name="window">窗口滤波参数</param>
+        public static void ApplyWindowFilter(float[] values, int start, int end, float[] window)
+        {
+            var arr = ApplyWindowFilter(values.AsSpan()[start..end], window);
+            Array.Copy(arr, 0, values, start, arr.Length);
+        }
     }
-
 }
