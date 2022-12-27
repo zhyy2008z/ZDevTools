@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+#if NET7_0_OR_GREATER
+using System.Numerics;
+#endif
 
 namespace ZDevTools.Collections
 {
@@ -331,8 +334,6 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 返回序列的一阶差分序列
         /// </summary>
-        /// <param name="items"></param>
-        /// <returns></returns>
         public static IEnumerable<double> FirstDifference(this IEnumerable<double> items)
         {
             if (items == null) throw new ArgumentNullException(nameof(items));
@@ -357,8 +358,78 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 返回序列的一阶差分序列
         /// </summary>
-        /// <param name="items"></param>
-        /// <returns></returns>
+        public static IEnumerable<float> FirstDifference(this IEnumerable<float> items)
+        {
+            if (items == null) throw new ArgumentNullException(nameof(items));
+
+            bool isFirst = true;
+            float lastValue = default;
+
+            foreach (var item in items)
+            {
+                if (isFirst)
+                {
+                    isFirst = false;
+                }
+                else
+                {
+                    yield return item - lastValue;
+                }
+                lastValue = item;
+            }
+        }
+
+        /// <summary>
+        /// 返回序列的一阶差分序列
+        /// </summary>
+        public static IEnumerable<long> FirstDifference(this IEnumerable<long> items)
+        {
+            if (items == null) throw new ArgumentNullException(nameof(items));
+
+            bool isFirst = true;
+            long lastValue = default;
+
+            foreach (var item in items)
+            {
+                if (isFirst)
+                {
+                    isFirst = false;
+                }
+                else
+                {
+                    yield return item - lastValue;
+                }
+                lastValue = item;
+            }
+        }
+
+        /// <summary>
+        /// 返回序列的一阶差分序列
+        /// </summary>
+        public static IEnumerable<int> FirstDifference(this IEnumerable<int> items)
+        {
+            if (items == null) throw new ArgumentNullException(nameof(items));
+
+            bool isFirst = true;
+            int lastValue = default;
+
+            foreach (var item in items)
+            {
+                if (isFirst)
+                {
+                    isFirst = false;
+                }
+                else
+                {
+                    yield return item - lastValue;
+                }
+                lastValue = item;
+            }
+        }
+
+        /// <summary>
+        /// 返回序列的一阶差分序列
+        /// </summary>
         public static IEnumerable<TimeSpan> FirstDifference(this IEnumerable<DateTime> items)
         {
             if (items == null) throw new ArgumentNullException(nameof(items));
@@ -378,6 +449,32 @@ namespace ZDevTools.Collections
                 lastValue = item;
             }
         }
+
+#if NET7_0_OR_GREATER
+        /// <summary>
+        /// 返回序列的一阶差分序列
+        /// </summary>
+        public static IEnumerable<T> FirstDifference<T>(this IEnumerable<T> items) where T : ISubtractionOperators<T, T, T>
+        {
+            if (items == null) throw new ArgumentNullException(nameof(items));
+
+            bool isFirst = true;
+            T lastValue = default;
+
+            foreach (var item in items)
+            {
+                if (isFirst)
+                {
+                    isFirst = false;
+                }
+                else
+                {
+                    yield return item - lastValue;
+                }
+                lastValue = item;
+            }
+        }
+#endif
 
         /// <summary>
         /// 序列变为BufferQueue
