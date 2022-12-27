@@ -7,9 +7,10 @@
     <Description>开发工具库，目前包含一个SqlHelper库，TreeNode树结构类型及算法，RSA算法加密解密实用工具类，SymbolicLink与SocketListener</Description>
     <Product>程序开发工具库</Product>
     <PackageTags>SqlHelper TreeNode RSAHelper SocketListener SymbolicLink</PackageTags>
-    <Version>5.6.1</Version>
+    <Version>5.7</Version>
     <PackageReleaseNotes>
-      1、MathTools新增针对float类型的ApplyWindowFilter函数
+      1、【Break Change】解决MaxValueIndex与MinValueIndex API 漏洞
+      2、提升包引用版本
     </PackageReleaseNotes>
 
     <Authors>穿越中的逍遥</Authors>
@@ -32,28 +33,28 @@
   <!-- 虽然 IsExternalInit 在net5.0上不会起作用，但是我们仍然采用条件包引用，是为了让net5.0连引用都不引用。-->
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-    <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
-    <PackageReference Include="IsExternalInit" Version="1.0.0">
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
+    <PackageReference Include="IsExternalInit" Version="1.0.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net5.0'">
-    <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
   </ItemGroup>
   
   <!--<ItemGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch(
          $(TargetFramework), '^net\d+\.\d+$'))">
-    <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
   </ItemGroup>-->
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
-    <PackageReference Include="System.Memory" Version="4.5.4" />
-    <PackageReference Include="IndexRange" Version="1.0.0" />
-    <PackageReference Include="IsExternalInit" Version="1.0.0">
+    <PackageReference Include="System.Memory" Version="4.5.5" />
+    <PackageReference Include="IndexRange" Version="1.0.2" />
+    <PackageReference Include="IsExternalInit" Version="1.0.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

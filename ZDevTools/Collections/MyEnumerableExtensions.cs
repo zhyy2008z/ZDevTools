@@ -169,25 +169,20 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 获取一个序列中最小值的索引及最小值本身
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="items"></param>
-        /// <param name="initValue"></param>
-        /// <param name="minValue"></param>
-        /// <returns></returns>
-        public static int MinValueIndex<T>(this IEnumerable<T> items, T initValue, out T minValue)
+        public static int MinValueIndex<T>(this IEnumerable<T> items, out T minValue)
             where T : IComparable<T>
         {
             if (items == null) throw new ArgumentNullException(nameof(items));
 
             int result = -1;
             int i = 0;
-            minValue = initValue;
+            minValue = default;
             foreach (var item in items)
             {
-                if (minValue.CompareTo(item) > 0)
+                if (i == 0 || minValue.CompareTo(item) > 0)
                 {
-                    result = i;
                     minValue = item;
+                    result = i;
                 }
                 i++;
             }
@@ -197,22 +192,17 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 获取一个序列中最大值的索引及最大值本身
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="items"></param>
-        /// <param name="initValue"></param>
-        /// <param name="maxValue"></param>
-        /// <returns></returns>
-        public static int MaxValueIndex<T>(this IEnumerable<T> items, T initValue, out T maxValue)
+        public static int MaxValueIndex<T>(this IEnumerable<T> items, out T maxValue)
                         where T : IComparable<T>
         {
             if (items == null) throw new ArgumentNullException(nameof(items));
 
             int result = -1;
             int i = 0;
-            maxValue = initValue;
+            maxValue = default;
             foreach (var item in items)
             {
-                if (maxValue.CompareTo(item) < 0)
+                if (i == 0 || maxValue.CompareTo(item) < 0)
                 {
                     maxValue = item;
                     result = i;
