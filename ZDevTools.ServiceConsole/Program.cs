@@ -41,7 +41,7 @@ namespace ZDevTools.ServiceConsole
             Serilog.Debugging.SelfLog.Enable(TextWriter.Synchronized(File.CreateText("logs\\serilog_self.log")));
 
             _eventSink = new EventSink();
-            Log.Logger = configLogger(new LoggerConfiguration(), out var env, out var formalEnv)
+            Log.Logger = configLogger(new LoggerConfiguration(), out var env)
                            .Enrich.FromLogContext()
                            .WriteTo.Console()
                            .WriteTo.Sink(_eventSink)
@@ -49,7 +49,6 @@ namespace ZDevTools.ServiceConsole
                            .CreateLogger();
 
             Log.Verbose($"DOTNET_ENVIRONMENT:{env}");
-            Log.Verbose($"Formal Environment:{formalEnv}");
             try
             {
                 Log.Verbose("start run");
@@ -129,7 +128,7 @@ namespace ZDevTools.ServiceConsole
             .ConfigureServices(configureAppServices)
             .UseSerilog();
 
-        static LoggerConfiguration configLogger(LoggerConfiguration config, out string env, out string formalEnv)
+        static LoggerConfiguration configLogger(LoggerConfiguration config, out string env)
         {
             env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
 
@@ -138,21 +137,18 @@ namespace ZDevTools.ServiceConsole
             var minimumLevel = config.MinimumLevel;
             minimumLevel.Verbose();
 
-            if (env.Equals(Environments.Production, StringComparison.InvariantCultureIgnoreCase))
+            if (env.Equals(Environments.Production, StringComparison.OrdinalIgnoreCase))
             {
-                formalEnv = Environments.Production;
                 minimumLevel.Override("Microsoft", LogEventLevel.Error);
                 minimumLevel.Override("System", LogEventLevel.Error);
             }
-            else if (env.Equals(Environments.Staging, StringComparison.InvariantCultureIgnoreCase))
+            else if (env.Equals(Environments.Staging, StringComparison.OrdinalIgnoreCase))
             {
-                formalEnv = Environments.Staging;
                 minimumLevel.Override("Microsoft", LogEventLevel.Warning);
                 minimumLevel.Override("System", LogEventLevel.Warning);
             }
             else
             {
-                formalEnv = Environments.Development;
                 minimumLevel.Override("Microsoft", LogEventLevel.Information);
                 minimumLevel.Override("System", LogEventLevel.Information);
             }

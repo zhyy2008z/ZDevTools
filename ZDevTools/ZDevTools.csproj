@@ -7,15 +7,14 @@
     <Description>开发工具库，目前包含一个SqlHelper库，TreeNode树结构类型及算法，RSA算法加密解密实用工具类，SymbolicLink与SocketListener</Description>
     <Product>程序开发工具库</Product>
     <PackageTags>SqlHelper TreeNode RSAHelper SocketListener SymbolicLink</PackageTags>
-    <Version>5.7.1</Version>
+    <Version>5.7.2</Version>
     <PackageReleaseNotes>
-      1、添加一些常见数据类型序列的一阶差分序列算法
-      2、【预告】后续将不再支持netcoreapp3.1
+      1、暴露MovingCache类的内部Buffer，便于客户端代码优化
     </PackageReleaseNotes>
 
     <Authors>穿越中的逍遥</Authors>
     <Company>穿越中的逍遥</Company>
-    <Copyright>Copyright © 穿越中的逍遥 2022</Copyright>
+    <Copyright>Copyright © 穿越中的逍遥 2024</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/zhyy2008z/ZDevTools/tree/master/ZDevTools</PackageProjectUrl>
     <RepositoryUrl>https://github.com/zhyy2008z/ZDevTools</RepositoryUrl>

@@ -15,9 +15,9 @@ namespace ZDevTools.Collections
     public class MovingCache<T> : IEnumerable<T>
     {
         /// <summary>
-        /// 缓存
+        /// 暴露内部缓存，可为特殊情况优化性能使用（外部只读，请勿赋值）
         /// </summary>
-        readonly T[] Buffer;
+        public T[] Buffer { get; private set; }
 
         /// <summary>
         /// 当前位置

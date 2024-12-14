@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 using Xunit;
+using Xunit.Abstractions;
 
 using ZDevTools.Collections;
 
@@ -12,6 +12,12 @@ namespace ZDevTools.Test.Collections
 {
     public class MovingCacheTest
     {
+        readonly ITestOutputHelper Output;
+        public MovingCacheTest(ITestOutputHelper output)
+        {
+            Output = output;
+        }
+
         [Fact]
         public void Test()
         {
@@ -59,6 +65,54 @@ namespace ZDevTools.Test.Collections
             Assert.Equal(1, cache.Count);
         }
 
+        [Fact]
+        public void TestPerformance()
+        {
+            MovingCache<double> cache = new MovingCache<double>(500000);
+            Random random = new Random();
+            foreach (var item in Enumerable.Range(0, 1000000))
+            {
+                cache.Enqueue(random.Next() + random.NextDouble());
+            }
 
+            List<double> times = new List<double>();
+            for (int i = 0; i < 10; i++)
+            {
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                cache.Average();
+                times.Add(stopwatch.ElapsedMilliseconds);
+            }
+
+            var t = times.Average();
+
+            times.Clear();
+
+
+            for (int i = 0; i < 10; i++)
+            {
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                cache.Buffer.Average();
+                times.Add(stopwatch.ElapsedMilliseconds);
+            }
+
+            var t2 = times.Average();
+
+
+            times.Clear();
+
+
+            for (int i = 0; i < 10; i++)
+            {
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                double sum = 0;
+                for (int j = 0; j < cache.Buffer.Length; j++)
+                    sum += cache.Buffer[j];
+                var a = sum / cache.Buffer.Length;
+                times.Add(stopwatch.ElapsedMilliseconds);
+            }
+
+            var t3 = times.Average();
+            Output.WriteLine($"{t:f1} vs {t2:f1} vs {t3:f1}");
+        }
     }
 }
