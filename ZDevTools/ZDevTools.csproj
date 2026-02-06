@@ -7,7 +7,7 @@
     <Description>开发工具库，目前包含一个SqlHelper库，TreeNode树结构类型及算法，RSA算法加密解密实用工具类，SymbolicLink与SocketListener</Description>
     <Product>程序开发工具库</Product>
     <PackageTags>SqlHelper TreeNode RSAHelper SocketListener SymbolicLink</PackageTags>
-    <Version>5.8</Version>
+    <Version>5.8.1</Version>
     <PackageReleaseNotes>
       1、调整目标框架
       2、增加 MarshalHelper.ArrayFromBytes'T(byte[] bytes, int arrayLength) API

@@ -154,7 +154,8 @@ namespace ZDevTools.InteropServices
             var isReferenceOrContainsReferences = IsReferenceOrContainsReferences<T>();
             int size = isReferenceOrContainsReferences ? Marshal.SizeOf<T>() : Unsafe.SizeOf<T>();
 
-            if (bytes.Length < arrayLength * size) throw new ArgumentException("字节数组长度过小！", nameof(bytes));
+            var byteLength = arrayLength * size;
+            if (bytes.Length < byteLength) throw new ArgumentException("字节数组长度过小！", nameof(bytes));
 
             if (bytes.Length == 0) return Array.Empty<T>();
 
@@ -179,9 +180,9 @@ namespace ZDevTools.InteropServices
                 result = new T[arrayLength];
                 var typeT = typeof(T);
                 if (typeT.IsPrimitive || typeT.IsEnum) //基元系类型走BlockCopy
-                    Buffer.BlockCopy(bytes, 0, result, 0, bytes.Length);
+                    Buffer.BlockCopy(bytes, 0, result, 0, byteLength);
                 else //其他类型走转型方式
-                    Unsafe.CopyBlock(ref Unsafe.As<T, byte>(ref result[0]), ref bytes[0], (uint)bytes.Length);
+                    Unsafe.CopyBlock(ref Unsafe.As<T, byte>(ref result[0]), ref bytes[0], (uint)byteLength);
             }
             return result;
         }
