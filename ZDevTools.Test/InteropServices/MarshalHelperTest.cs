@@ -79,6 +79,21 @@ namespace ZDevTools.Test.InteropServices
 
             Assert.Equal(new[] { 32 }.AsEnumerable(), MarshalHelper.ArrayFromBytes<int>(new byte[] { 32, 0, 0, 0 }));
         }
+
+        [Fact]
+        public void ArrayFromBytes2()
+        {
+            Assert.Equal(new[] { new StructA() { A = 22 }, new StructA() { A = 22 } }.AsEnumerable(), MarshalHelper.ArrayFromBytes<StructA>(new byte[] { 22, 0, 0, 0, 22, 0, 0, 0, 22, 0, 0, 0 }, 2));
+
+            Assert.Equal(new[]{ new ClassE()
+            {
+                MeasurementDatas = new[] {
+                    new StructF() { SignalValue4 = 23 }
+                }
+            } }.AsEnumerable(), MarshalHelper.ArrayFromBytes<ClassE>(new byte[] { 0, 0, 0, 0, 23, 0, 0, 0 }, 1));
+
+            Assert.Equal(new[] { 32 }.AsEnumerable(), MarshalHelper.ArrayFromBytes<int>(new byte[] { 32, 0, 0, 0 }, 1));
+        }
     }
 
     struct StructA

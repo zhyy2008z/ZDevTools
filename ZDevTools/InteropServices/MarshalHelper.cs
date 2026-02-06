@@ -147,6 +147,46 @@ namespace ZDevTools.InteropServices
         }
 
         /// <summary>
+        /// 从字节数组反序列化为对象数组，如果为unmanaged类型的数组使用托管内存模型进行反序列化，其他类型使用非托管内存模型进行反序列化
+        /// </summary>
+        public static T[] ArrayFromBytes<T>(byte[] bytes, int arrayLength)
+        {
+            var isReferenceOrContainsReferences = IsReferenceOrContainsReferences<T>();
+            int size = isReferenceOrContainsReferences ? Marshal.SizeOf<T>() : Unsafe.SizeOf<T>();
+
+            if (bytes.Length < arrayLength * size) throw new ArgumentException("字节数组长度过小！", nameof(bytes));
+
+            if (bytes.Length == 0) return Array.Empty<T>();
+
+            T[] result;
+            if (isReferenceOrContainsReferences)
+            {
+                result = new T[arrayLength];
+                GCHandle handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
+                try
+                {
+                    nint address = handle.AddrOfPinnedObject();
+                    for (int i = 0; i < result.Length; i++)
+                        result[i] = Marshal.PtrToStructure<T>(address + i * size);
+                }
+                finally
+                {
+                    handle.Free();
+                }
+            }
+            else
+            {
+                result = new T[arrayLength];
+                var typeT = typeof(T);
+                if (typeT.IsPrimitive || typeT.IsEnum) //基元系类型走BlockCopy
+                    Buffer.BlockCopy(bytes, 0, result, 0, bytes.Length);
+                else //其他类型走转型方式
+                    Unsafe.CopyBlock(ref Unsafe.As<T, byte>(ref result[0]), ref bytes[0], (uint)bytes.Length);
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 获取具有固定长度的字符串Buffer
         /// </summary>
         /// <param name="str">字符串</param>

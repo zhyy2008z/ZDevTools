@@ -114,8 +114,8 @@ namespace ZDevTools.Security
             //在前端加上第一个数组的长度值 这样今后可以根据这个值分别取出来两个数组
             list.AddRange(BitConverter.GetBytes(eOrD.Length + 1));
             var zeroSequence = Enumerable.Repeat((byte)0, 1);
-            list.AddRange(eOrD.Reverse().Concat(zeroSequence));
-            list.AddRange(n.Reverse().Concat(zeroSequence));
+            list.AddRange(Enumerable.Reverse(eOrD).Concat(zeroSequence));
+            list.AddRange(Enumerable.Reverse(n).Concat(zeroSequence));
             byte[] b = list.ToArray();
             return Convert.ToBase64String(b);
         }
