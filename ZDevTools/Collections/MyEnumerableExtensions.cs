@@ -12,67 +12,6 @@ namespace ZDevTools.Collections
     /// </summary>
     public static class MyEnumerableExtensions
     {
-        ///// <summary>
-        ///// 索引枚举器
-        ///// </summary>
-        //public struct IndexedEnumerable<T>
-        //{
-        //    readonly IEnumerable<T> Values;
-
-        //    /// <summary>
-        //    /// 初始化枚举器
-        //    /// </summary>
-        //    /// <param name="values"></param>
-        //    public IndexedEnumerable(IEnumerable<T> values) => this.Values = values;
-
-        //    /// <summary>
-        //    /// 获取迭代器
-        //    /// </summary>
-        //    public Enumerator GetEnumerator() => new Enumerator(Values.GetEnumerator());
-
-        //    /// <summary>
-        //    /// 迭代器
-        //    /// </summary>
-        //    public struct Enumerator
-        //    {
-        //        readonly IEnumerator<T> InnerEnumerator;
-        //        int _index;
-
-        //        /// <summary>
-        //        /// 初始化迭代器
-        //        /// </summary>
-        //        public Enumerator(IEnumerator<T> enumerator)
-        //        {
-        //            this.InnerEnumerator = enumerator;
-        //            _index = -1;
-        //        }
-
-        //        /// <summary>
-        //        /// 迭代到下一个
-        //        /// </summary>
-        //        public bool MoveNext()
-        //        {
-        //            _index++;
-        //            return InnerEnumerator.MoveNext();
-        //        }
-
-        //        /// <summary>
-        //        /// 当前值
-        //        /// </summary>
-        //        public (int Index, T Item) Current => (_index, InnerEnumerator.Current);
-        //    }
-        //}
-
-        ///// <summary>
-        ///// 为序列增加索引字段以配合foreach增加索引值
-        ///// </summary>
-        //public static IndexedEnumerable<T> Indexed<T>(this IEnumerable<T> items)
-        //{
-        //    if (items == null) throw new ArgumentNullException(nameof(items));
-
-        //    return new IndexedEnumerable<T>(items);
-        //}
-
         ///<summary>Finds the index of the first item matching an expression in an enumerable.</summary>
         ///<param name="items">The enumerable to search.</param>
         ///<param name="predicate">The expression to test the items against.</param>
@@ -282,11 +221,6 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 获取由区间 [<paramref name="startIndex"/>, <paramref name="endIndex"/>] 代表的一组序列
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="items"></param>
-        /// <param name="startIndex"></param>
-        /// <param name="endIndex"></param>
-        /// <returns></returns>
         public static IEnumerable<T> Range<T>(this IEnumerable<T> items, int startIndex, int endIndex)
         {
             return items.Skip(startIndex).Take(endIndex - startIndex + 1);
@@ -295,11 +229,6 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 获取由区间 [<paramref name="startIndex"/>, <paramref name="endIndex"/>) 代表的一组序列
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="items"></param>
-        /// <param name="startIndex"></param>
-        /// <param name="endIndex"></param>
-        /// <returns></returns>
         public static IEnumerable<T> IntervalL<T>(this IEnumerable<T> items, int startIndex, int endIndex)
         {
             return items.Skip(startIndex).Take(endIndex - startIndex);
@@ -308,11 +237,6 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 获取由区间 (<paramref name="startIndex"/>, <paramref name="endIndex"/>] 代表的一组序列
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="items"></param>
-        /// <param name="startIndex"></param>
-        /// <param name="endIndex"></param>
-        /// <returns></returns>
         public static IEnumerable<T> IntervalR<T>(this IEnumerable<T> items, int startIndex, int endIndex)
         {
             return items.Skip(startIndex + 1).Take(endIndex - startIndex);
@@ -321,11 +245,6 @@ namespace ZDevTools.Collections
         /// <summary>
         /// 获取由区间 (<paramref name="startIndex"/>, <paramref name="endIndex"/>) 代表的一组序列
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="items"></param>
-        /// <param name="startIndex"></param>
-        /// <param name="endIndex"></param>
-        /// <returns></returns>
         public static IEnumerable<T> Interval<T>(this IEnumerable<T> items, int startIndex, int endIndex)
         {
             return items.Skip(startIndex + 1).Take(endIndex - startIndex - 1);
@@ -486,6 +405,40 @@ namespace ZDevTools.Collections
                 throw new ArgumentNullException(nameof(source));
             }
             return new BufferQueue<T>(source);
+        }
+
+        /// <summary>
+        /// 筛选并投影结果
+        /// </summary>
+        public static IEnumerable<TResult> WhereSelect<T, TResult>(this IEnumerable<T> items, Func<T, (bool, TResult)> predicateSelector)
+        {
+            if (items is null) throw new ArgumentNullException(nameof(items));
+            if (predicateSelector is null) throw new ArgumentNullException(nameof(predicateSelector));
+
+            foreach (var item in items)
+            {
+                var (flag, result) = predicateSelector(item);
+                if (flag)
+                    yield return result;
+            }
+        }
+
+        /// <summary>
+        /// 筛选并投影结果（支持索引）
+        /// </summary>
+        public static IEnumerable<TResult> WhereSelect<T, TResult>(this IEnumerable<T> items, Func<T, int, (bool, TResult)> predicateSelector)
+        {
+            if (items is null) throw new ArgumentNullException(nameof(items));
+            if (predicateSelector is null) throw new ArgumentNullException(nameof(predicateSelector));
+
+            int i = 0;
+            foreach (var item in items)
+            {
+                var (flag, result) = predicateSelector(item, i);
+                if (flag)
+                    yield return result;
+                i++;
+            }
         }
     }
 }
