@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="Google.Protobuf"
-                      Version="3.14.0" />
+                      Version="3.15.0" />
     <PackageReference Include="Grpc"
                       Version="2.34.0" />
     <PackageReference Include="Grpc.Tools"
