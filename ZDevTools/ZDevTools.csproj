@@ -1,15 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net5.0;net7.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net472;net5.0;net7.0;net10.0</TargetFrameworks>
     <LangVersion>Latest</LangVersion>
 
     <Description>开发工具库，目前包含一个SqlHelper库，TreeNode树结构类型及算法，RSA算法加密解密实用工具类，SymbolicLink与SocketListener</Description>
     <Product>程序开发工具库</Product>
     <PackageTags>SqlHelper TreeNode RSAHelper SocketListener SymbolicLink</PackageTags>
-    <Version>5.9</Version>
+    <Version>5.9.2</Version>
     <PackageReleaseNotes>
-      1、增加 WhereSelect 系列linq扩展函数
+      1、支持.netstandard2.0
     </PackageReleaseNotes>
 
     <Authors>穿越中的逍遥</Authors>
@@ -42,21 +42,25 @@
   </ItemGroup>-->
 
   <ItemGroup Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(TargetFramework), '^net\d+\.\d+$'))">
-    <PackageReference Include="System.Data.SqlClient"
-                      Version="4.8.5" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-    <PackageReference Include="System.Threading.Tasks.Extensions"
-                      Version="4.5.4" />
-    <PackageReference Include="System.ComponentModel.Annotations"
-                      Version="5.0.0" />
-    <PackageReference Include="System.Memory"
-                      Version="4.5.5" />
-    <PackageReference Include="IndexRange"
-                      Version="1.0.2" />
-    <PackageReference Include="IsExternalInit"
-                      Version="1.0.3">
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
+    <PackageReference Include="System.Memory" Version="4.6.3" />
+    <PackageReference Include="Polyfill" Version="10.11.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
+    <PackageReference Include="System.Memory" Version="4.6.3" />
+    <PackageReference Include="Polyfill" Version="10.11.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

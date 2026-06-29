@@ -57,7 +57,11 @@ namespace ZDevTools.Utilities
                 MiniDumpExceptionInformation info;
                 info.ThreadId = NativeMethods.GetCurrentThreadId();
                 info.ClientPointers = false;
+#if NETSTANDARD
+                info.ExceptioonPointers = IntPtr.Zero;
+#else
                 info.ExceptioonPointers = Marshal.GetExceptionPointers();
+#endif
                 return NativeMethods.MiniDumpWriteDump(
                   NativeMethods.GetCurrentProcess(),
                   NativeMethods.GetCurrentProcessId(),
