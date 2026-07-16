@@ -123,7 +123,6 @@ namespace ZDevTools
     [Flags]
     enum MiniDumpTypes : uint
     {
-        // From dbghelp.h:
         MiniDumpNormal = 0x00000000,
         MiniDumpWithDataSegs = 0x00000001,
         MiniDumpWithFullMemory = 0x00000002,
@@ -143,7 +142,13 @@ namespace ZDevTools
         MiniDumpWithFullAuxiliaryState = 0x00008000,
         MiniDumpWithPrivateWriteCopyMemory = 0x00010000,
         MiniDumpIgnoreInaccessibleMemory = 0x00020000,
-        MiniDumpValidTypeFlags = 0x0003ffff,
+        MiniDumpWithTokenInformation = 0x00040000,
+        MiniDumpWithModuleHeaders = 0x00080000,
+        MiniDumpFilterTriage = 0x00100000,
+        MiniDumpWithAvxXStateContext = 0x00200000,
+        MiniDumpWithIptTrace = 0x00400000,
+        MiniDumpScanInaccessiblePartialPages = 0x00800000,
+        MiniDumpValidTypeFlags = 0x01ffffff
     };
 
     //typedef struct _MINIDUMP_EXCEPTION_INFORMATION {

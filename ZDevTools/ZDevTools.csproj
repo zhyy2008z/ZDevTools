@@ -7,9 +7,9 @@
     <Description>开发工具库，目前包含一个SqlHelper库，TreeNode树结构类型及算法，RSA算法加密解密实用工具类，SymbolicLink与SocketListener</Description>
     <Product>程序开发工具库</Product>
     <PackageTags>SqlHelper TreeNode RSAHelper SocketListener SymbolicLink</PackageTags>
-    <Version>5.9.2</Version>
+    <Version>5.9.3</Version>
     <PackageReleaseNotes>
-      1、支持.netstandard2.0
+      1、优化创建dump文件的dump类型默认值，使之覆盖更多内容
     </PackageReleaseNotes>
 
     <Authors>穿越中的逍遥</Authors>

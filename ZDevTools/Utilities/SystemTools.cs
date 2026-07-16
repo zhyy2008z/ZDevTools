@@ -41,7 +41,20 @@ namespace ZDevTools.Utilities
         /// <param name="fileName">文件路径</param>
         public static bool WriteMinidump(string fileName)
         {
-            return WriteMinidump(fileName, (uint)MiniDumpTypes.MiniDumpWithFullMemory);
+            return WriteMinidump(fileName, (uint)(MiniDumpTypes.MiniDumpNormal
+                | MiniDumpTypes.MiniDumpWithFullMemory //2
+                | MiniDumpTypes.MiniDumpWithHandleData //4
+                | MiniDumpTypes.MiniDumpWithUnloadedModules //20
+                | MiniDumpTypes.MiniDumpWithProcessThreadData //100
+                | MiniDumpTypes.MiniDumpWithFullMemoryInfo //800
+                | MiniDumpTypes.MiniDumpWithThreadInfo //1000
+                | MiniDumpTypes.MiniDumpWithFullAuxiliaryState //8000
+                | MiniDumpTypes.MiniDumpIgnoreInaccessibleMemory //20000
+                | MiniDumpTypes.MiniDumpWithTokenInformation //40000
+                | MiniDumpTypes.MiniDumpWithModuleHeaders //80000
+                | MiniDumpTypes.MiniDumpWithAvxXStateContext //200000
+                | MiniDumpTypes.MiniDumpScanInaccessiblePartialPages //800000
+                ));
         }
 
         /// <summary>
